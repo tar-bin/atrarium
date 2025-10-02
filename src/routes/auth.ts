@@ -9,11 +9,12 @@ import { validateRequest, LoginRequestSchema } from '../schemas/validation';
 const app = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
 // ============================================================================
-// POST /api/auth/login
+// POST /login
 // Initiate OAuth login (Phase 0: simplified mock implementation)
+// Mounted at /api/auth, so full path is /api/auth/login
 // ============================================================================
 
-app.post('/api/auth/login', async (c) => {
+app.post('/login', async (c) => {
   try {
     const body = await c.req.json();
     const validation = await validateRequest(LoginRequestSchema, body);
@@ -37,11 +38,12 @@ app.post('/api/auth/login', async (c) => {
 });
 
 // ============================================================================
-// GET /api/auth/callback
+// GET /callback
 // OAuth callback handler (Phase 0: not implemented)
+// Mounted at /api/auth, so full path is /api/auth/callback
 // ============================================================================
 
-app.get('/api/auth/callback', async (c) => {
+app.get('/callback', async (c) => {
   return c.json(
     {
       error: 'NotImplemented',
@@ -52,11 +54,12 @@ app.get('/api/auth/callback', async (c) => {
 });
 
 // ============================================================================
-// POST /api/auth/refresh
+// POST /refresh
 // Refresh access token using refresh token
+// Mounted at /api/auth, so full path is /api/auth/refresh
 // ============================================================================
 
-app.post('/api/auth/refresh', async (c) => {
+app.post('/refresh', async (c) => {
   try {
     const body = await c.req.json();
     const refreshToken = body.refreshToken;

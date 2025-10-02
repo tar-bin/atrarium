@@ -71,10 +71,9 @@ export class DatabaseService {
    */
   async query<T = unknown>(query: string, ...params: unknown[]): Promise<D1Result<T>> {
     return executeWithRetry(async () => {
-      const session = this.env.DB.withSession();
-      const stmt = session.prepare(query);
+      let stmt = this.env.DB.prepare(query);
       if (params.length > 0) {
-        stmt.bind(...params);
+        stmt = stmt.bind(...params);
       }
       const result = await stmt.all<T>();
 
@@ -96,10 +95,9 @@ export class DatabaseService {
    */
   async queryOne<T = unknown>(query: string, ...params: unknown[]): Promise<T | null> {
     return executeWithRetry(async () => {
-      const session = this.env.DB.withSession();
-      const stmt = session.prepare(query);
+      let stmt = this.env.DB.prepare(query);
       if (params.length > 0) {
-        stmt.bind(...params);
+        stmt = stmt.bind(...params);
       }
       return await stmt.first<T>();
     });
@@ -110,9 +108,9 @@ export class DatabaseService {
    */
   async execute(query: string, ...params: unknown[]): Promise<D1Result> {
     return executeWithRetry(async () => {
-      const stmt = this.env.DB.prepare(query);
+      let stmt = this.env.DB.prepare(query);
       if (params.length > 0) {
-        stmt.bind(...params);
+        stmt = stmt.bind(...params);
       }
       return await stmt.run();
     });

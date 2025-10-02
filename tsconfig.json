@@ -25,6 +25,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*", "tests/**/*"],
-  "exclude": ["node_modules", "dist", ".wrangler"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", ".wrangler", "tests"]
 }
