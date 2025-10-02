@@ -137,3 +137,47 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# AI Agents & Code Assistants
+.claude/
+.github/copilot/
+.cursor/
+.windsurf/
+.qwen/
+.opencode/
+.codex/
+.roo/
+.kilo/
+.auggie/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+tmp/
+temp/
+
+# Cloudflare Workers
+.wrangler/
+.mf/
+worker/
