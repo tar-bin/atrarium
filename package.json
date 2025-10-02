@@ -1,0 +1,41 @@
+{
+  "name": "atrarium",
+  "version": "0.1.0",
+  "description": "Community management system built on AT Protocol (Bluesky)",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src tests --ext .ts",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\""
+  },
+  "keywords": [
+    "atproto",
+    "bluesky",
+    "community",
+    "cloudflare-workers"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@atproto/api": "^0.13.16",
+    "@atproto/xrpc-server": "^0.7.4",
+    "@atproto/identity": "^0.4.3",
+    "hono": "^4.6.14",
+    "zod": "^3.23.8",
+    "jose": "^5.9.6"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241127.0",
+    "@cloudflare/vitest-pool-workers": "^0.5.30",
+    "@types/node": "^22.10.2",
+    "eslint": "^9.16.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8",
+    "wrangler": "^3.94.0"
+  }
+}

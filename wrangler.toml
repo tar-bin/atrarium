@@ -1,0 +1,33 @@
+name = "atrarium"
+main = "src/index.ts"
+compatibility_date = "2024-10-22"
+compatibility_flags = ["nodejs_compat"]
+
+# D1 Database Binding (Run: wrangler d1 create atrarium-db)
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "atrarium-db"
+# database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+# KV Namespace Binding (Run: wrangler kv:namespace create POST_CACHE)
+# [[kv_namespaces]]
+# binding = "POST_CACHE"
+# id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+# preview_id = "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy"
+
+# Environment Variables
+[vars]
+ENVIRONMENT = "development"
+
+# Cron Triggers (for post deletion sync)
+[triggers]
+crons = ["0 */12 * * *"]  # Every 12 hours
+
+# Build Configuration
+[build]
+command = "npm run typecheck"
+
+# Upload Rules
+[[rules]]
+globs = ["**/*.{ts,js,json}"]
+type = "ESModule"
