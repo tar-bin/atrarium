@@ -4,6 +4,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import app from '../../src/index';
 import { createMockEnv, createMockJWT } from '../helpers/test-env';
+import type { CommunityResponse, ThemeFeedResponse, PostIndexResponse, FeedSkeleton } from '../../src/types';
 
 describe('Integration: Post Workflow', () => {
   let env: any;
@@ -30,7 +31,7 @@ describe('Integration: Post Workflow', () => {
     });
 
     const communityResp = await app.fetch(createCommunityReq, env, {} as ExecutionContext);
-    const community = await communityResp.json();
+    const community = await communityResp.json() as CommunityResponse;
     communityId = community.id;
 
     expect(communityId).toBeTruthy();
@@ -51,7 +52,7 @@ describe('Integration: Post Workflow', () => {
     );
 
     const feedResp = await app.fetch(createFeedReq, env, {} as ExecutionContext);
-    const feed = await feedResp.json();
+    const feed = await feedResp.json() as ThemeFeedResponse;
     feedId = feed.id;
 
     expect(feedId).toBeTruthy();
@@ -73,7 +74,7 @@ describe('Integration: Post Workflow', () => {
     const postResp = await app.fetch(postReq, env, {} as ExecutionContext);
     expect(postResp.status).toBe(201);
 
-    const post = await postResp.json();
+    const post = await postResp.json() as PostIndexResponse;
     expect(post.uri).toBe('at://did:plc:test123/app.bsky.feed.post/testpost123');
     expect(post.feedId).toBe(feedId);
 
@@ -84,10 +85,10 @@ describe('Integration: Post Workflow', () => {
     );
 
     const skeletonResp = await app.fetch(skeletonReq, env, {} as ExecutionContext);
-    const skeleton = await skeletonResp.json();
+    const skeleton = await skeletonResp.json() as FeedSkeleton;
 
     const foundPost = skeleton.feed.find(
-      (item: any) => item.post === 'at://did:plc:test123/app.bsky.feed.post/testpost123'
+      (item) => item.post === 'at://did:plc:test123/app.bsky.feed.post/testpost123'
     );
     expect(foundPost).toBeTruthy();
   });

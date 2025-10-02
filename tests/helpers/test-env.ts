@@ -1,13 +1,15 @@
 // Test environment helpers
+import { env } from 'cloudflare:test';
 import type { Env } from '../../src/types';
 
 /**
  * Create mock environment for tests
+ * Note: Uses real Miniflare bindings from cloudflare:test
  */
 export function createMockEnv(): Env {
   return {
-    DB: {} as D1Database, // Will be provided by Miniflare
-    POST_CACHE: {} as KVNamespace, // Will be provided by Miniflare
+    DB: env.DB,
+    POST_CACHE: env.POST_CACHE,
     JWT_SECRET: 'test-secret-key-for-testing-only-not-for-production',
     ENVIRONMENT: 'test',
   };

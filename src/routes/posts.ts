@@ -2,7 +2,7 @@
 // Post submission API
 
 import { Hono } from 'hono';
-import type { Env, PostIndexResponse } from '../types';
+import type { Env, PostIndexResponse, HonoVariables } from '../types';
 import { AuthService } from '../services/auth';
 import { PostIndexModel } from '../models/post-index';
 import { ThemeFeedModel } from '../models/theme-feed';
@@ -12,7 +12,7 @@ import { CacheService } from '../services/cache';
 import { validateRequest, SubmitPostSchema } from '../schemas/validation';
 import { getCurrentTimestamp } from '../services/db';
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
 // ============================================================================
 // Middleware: JWT Authentication
@@ -20,7 +20,7 @@ const app = new Hono<{ Bindings: Env }>();
 
 app.use('*', async (c, next) => {
   try {
-    const authHeader = c.req.header('Authorization');
+    const authHeader = c.req.header('Authorization') || null;
     const authService = new AuthService(c.env);
     const userDid = await authService.extractUserFromHeader(authHeader);
     c.set('userDid', userDid);

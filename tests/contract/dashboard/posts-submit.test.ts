@@ -1,9 +1,10 @@
 // Contract Test: POST /api/posts
 // Verifies submit post URI to theme feed
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import app from '../../../src/index';
 import { createMockEnv, createMockJWT } from '../../helpers/test-env';
+import type { ErrorResponse } from '../../../src/types';
 
 describe('Contract: POST /api/posts', () => {
   let env: any;
@@ -57,7 +58,7 @@ describe('Contract: POST /api/posts', () => {
 
     const response = await app.fetch(request, env, {} as ExecutionContext);
     expect(response.status).toBe(400);
-    const error = await response.json();
+    const error = await response.json() as ErrorResponse;
     expect(error.message).toContain('AT-URI');
   });
 

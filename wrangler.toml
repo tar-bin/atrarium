@@ -1,7 +1,7 @@
 name = "atrarium"
 main = "src/index.ts"
 compatibility_date = "2024-10-22"
-node_compat = true
+compatibility_flags = ["nodejs_compat"]
 
 # D1 Database Binding (Run: wrangler d1 create atrarium-db)
 # [[d1_databases]]
@@ -28,6 +28,6 @@ crons = ["0 */12 * * *"]  # Every 12 hours
 command = "npm run typecheck"
 
 # Upload Rules
-[rules]
+[[rules]]
 globs = ["**/*.{ts,js,json}"]
 type = "ESModule"

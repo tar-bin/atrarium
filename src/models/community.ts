@@ -8,7 +8,7 @@ import type {
   CommunityStage,
   CreateCommunityRequest,
 } from '../types';
-import { DatabaseService, generateUUID, getCurrentTimestamp, toCamelCase } from '../services/db';
+import { DatabaseService, generateUUID, getCurrentTimestamp } from '../services/db';
 
 // ============================================================================
 // Community Model

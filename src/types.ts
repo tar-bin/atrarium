@@ -14,6 +14,11 @@ export interface Env {
   ENVIRONMENT?: string;
 }
 
+// Hono context variables
+export type HonoVariables = {
+  userDid: string;
+};
+
 // ============================================================================
 // Database Entities
 // ============================================================================

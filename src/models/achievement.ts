@@ -48,7 +48,7 @@ export class AchievementModel {
   /**
    * List achievements for a user (stub)
    */
-  async listByUser(userDid: string): Promise<Achievement[]> {
+  async listByUser(_userDid: string): Promise<Achievement[]> {
     // Not implemented in Phase 0
     return [];
   }

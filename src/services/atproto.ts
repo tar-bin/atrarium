@@ -8,10 +8,8 @@ import type { Env } from '../types';
 // ============================================================================
 
 export class ATProtoService {
-  private env: Env;
-
-  constructor(env: Env) {
-    this.env = env;
+  constructor(_env: Env) {
+    // env unused in Phase 0 (mock implementation)
   }
 
   /**
@@ -19,7 +17,7 @@ export class ATProtoService {
    * @param uris Array of AT-URIs
    * @returns Array of URIs that no longer exist
    */
-  async checkPostsExistence(uris: string[]): Promise<string[]> {
+  async checkPostsExistence(_uris: string[]): Promise<string[]> {
     // Phase 0: Simplified implementation
     // In production: Use @atproto/api to query Bluesky AppView
 
@@ -33,7 +31,7 @@ export class ATProtoService {
    * @param uri AT-URI
    * @returns Post metadata (text, media, langs, etc.)
    */
-  async fetchPostMetadata(uri: string): Promise<{
+  async fetchPostMetadata(_uri: string): Promise<{
     text: string;
     hasMedia: boolean;
     langs: string[] | null;

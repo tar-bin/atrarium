@@ -4,6 +4,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import app from '../../src/index';
 import { createMockEnv } from '../helpers/test-env';
+import type { AuthResponse, CommunityResponse, PaginatedResponse } from '../../src/types';
 
 describe('Integration: Create Community Workflow', () => {
   let env: any;
@@ -25,7 +26,7 @@ describe('Integration: Create Community Workflow', () => {
     const loginResponse = await app.fetch(loginRequest, env, {} as ExecutionContext);
     expect(loginResponse.status).toBe(200);
 
-    const authData = await loginResponse.json();
+    const authData = await loginResponse.json() as AuthResponse;
     accessToken = authData.accessJwt;
     userDid = authData.did;
 
@@ -48,7 +49,7 @@ describe('Integration: Create Community Workflow', () => {
     const createResponse = await app.fetch(createRequest, env, {} as ExecutionContext);
     expect(createResponse.status).toBe(201);
 
-    const community = await createResponse.json();
+    const community = await createResponse.json() as CommunityResponse;
 
     // Step 3: Verify community created
     expect(community.id).toBeTruthy();
@@ -65,8 +66,8 @@ describe('Integration: Create Community Workflow', () => {
     const listResponse = await app.fetch(listRequest, env, {} as ExecutionContext);
     expect(listResponse.status).toBe(200);
 
-    const listData = await listResponse.json();
-    const foundCommunity = listData.data.find((c: any) => c.id === community.id);
+    const listData = await listResponse.json() as PaginatedResponse<CommunityResponse>;
+    const foundCommunity = listData.data.find((c) => c.id === community.id);
     expect(foundCommunity).toBeTruthy();
   });
 });

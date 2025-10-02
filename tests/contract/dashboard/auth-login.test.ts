@@ -1,9 +1,10 @@
 // Contract Test: POST /api/auth/login
 // Verifies OAuth redirect response (Phase 0: mock implementation)
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import app from '../../../src/index';
 import { createMockEnv } from '../../helpers/test-env';
+import type { AuthResponse, ErrorResponse } from '../../../src/types';
 
 describe('Contract: POST /api/auth/login', () => {
   let env: any;
@@ -22,7 +23,7 @@ describe('Contract: POST /api/auth/login', () => {
     const response = await app.fetch(request, env, {} as ExecutionContext);
 
     expect(response.status).toBe(400);
-    const error = await response.json();
+    const error = await response.json() as ErrorResponse;
     expect(error).toHaveProperty('error', 'InvalidRequest');
   });
 
@@ -36,7 +37,7 @@ describe('Contract: POST /api/auth/login', () => {
     const response = await app.fetch(request, env, {} as ExecutionContext);
 
     expect(response.status).toBe(200);
-    const authResponse = await response.json();
+    const authResponse = await response.json() as AuthResponse;
 
     // Phase 0: Mock OAuth returns tokens directly
     expect(authResponse).toHaveProperty('accessJwt');
@@ -57,7 +58,7 @@ describe('Contract: POST /api/auth/login', () => {
     });
 
     const response = await app.fetch(request, env, {} as ExecutionContext);
-    const authResponse = await response.json();
+    const authResponse = await response.json() as AuthResponse;
 
     expect(authResponse.did).toMatch(/^did:plc:/);
   });
@@ -70,7 +71,7 @@ describe('Contract: POST /api/auth/login', () => {
     });
 
     const response = await app.fetch(request, env, {} as ExecutionContext);
-    const authResponse = await response.json();
+    const authResponse = await response.json() as AuthResponse;
 
     expect(authResponse.refreshJwt).toBeTruthy();
     expect(authResponse.refreshJwt).not.toBe(authResponse.accessJwt);

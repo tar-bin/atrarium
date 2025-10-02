@@ -80,8 +80,8 @@ export class PostIndexModel {
 
     if (cursor) {
       const [ts, id] = cursor.split('::');
-      cursorTimestamp = parseInt(ts, 10);
-      cursorId = parseInt(id, 10);
+      cursorTimestamp = parseInt(ts || '0', 10);
+      cursorId = parseInt(id || '0', 10);
     }
 
     const result = await this.db.query<PostIndexRow>(
@@ -102,7 +102,9 @@ export class PostIndexModel {
     let nextCursor: string | undefined;
     if (posts.length === limit && posts.length > 0) {
       const lastPost = posts[posts.length - 1];
-      nextCursor = `${lastPost.createdAt}::${lastPost.id}`;
+      if (lastPost) {
+        nextCursor = `${lastPost.createdAt}::${lastPost.id}`;
+      }
     }
 
     return { posts, cursor: nextCursor };

@@ -2,12 +2,12 @@
 // Membership management API
 
 import { Hono } from 'hono';
-import type { Env } from '../types';
+import type { Env, HonoVariables } from '../types';
 import { AuthService } from '../services/auth';
 import { MembershipModel } from '../models/membership';
 import { CommunityModel } from '../models/community';
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
 // ============================================================================
 // Middleware: JWT Authentication
@@ -15,7 +15,7 @@ const app = new Hono<{ Bindings: Env }>();
 
 app.use('*', async (c, next) => {
   try {
-    const authHeader = c.req.header('Authorization');
+    const authHeader = c.req.header('Authorization') || null;
     const authService = new AuthService(c.env);
     const userDid = await authService.extractUserFromHeader(authHeader);
     c.set('userDid', userDid);

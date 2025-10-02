@@ -73,7 +73,7 @@ export function parseFeedUri(feedUri: string): { did: string; feedId: string } |
   const pattern = /^at:\/\/(did:web:[^/]+)\/app\.bsky\.feed\.generator\/(.+)$/;
   const match = feedUri.match(pattern);
 
-  if (!match) return null;
+  if (!match || !match[1] || !match[2]) return null;
 
   return {
     did: match[1],

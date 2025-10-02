@@ -4,6 +4,7 @@
 import { describe, it, expect } from 'vitest';
 import app from '../../../src/index';
 import { createMockEnv } from '../../helpers/test-env';
+import type { DIDDocument } from '../../../src/types';
 
 describe('Contract: GET /.well-known/did.json', () => {
   it('should return valid DID document', async () => {
@@ -15,7 +16,7 @@ describe('Contract: GET /.well-known/did.json', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('Content-Type')).toContain('application/json');
 
-    const didDoc = await response.json();
+    const didDoc = await response.json() as DIDDocument;
 
     // Verify DID document structure
     expect(didDoc).toHaveProperty('@context');
@@ -26,13 +27,15 @@ describe('Contract: GET /.well-known/did.json', () => {
 
     expect(didDoc).toHaveProperty('service');
     expect(Array.isArray(didDoc.service)).toBe(true);
-    expect(didDoc.service.length).toBeGreaterThan(0);
+    expect(didDoc.service?.length).toBeGreaterThan(0);
 
-    const service = didDoc.service[0];
-    expect(service).toHaveProperty('id', '#bsky_fg');
-    expect(service).toHaveProperty('type', 'BskyFeedGenerator');
-    expect(service).toHaveProperty('serviceEndpoint');
-    expect(service.serviceEndpoint).toMatch(/^https?:\/\//);
+    const service = didDoc.service?.[0];
+    if (service) {
+      expect(service).toHaveProperty('id', '#bsky_fg');
+      expect(service).toHaveProperty('type', 'BskyFeedGenerator');
+      expect(service).toHaveProperty('serviceEndpoint');
+      expect(service.serviceEndpoint).toMatch(/^https?:\/\//);
+    }
   });
 
   it('should include Cache-Control header', async () => {
@@ -50,9 +53,9 @@ describe('Contract: GET /.well-known/did.json', () => {
     const request = new Request('http://example.com/.well-known/did.json');
 
     const response = await app.fetch(request, env, {} as ExecutionContext);
-    const didDoc = await response.json();
+    const didDoc = await response.json() as DIDDocument;
 
     expect(didDoc.id).toBe('did:web:example.com');
-    expect(didDoc.service[0].serviceEndpoint).toBe('https://example.com');
+    expect(didDoc.service[0]?.serviceEndpoint).toBe('https://example.com');
   });
 });

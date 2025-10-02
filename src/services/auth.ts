@@ -39,7 +39,7 @@ export class AuthService {
 
     const secret = new TextEncoder().encode(this.env.JWT_SECRET);
 
-    return await new SignJWT(payload)
+    return await new SignJWT(payload as unknown as Record<string, unknown>)
       .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
       .setIssuedAt(payload.iat)
       .setExpirationTime(payload.exp)
@@ -67,7 +67,7 @@ export class AuthService {
 
     const secret = new TextEncoder().encode(this.env.JWT_SECRET);
 
-    return await new SignJWT(payload)
+    return await new SignJWT(payload as unknown as Record<string, unknown>)
       .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
       .setIssuedAt(payload.iat)
       .setExpirationTime(payload.exp)
@@ -148,7 +148,7 @@ export class AuthService {
   /**
    * Handle OAuth callback (Phase 0: mock implementation)
    */
-  async handleOAuthCallback(code: string, state: string): Promise<AuthResponse> {
+  async handleOAuthCallback(_code: string, _state: string): Promise<AuthResponse> {
     // Phase 0: Simplified flow
     // In production: Exchange code for tokens with Bluesky OAuth server
     throw new Error('OAuth callback not implemented in Phase 0');

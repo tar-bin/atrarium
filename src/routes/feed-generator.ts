@@ -2,14 +2,13 @@
 // AT Protocol Feed Generator endpoints (/.well-known/did.json, describeFeedGenerator, getFeedSkeleton)
 
 import { Hono } from 'hono';
-import type { Env, FeedSkeleton, FeedGeneratorDescription } from '../types';
+import type { Env, FeedSkeleton, FeedGeneratorDescription, HonoVariables } from '../types';
 import { generateDIDDocument, extractHostname, getFeedUri, parseFeedUri } from '../utils/did';
-import { ThemeFeedModel } from '../models/theme-feed';
 import { PostIndexModel } from '../models/post-index';
 import { CacheService } from '../services/cache';
 import { validateRequest, GetFeedSkeletonParamsSchema } from '../schemas/validation';
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
 // ============================================================================
 // GET /.well-known/did.json
@@ -46,9 +45,6 @@ app.get('/xrpc/app.bsky.feed.describeFeedGenerator', async (c) => {
   try {
     const hostname = extractHostname(c.req.raw);
     const did = `did:web:${hostname.split(':')[0]}`;
-
-    // Get all active theme feeds
-    const themeFeedModel = new ThemeFeedModel(c.env);
 
     // For Phase 0: List all active feeds across all communities
     // In production: This would be more sophisticated

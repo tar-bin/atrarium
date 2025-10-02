@@ -1,9 +1,10 @@
 // Contract Test: GET /api/communities
 // Verifies list communities response with JWT authentication
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import app from '../../../src/index';
 import { createMockEnv, createMockJWT } from '../../helpers/test-env';
+import type { PaginatedResponse, CommunityResponse, ErrorResponse } from '../../../src/types';
 
 describe('Contract: GET /api/communities', () => {
   let env: any;
@@ -18,7 +19,7 @@ describe('Contract: GET /api/communities', () => {
     const response = await app.fetch(request, env, {} as ExecutionContext);
 
     expect(response.status).toBe(401);
-    const error = await response.json();
+    const error = await response.json() as ErrorResponse;
     expect(error).toHaveProperty('error', 'Unauthorized');
   });
 
@@ -31,7 +32,7 @@ describe('Contract: GET /api/communities', () => {
     const response = await app.fetch(request, env, {} as ExecutionContext);
 
     expect(response.status).toBe(200);
-    const result = await response.json();
+    const result = await response.json() as PaginatedResponse<CommunityResponse>;
     expect(result).toHaveProperty('data');
     expect(Array.isArray(result.data)).toBe(true);
   });
@@ -53,7 +54,7 @@ describe('Contract: GET /api/communities', () => {
     });
 
     const response = await app.fetch(request, env, {} as ExecutionContext);
-    const result = await response.json();
+    const result = await response.json() as PaginatedResponse<CommunityResponse>;
 
     expect(result.data).toBeDefined();
     expect(Array.isArray(result.data)).toBe(true);
@@ -61,12 +62,14 @@ describe('Contract: GET /api/communities', () => {
     // Each community should have required fields
     if (result.data.length > 0) {
       const community = result.data[0];
-      expect(community).toHaveProperty('id');
-      expect(community).toHaveProperty('name');
-      expect(community).toHaveProperty('stage');
-      expect(community).toHaveProperty('memberCount');
-      expect(community).toHaveProperty('postCount');
-      expect(community).toHaveProperty('createdAt');
+      if (community) {
+        expect(community).toHaveProperty('id');
+        expect(community).toHaveProperty('name');
+        expect(community).toHaveProperty('stage');
+        expect(community).toHaveProperty('memberCount');
+        expect(community).toHaveProperty('postCount');
+        expect(community).toHaveProperty('createdAt');
+      }
     }
   });
 });

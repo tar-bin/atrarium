@@ -1,7 +1,7 @@
 // Contract Test: POST /api/communities
 // Verifies create community request/response
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import app from '../../../src/index';
 import { createMockEnv, createMockJWT } from '../../helpers/test-env';
 

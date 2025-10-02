@@ -1,9 +1,10 @@
 // Contract Test: GET /xrpc/app.bsky.feed.getFeedSkeleton
 // Verifies feed skeleton response, pagination, and parameter validation
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import app from '../../../src/index';
 import { createMockEnv } from '../../helpers/test-env';
+import type { ErrorResponse, FeedSkeleton } from '../../../src/types';
 
 describe('Contract: GET /xrpc/app.bsky.feed.getFeedSkeleton', () => {
   let env: any;
@@ -18,7 +19,7 @@ describe('Contract: GET /xrpc/app.bsky.feed.getFeedSkeleton', () => {
     const response = await app.fetch(request, env, {} as ExecutionContext);
 
     expect(response.status).toBe(400);
-    const error = await response.json();
+    const error = await response.json() as ErrorResponse;
     expect(error).toHaveProperty('error');
     expect(error.error).toBe('InvalidRequest');
   });
@@ -31,7 +32,7 @@ describe('Contract: GET /xrpc/app.bsky.feed.getFeedSkeleton', () => {
     const response = await app.fetch(request, env, {} as ExecutionContext);
 
     expect(response.status).toBe(400);
-    const error = await response.json();
+    const error = await response.json() as ErrorResponse;
     expect(error.message).toContain('feed');
   });
 
@@ -47,7 +48,7 @@ describe('Contract: GET /xrpc/app.bsky.feed.getFeedSkeleton', () => {
     // Should return 200 even if feed doesn't exist (empty feed)
     expect(response.status).toBe(200);
 
-    const skeleton = await response.json();
+    const skeleton = await response.json() as FeedSkeleton;
     expect(skeleton).toHaveProperty('feed');
     expect(Array.isArray(skeleton.feed)).toBe(true);
   });
@@ -60,7 +61,7 @@ describe('Contract: GET /xrpc/app.bsky.feed.getFeedSkeleton', () => {
     );
 
     const response = await app.fetch(request, env, {} as ExecutionContext);
-    const skeleton = await response.json();
+    const skeleton = await response.json() as FeedSkeleton;
 
     expect(skeleton).toHaveProperty('feed');
     expect(Array.isArray(skeleton.feed)).toBe(true);
@@ -129,13 +130,15 @@ describe('Contract: GET /xrpc/app.bsky.feed.getFeedSkeleton', () => {
     );
 
     const response = await app.fetch(request, env, {} as ExecutionContext);
-    const skeleton = await response.json();
+    const skeleton = await response.json() as FeedSkeleton;
 
     // Each feed item should have { post: "at://..." }
     if (skeleton.feed.length > 0) {
       const item = skeleton.feed[0];
-      expect(item).toHaveProperty('post');
-      expect(item.post).toMatch(/^at:\/\/did:(plc|web):.+\/app\.bsky\.feed\.post\/.+$/);
+      if (item) {
+        expect(item).toHaveProperty('post');
+        expect(item.post).toMatch(/^at:\/\/did:(plc|web):.+\/app\.bsky\.feed\.post\/.+$/);
+      }
     }
   });
 });

@@ -3,9 +3,8 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import app from '../../../src/index';
-import { createMockEnv, setupTestDatabase } from '../../helpers/test-env';
-import { CommunityModel } from '../../../src/models/community';
-import { ThemeFeedModel } from '../../../src/models/theme-feed';
+import { createMockEnv } from '../../helpers/test-env';
+import type { FeedGeneratorDescription } from '../../../src/types';
 
 describe('Contract: GET /xrpc/app.bsky.feed.describeFeedGenerator', () => {
   let env: any;
@@ -25,7 +24,7 @@ describe('Contract: GET /xrpc/app.bsky.feed.describeFeedGenerator', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('Content-Type')).toContain('application/json');
 
-    const description = await response.json();
+    const description = await response.json() as FeedGeneratorDescription;
 
     // Verify structure
     expect(description).toHaveProperty('did');
@@ -41,15 +40,17 @@ describe('Contract: GET /xrpc/app.bsky.feed.describeFeedGenerator', () => {
     );
 
     const response = await app.fetch(request, env, {} as ExecutionContext);
-    const description = await response.json();
+    const description = await response.json() as FeedGeneratorDescription;
 
     // Each feed should have uri, displayName
     if (description.feeds.length > 0) {
       const feed = description.feeds[0];
-      expect(feed).toHaveProperty('uri');
-      expect(feed.uri).toMatch(/^at:\/\/did:web:.+\/app\.bsky\.feed\.generator\/.+$/);
-      expect(feed).toHaveProperty('displayName');
-      expect(typeof feed.displayName).toBe('string');
+      if (feed) {
+        expect(feed).toHaveProperty('uri');
+        expect(feed.uri).toMatch(/^at:\/\/did:web:.+\/app\.bsky\.feed\.generator\/.+$/);
+        expect(feed).toHaveProperty('displayName');
+        expect(typeof feed.displayName).toBe('string');
+      }
     }
   });
 
@@ -59,13 +60,15 @@ describe('Contract: GET /xrpc/app.bsky.feed.describeFeedGenerator', () => {
     );
 
     const response = await app.fetch(request, env, {} as ExecutionContext);
-    const description = await response.json();
+    const description = await response.json() as FeedGeneratorDescription;
 
     if (description.feeds.length > 0) {
       const feed = description.feeds[0];
-      // description is optional, but if present should be string
-      if (feed.description !== undefined) {
-        expect(typeof feed.description).toBe('string');
+      if (feed) {
+        // description is optional, but if present should be string
+        if (feed.description !== undefined) {
+          expect(typeof feed.description).toBe('string');
+        }
       }
     }
   });

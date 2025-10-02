@@ -1,9 +1,10 @@
 // Contract Test: GET /api/communities/{id}/feeds
 // Verifies list theme feeds for community
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import app from '../../../src/index';
 import { createMockEnv, createMockJWT } from '../../helpers/test-env';
+import type { PaginatedResponse, ThemeFeedResponse } from '../../../src/types';
 
 describe('Contract: GET /api/communities/{id}/feeds', () => {
   let env: any;
@@ -37,7 +38,7 @@ describe('Contract: GET /api/communities/{id}/feeds', () => {
 
     // May return 403 if user is not a member, which is acceptable
     if (response.status === 200) {
-      const result = await response.json();
+      const result = await response.json() as PaginatedResponse<ThemeFeedResponse>;
       expect(result).toHaveProperty('data');
       expect(Array.isArray(result.data)).toBe(true);
     } else {

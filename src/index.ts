@@ -4,7 +4,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
-import type { Env } from './types';
+import type { Env, HonoVariables } from './types';
 
 // Import routes
 import feedGeneratorRoutes from './routes/feed-generator';
@@ -24,7 +24,7 @@ import { CacheService } from './services/cache';
 // Main Application
 // ============================================================================
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
 // ============================================================================
 // Middleware
@@ -101,7 +101,7 @@ app.notFound((c) => {
 // Scheduled Jobs (Cron Triggers)
 // ============================================================================
 
-async function handleScheduledJob(env: Env, ctx: ExecutionContext) {
+async function handleScheduledJob(env: Env, _ctx: ExecutionContext) {
   console.log('[Scheduled Job] Starting post deletion sync and feed health check');
 
   try {
@@ -151,7 +151,7 @@ export default {
     return app.fetch(request, env, ctx);
   },
 
-  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+  async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
     ctx.waitUntil(handleScheduledJob(env, ctx));
   },
 };

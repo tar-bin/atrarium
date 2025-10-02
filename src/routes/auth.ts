@@ -2,11 +2,11 @@
 // OAuth login initiation and callback handling
 
 import { Hono } from 'hono';
-import type { Env, AuthResponse } from '../types';
+import type { Env, AuthResponse, HonoVariables } from '../types';
 import { AuthService } from '../services/auth';
 import { validateRequest, LoginRequestSchema } from '../schemas/validation';
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
 // ============================================================================
 // POST /api/auth/login
