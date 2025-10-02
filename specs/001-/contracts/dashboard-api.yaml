@@ -1,0 +1,691 @@
+openapi: 3.1.0
+info:
+  title: Atrarium Dashboard API
+  description: Admin dashboard API for managing communities, theme feeds, and memberships
+  version: 1.0.0
+  contact:
+    name: Atrarium Project
+  license:
+    name: MIT
+
+servers:
+  - url: https://atrarium.example.com/api
+    description: Production server
+  - url: http://localhost:8787/api
+    description: Local development (Miniflare)
+
+tags:
+  - name: Auth
+    description: Authentication and authorization
+  - name: Communities
+    description: Community management
+  - name: Theme Feeds
+    description: Theme feed management
+  - name: Memberships
+    description: Membership management
+  - name: Posts
+    description: Post submission
+
+paths:
+  /auth/login:
+    post:
+      summary: Initiate OAuth login
+      description: Redirect user to Bluesky OAuth authorization
+      operationId: loginInit
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - handle
+              properties:
+                handle:
+                  type: string
+                  description: Bluesky handle or DID
+                  example: 'user.bsky.social'
+      responses:
+        '302':
+          description: Redirect to OAuth authorization
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+              description: OAuth authorization URL
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /auth/callback:
+    get:
+      summary: OAuth callback
+      description: Handle OAuth callback and issue JWT
+      operationId: oauthCallback
+      tags:
+        - Auth
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /communities:
+    get:
+      summary: List communities
+      description: Get all communities the authenticated user is a member of
+      operationId: listCommunities
+      tags:
+        - Communities
+      security:
+        - Bearer: []
+      responses:
+        '200':
+          description: Communities successfully retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  communities:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Community'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      summary: Create community
+      description: Create a new community (authenticated user becomes owner)
+      operationId: createCommunity
+      tags:
+        - Communities
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommunityRequest'
+      responses:
+        '201':
+          description: Community created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Community'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /communities/{communityId}:
+    get:
+      summary: Get community details
+      description: Retrieve detailed information about a community
+      operationId: getCommunity
+      tags:
+        - Communities
+      security:
+        - Bearer: []
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+      responses:
+        '200':
+          description: Community details successfully retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Community'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      summary: Update community
+      description: Update community settings (owner only)
+      operationId: updateCommunity
+      tags:
+        - Communities
+      security:
+        - Bearer: []
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCommunityRequest'
+      responses:
+        '200':
+          description: Community updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Community'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /communities/{communityId}/feeds:
+    get:
+      summary: List theme feeds
+      description: Get all theme feeds in a community
+      operationId: listThemeFeeds
+      tags:
+        - Theme Feeds
+      security:
+        - Bearer: []
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [active, warning, archived]
+          description: Filter by feed status
+      responses:
+        '200':
+          description: Theme feeds successfully retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  feeds:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ThemeFeed'
+
+    post:
+      summary: Create theme feed
+      description: Create a new theme feed (owner only)
+      operationId: createThemeFeed
+      tags:
+        - Theme Feeds
+      security:
+        - Bearer: []
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateThemeFeedRequest'
+      responses:
+        '201':
+          description: Theme feed created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThemeFeed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /communities/{communityId}/members:
+    get:
+      summary: List members
+      description: Get all members of a community
+      operationId: listMembers
+      tags:
+        - Memberships
+      security:
+        - Bearer: []
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+      responses:
+        '200':
+          description: Members successfully retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  members:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Membership'
+
+    post:
+      summary: Join community
+      description: Add authenticated user as member
+      operationId: joinCommunity
+      tags:
+        - Memberships
+      security:
+        - Bearer: []
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+      responses:
+        '201':
+          description: Successfully joined community
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Membership'
+        '409':
+          description: Already a member
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /communities/{communityId}/members/{userDid}:
+    delete:
+      summary: Leave community
+      description: Remove membership (user can only remove themselves, owners cannot leave without transfer)
+      operationId: leaveCommunity
+      tags:
+        - Memberships
+      security:
+        - Bearer: []
+      parameters:
+        - $ref: '#/components/parameters/communityId'
+        - $ref: '#/components/parameters/userDid'
+      responses:
+        '204':
+          description: Successfully left community
+        '400':
+          description: Cannot leave (e.g., owner without successor)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /posts:
+    post:
+      summary: Submit post to feed
+      description: Submit a post URI to a theme feed
+      operationId: submitPost
+      tags:
+        - Posts
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitPostRequest'
+      responses:
+        '201':
+          description: Post successfully indexed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostIndex'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Feed not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    AuthResponse:
+      type: object
+      required:
+        - accessJwt
+        - refreshJwt
+        - did
+        - handle
+      properties:
+        accessJwt:
+          type: string
+          description: Access token (15 min expiry)
+          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+        refreshJwt:
+          type: string
+          description: Refresh token (2 months expiry)
+          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+        did:
+          type: string
+          pattern: '^did:(plc|web):[a-z0-9._:-]+$'
+          example: 'did:plc:z72i7hdynmk6r22z27h6tvur'
+        handle:
+          type: string
+          example: 'user.bsky.social'
+
+    Community:
+      type: object
+      required:
+        - id
+        - name
+        - stage
+        - memberCount
+        - postCount
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: '550e8400-e29b-41d4-a716-446655440000'
+        name:
+          type: string
+          maxLength: 100
+          example: 'Tech Community'
+        description:
+          type: string
+          maxLength: 500
+          nullable: true
+          example: 'A community for tech enthusiasts'
+        stage:
+          type: string
+          enum: [theme, community, graduated]
+          example: 'community'
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+          example: '660e8400-e29b-41d4-a716-446655440001'
+        memberCount:
+          type: integer
+          minimum: 0
+          example: 42
+        postCount:
+          type: integer
+          minimum: 0
+          example: 128
+        createdAt:
+          type: integer
+          description: Unix epoch (seconds)
+          example: 1696291200
+        graduatedAt:
+          type: integer
+          nullable: true
+          example: null
+
+    CreateCommunityRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: 'My Community'
+        description:
+          type: string
+          maxLength: 500
+          example: 'A welcoming community for everyone'
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+          example: null
+
+    UpdateCommunityRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+        stage:
+          type: string
+          enum: [theme, community, graduated]
+
+    ThemeFeed:
+      type: object
+      required:
+        - id
+        - communityId
+        - name
+        - status
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: '770e8400-e29b-41d4-a716-446655440002'
+        communityId:
+          type: string
+          format: uuid
+          example: '550e8400-e29b-41d4-a716-446655440000'
+        name:
+          type: string
+          maxLength: 100
+          example: 'General Discussion'
+        description:
+          type: string
+          maxLength: 500
+          nullable: true
+          example: 'Main discussion feed'
+        status:
+          type: string
+          enum: [active, warning, archived]
+          example: 'active'
+        lastPostAt:
+          type: integer
+          nullable: true
+          example: 1696291200
+        posts7d:
+          type: integer
+          minimum: 0
+          example: 15
+        activeUsers7d:
+          type: integer
+          minimum: 0
+          example: 5
+        createdAt:
+          type: integer
+          example: 1696291200
+
+    CreateThemeFeedRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: 'Tech Talk'
+        description:
+          type: string
+          maxLength: 500
+          example: 'Discuss technology topics'
+
+    Membership:
+      type: object
+      required:
+        - communityId
+        - userDid
+        - role
+        - joinedAt
+      properties:
+        communityId:
+          type: string
+          format: uuid
+          example: '550e8400-e29b-41d4-a716-446655440000'
+        userDid:
+          type: string
+          pattern: '^did:(plc|web):[a-z0-9._:-]+$'
+          example: 'did:plc:z72i7hdynmk6r22z27h6tvur'
+        handle:
+          type: string
+          example: 'user.bsky.social'
+        role:
+          type: string
+          enum: [owner, moderator, member]
+          example: 'member'
+        joinedAt:
+          type: integer
+          example: 1696291200
+        lastActivityAt:
+          type: integer
+          nullable: true
+          example: 1696295000
+
+    SubmitPostRequest:
+      type: object
+      required:
+        - uri
+        - feedId
+      properties:
+        uri:
+          type: string
+          pattern: '^at://did:(plc|web):[a-z0-9._:-]+/app\.bsky\.feed\.post/[a-zA-Z0-9]+$'
+          description: AT-URI of the post
+          example: 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3k44dddkhc322'
+        feedId:
+          type: string
+          format: uuid
+          description: Target theme feed ID
+          example: '770e8400-e29b-41d4-a716-446655440002'
+
+    PostIndex:
+      type: object
+      required:
+        - id
+        - uri
+        - feedId
+        - authorDid
+        - createdAt
+      properties:
+        id:
+          type: integer
+          example: 1
+        uri:
+          type: string
+          example: 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3k44dddkhc322'
+        feedId:
+          type: string
+          format: uuid
+          example: '770e8400-e29b-41d4-a716-446655440002'
+        authorDid:
+          type: string
+          example: 'did:plc:z72i7hdynmk6r22z27h6tvur'
+        createdAt:
+          type: integer
+          example: 1696291200
+        hasMedia:
+          type: boolean
+          example: false
+        langs:
+          type: array
+          items:
+            type: string
+          nullable: true
+          example: ['en', 'ja']
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          example: 'BadRequest'
+        message:
+          type: string
+          example: 'Invalid request parameters'
+
+  parameters:
+    communityId:
+      name: communityId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Community ID
+      example: '550e8400-e29b-41d4-a716-446655440000'
+
+    userDid:
+      name: userDid
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^did:(plc|web):[a-z0-9._:-]+$'
+      description: User DID
+      example: 'did:plc:z72i7hdynmk6r22z27h6tvur'
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: 'BadRequest'
+            message: 'Invalid request parameters'
+
+    Unauthorized:
+      description: Unauthorized (invalid or missing JWT)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: 'Unauthorized'
+            message: 'Invalid or missing authentication token'
+
+    Forbidden:
+      description: Forbidden (insufficient permissions)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: 'Forbidden'
+            message: 'Insufficient permissions'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: 'NotFound'
+            message: 'Community not found'
+
+  securitySchemes:
+    Bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token from /auth/callback (15 min expiry)
+
+security:
+  - Bearer: []
