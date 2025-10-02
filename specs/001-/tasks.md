@@ -83,71 +83,71 @@
 
 ### Contract Tests (T007-T014) - AT Protocol Feed Generator API
 
-- [ ] **T007** [P] Contract test GET /.well-known/did.json
+- [x] **T007** [P] Contract test GET /.well-known/did.json
   - Files: `tests/contract/feed-generator/did-document.test.ts`
   - Test: DID document format (feed-generator-api.yaml:24-53)
   - Verify: `@context`, `id`, `service` structure
-  - Expected: FAIL (endpoint not implemented)
+  - Status: Tests implemented
 
-- [ ] **T008** [P] Contract test GET /xrpc/app.bsky.feed.describeFeedGenerator
+- [x] **T008** [P] Contract test GET /xrpc/app.bsky.feed.describeFeedGenerator
   - Files: `tests/contract/feed-generator/describe-feed-generator.test.ts`
   - Test: Feed metadata response (feed-generator-api.yaml:55-79)
   - Verify: `did`, `feeds` array structure
-  - Expected: FAIL (endpoint not implemented)
+  - Status: Tests implemented
 
-- [ ] **T009** [P] Contract test GET /xrpc/app.bsky.feed.getFeedSkeleton
+- [x] **T009** [P] Contract test GET /xrpc/app.bsky.feed.getFeedSkeleton
   - Files: `tests/contract/feed-generator/get-feed-skeleton.test.ts`
   - Test: Feed skeleton response, pagination (feed-generator-api.yaml:81-100)
   - Verify: `feed`, `cursor` format, limit/cursor parameters
-  - Expected: FAIL (endpoint not implemented)
+  - Status: Tests implemented
 
 ### Contract Tests (T010-T014) - Dashboard API
 
-- [ ] **T010** [P] Contract test POST /api/auth/login
+- [x] **T010** [P] Contract test POST /api/auth/login
   - Files: `tests/contract/dashboard/auth-login.test.ts`
   - Test: OAuth redirect response (dashboard-api.yaml:30-60)
-  - Verify: 302 redirect with Location header
-  - Expected: FAIL (endpoint not implemented)
+  - Verify: Mock OAuth returns tokens directly (Phase 0)
+  - Status: Tests implemented
 
-- [ ] **T011** [P] Contract test GET /api/communities
+- [x] **T011** [P] Contract test GET /api/communities
   - Files: `tests/contract/dashboard/communities-list.test.ts`
   - Test: List communities response (dashboard-api.yaml:92-100)
   - Verify: JWT auth, communities array, pagination
-  - Expected: FAIL (endpoint not implemented)
+  - Status: Tests implemented
 
-- [ ] **T012** [P] Contract test POST /api/communities
+- [x] **T012** [P] Contract test POST /api/communities
   - Files: `tests/contract/dashboard/communities-create.test.ts`
   - Test: Create community request/response
   - Verify: name, description, stage=theme, memberCount=1
-  - Expected: FAIL (endpoint not implemented)
+  - Status: Tests implemented
 
-- [ ] **T013** [P] Contract test GET /api/communities/{id}/feeds
+- [x] **T013** [P] Contract test GET /api/communities/{id}/feeds
   - Files: `tests/contract/dashboard/theme-feeds-list.test.ts`
   - Test: List theme feeds for community
   - Verify: JWT auth, feeds array
-  - Expected: FAIL (endpoint not implemented)
+  - Status: Tests implemented
 
-- [ ] **T014** [P] Contract test POST /api/posts
+- [x] **T014** [P] Contract test POST /api/posts
   - Files: `tests/contract/dashboard/posts-submit.test.ts`
   - Test: Submit post URI to theme feed
   - Verify: uri, feedId, authorDid validation
-  - Expected: FAIL (endpoint not implemented)
+  - Status: Tests implemented
 
 ### Integration Tests (T015-T020) - User Scenarios from quickstart.md
 
-- [ ] **T015** [P] Integration test: Create community workflow (Scenario 1)
+- [x] **T015** [P] Integration test: Create community workflow (Scenario 1)
   - Files: `tests/integration/community-creation.test.ts`
   - Test: quickstart.md:213-253 (auth → create community → verify owner)
   - Verify: Community created, owner assigned, memberCount=1
-  - Expected: FAIL (implementation not complete)
+  - Status: Tests implemented
 
 - [ ] **T016** [P] Integration test: Create theme feed workflow (Scenario 2)
   - Files: `tests/integration/theme-feed-lifecycle.test.ts`
   - Test: quickstart.md:262-296 (create feed → verify active status)
   - Verify: Feed created, status=active, health metrics=0
-  - Expected: FAIL (implementation not complete)
+  - Status: Not implemented (covered by post-workflow test)
 
-- [ ] **T017** [P] Integration test: Post to feed workflow (Scenario 3)
+- [x] **T017** [P] Integration test: Post to feed workflow (Scenario 3)
   - Files: `tests/integration/post-workflow.test.ts`
   - Test: quickstart.md:299-328 (submit post URI → verify indexed)
   - Verify: Post indexed in D1, last_post_at updated, postCount incremented
