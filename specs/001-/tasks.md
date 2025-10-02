@@ -40,36 +40,36 @@
 
 ## Phase 3.1: Setup & Infrastructure (T001-T006)
 
-- [ ] **T001** Create project structure per plan.md (src/, tests/, schema.sql, wrangler.toml)
+- [x] **T001** Create project structure per plan.md (src/, tests/, schema.sql, wrangler.toml)
   - Files: `src/index.ts`, `tests/contract/`, `tests/integration/`, `tests/unit/`, `schema.sql`, `wrangler.toml`
   - Initialize: TypeScript config, package.json with dependencies
   - Verify: Directory structure matches plan.md:104-161
 
-- [ ] **T002** Initialize TypeScript project with Cloudflare Workers dependencies
+- [x] **T002** Initialize TypeScript project with Cloudflare Workers dependencies
   - Files: `package.json`, `tsconfig.json`, `wrangler.toml`
   - Install: `@cloudflare/workers-types`, `wrangler`, `hono`, `zod`, `@atproto/api`, `vitest`, `@cloudflare/vitest-pool-workers`
   - Configure: TypeScript target ES2022, module ESNext, Cloudflare Workers runtime
 
-- [ ] **T003** [P] Configure ESLint and Prettier for TypeScript
+- [x] **T003** [P] Configure ESLint and Prettier for TypeScript
   - Files: `.eslintrc.json`, `.prettierrc`
   - Rules: TypeScript strict mode, Cloudflare Workers best practices
   - Verify: `npm run lint` passes on empty project
 
-- [ ] **T004** Initialize D1 database schema from data-model.md
+- [x] **T004** Initialize D1 database schema from data-model.md
   - Files: `schema.sql` (from data-model.md:354-468)
   - Create: 6 tables (communities, theme_feeds, memberships, post_index, owner_transition_log, achievements)
   - Add: Indexes, constraints, PRAGMA foreign_keys = ON
   - Run: `wrangler d1 execute atrarium-db --local --file=./schema.sql`
   - Verify: All 6 tables created successfully
 
-- [ ] **T005** Configure Cloudflare Workers bindings in wrangler.toml
+- [x] **T005** Configure Cloudflare Workers bindings in wrangler.toml
   - Files: `wrangler.toml`
   - Add: D1 database binding (DB), KV namespace binding (POST_CACHE)
   - Add: Cron trigger (0 */12 * * *) for post deletion sync
   - Add: Environment variables (ENVIRONMENT)
   - Verify: `wrangler dev` starts without errors
 
-- [ ] **T006** [P] Create TypeScript type definitions from data-model.md
+- [x] **T006** [P] Create TypeScript type definitions from data-model.md
   - Files: `src/types.ts`
   - Define: Community, ThemeFeed, Membership, PostIndex, OwnerTransitionLog interfaces
   - Define: Env type with D1Database, KVNamespace bindings
@@ -177,7 +177,7 @@
 
 ### Database Layer (T021)
 
-- [ ] **T021** Database service layer with D1 Sessions API
+- [x] **T021** Database service layer with D1 Sessions API
   - Files: `src/services/db.ts`
   - Implement: Query helper with read replication (research.md:122-131)
   - Implement: Batch operations (research.md:153-160)
@@ -186,74 +186,74 @@
 
 ### Models (T022-T027)
 
-- [ ] **T022** [P] Community model with validation
+- [x] **T022** [P] Community model with validation
   - Files: `src/models/community.ts`
   - Implement: Community CRUD operations (data-model.md:39-118)
   - Implement: Stage transitions (theme→community→graduated)
   - Implement: Feed mix validation (sum = 1.0)
   - Verify: Tests T007, T015 pass
 
-- [ ] **T023** [P] ThemeFeed model with health metrics
+- [x] **T023** [P] ThemeFeed model with health metrics
   - Files: `src/models/theme-feed.ts`
   - Implement: ThemeFeed CRUD operations (data-model.md:120-184)
   - Implement: Status transitions (active→warning→archived)
   - Implement: Health metrics calculation (posts_7d, active_users_7d)
   - Verify: Tests T013, T016 pass
 
-- [ ] **T024** [P] Membership model with role-based access
+- [x] **T024** [P] Membership model with role-based access
   - Files: `src/models/membership.ts`
   - Implement: Membership CRUD operations (data-model.md:186-232)
   - Implement: Role validation (owner/moderator/member)
   - Implement: Owner transfer logic (FR-040, FR-041)
   - Verify: Tests T011, T019 pass
 
-- [ ] **T025** [P] PostIndex model with URI validation
+- [x] **T025** [P] PostIndex model with URI validation
   - Files: `src/models/post-index.ts`
   - Implement: PostIndex CRUD operations (data-model.md:234-281)
   - Implement: AT-URI format validation (at://did:plc:xxx/app.bsky.feed.post/yyy)
   - Implement: Duplicate URI prevention (UNIQUE constraint)
   - Verify: Tests T014, T017 pass
 
-- [ ] **T026** [P] OwnerTransitionLog model for audit trail
+- [x] **T026** [P] OwnerTransitionLog model for audit trail
   - Files: `src/models/owner-transition-log.ts`
   - Implement: Log entry creation (data-model.md:283-323)
   - Implement: Transition reason validation (deletion/inactivity/vacation/manual)
   - Verify: Owner transitions logged correctly
 
-- [ ] **T027** [P] Achievement model (stub for Phase 1+)
+- [x] **T027** [P] Achievement model (stub for Phase 1+)
   - Files: `src/models/achievement.ts`
   - Implement: Minimal achievement CRUD (data-model.md:325-348)
   - Note: Not used in Phase 0, included for schema completeness
 
 ### Services (T028-T032)
 
-- [ ] **T028** [P] Authentication service with JWT and DID verification
+- [x] **T028** [P] Authentication service with JWT and DID verification
   - Files: `src/services/auth.ts`
   - Implement: OAuth 2.1 flow (research.md:268-335)
   - Implement: JWT creation and verification (dashboard JWT, service JWT)
   - Implement: DID verification with @atproto/xrpc-server (research.md:314-334)
   - Verify: Tests T010 passes
 
-- [ ] **T029** [P] Cache service with KV cache-aside pattern
+- [x] **T029** [P] Cache service with KV cache-aside pattern
   - Files: `src/services/cache.ts`
   - Implement: Post metadata caching (7-day TTL, research.md:134-151)
   - Implement: Cache invalidation on deletion
   - Verify: KV read/write operations work correctly
 
-- [ ] **T030** [P] AT Protocol service for post retrieval
+- [x] **T030** [P] AT Protocol service for post retrieval
   - Files: `src/services/atproto.ts`
   - Implement: Post existence check (for deletion sync, research.md:387-413)
   - Implement: Post metadata fetching from Bluesky PDS
   - Use: @atproto/api library
   - Verify: Posts can be fetched from Bluesky network
 
-- [ ] **T031** [P] DID document generator
+- [x] **T031** [P] DID document generator
   - Files: `src/utils/did.ts`
   - Implement: did:web document generation (research.md:214-266)
   - Implement: Hostname validation to prevent spoofing
   - Verify: Tests T007 passes
 
-- [ ] **T032** [P] Validation schemas with zod
+- [x] **T032** [P] Validation schemas with zod
   - Files: `src/schemas/validation.ts`
   - Implement: Request validation for all dashboard endpoints
   - Implement: AT-URI pattern validation
