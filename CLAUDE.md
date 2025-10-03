@@ -6,8 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Atrarium is a community management system built on AT Protocol (Bluesky), designed for small communities (10-200 people). It replaces expensive Mastodon/Misskey servers with a serverless architecture on Cloudflare Workers, reducing costs by 95% ($30-150/month → $5/month) and operational time by 80%.
 
-**Current Phase**: Phase 0 (MVP Implementation Completed)
-**Status**: Backend implemented, tests passing, dashboard pending
+**Current Phase**: Phase 0 → Phase 1 Transition
+**Status**: Backend complete, VitePress docs live, dashboard pending
 
 ## Architecture
 
@@ -66,17 +66,41 @@ tests/                 # Test suite (Vitest + Cloudflare Workers)
 │   ├── dashboard/         # Dashboard API tests
 │   └── feed-generator/    # Feed Generator API tests
 ├── integration/       # Integration tests
+├── docs-site/         # VitePress documentation tests
+│   ├── navigation.test.ts  # Navigation structure validation
+│   ├── i18n.test.ts        # i18n parity check (en ↔ ja)
+│   ├── links.test.ts       # Link validation (no 404s)
+│   └── build.test.ts       # VitePress build validation
 └── helpers/           # Test utilities
     ├── setup.ts           # Test database setup
     └── test-env.ts        # Test environment config
 
+docs-site/            # VitePress documentation site
+├── en/                   # English documentation (10 pages)
+│   ├── guide/               # Getting started guides
+│   ├── architecture/        # System design docs
+│   └── reference/           # API reference
+├── ja/                   # Japanese documentation (10 pages, mirrors en/)
+├── .vitepress/
+│   ├── config.ts            # VitePress configuration (i18n, theme)
+│   ├── locales/             # Locale-specific navigation
+│   │   ├── en.ts
+│   │   └── ja.ts
+│   └── theme/               # Custom theme (Atrarium brand colors)
+├── package.json          # VitePress dependencies
+├── README.md             # Documentation site setup guide
+├── CONTRIBUTING.md       # Documentation contribution guide
+└── DEPLOYMENT.md         # Cloudflare Pages deployment checklist
+
 schema.sql            # D1 database schema (SQLite)
 wrangler.toml        # Cloudflare Workers configuration
 vitest.config.ts     # Vitest configuration for Cloudflare Workers
+vitest.docs.config.ts # Vitest configuration for documentation tests
 ```
 
 **Documentation**:
-- [README.md](README.md) - Primary documentation (English) - **source of truth**
+- **[Documentation Site](https://atrarium-docs.pages.dev)** - VitePress documentation (EN/JA) - **primary reference**
+- [README.md](README.md) - Project summary (English) - **source of truth for project info**
 - [README.ja.md](README.ja.md) - Japanese translation (maintain sync with README.md)
 - [docs/01-overview.md](docs/01-overview.md) - Project overview and design philosophy
 - [docs/02-system-design.md](docs/02-system-design.md) - Architecture and database design
@@ -84,9 +108,11 @@ vitest.config.ts     # Vitest configuration for Cloudflare Workers
 - [docs/development-spec.md](docs/development-spec.md) - Complete development specification
 
 **Documentation Policy**:
-- **English (README.md)** is the primary/canonical version
-- **Other languages (README.ja.md, etc.)** are translations that should be kept in sync
+- **English (README.md)** is the primary/canonical version for project information
+- **VitePress docs** (`docs-site/`) provide comprehensive guides, architecture details, and API references
+- **Other languages (README.ja.md, docs-site/ja/)** are translations that should be kept in sync
 - When updating project information, always update README.md first, then sync translations
+- VitePress docs follow i18n contract: every `en/*.md` must have corresponding `ja/*.md`
 
 ## Database Schema
 
@@ -134,6 +160,14 @@ npm run dev          # Run Workers locally with Miniflare
 npm run typecheck    # TypeScript type checking (no emit)
 npm test             # Run all tests with Vitest
 npm run test:watch   # Run tests in watch mode
+npm run test:docs    # Run VitePress documentation tests
+
+# Documentation site
+cd docs-site
+npm install          # Install VitePress dependencies (first time only)
+npm run docs:dev     # Start VitePress dev server (http://localhost:5173)
+npm run docs:build   # Build static site
+npm run docs:preview # Preview production build
 
 # Code quality
 npm run lint         # ESLint
@@ -158,8 +192,18 @@ npx vitest run tests/contract/feed-generator/get-feed-skeleton.test.ts
 ### Deployment
 ```bash
 npm run deploy                    # Deploy Workers to production
-npm run dashboard:deploy          # Build and deploy dashboard to Pages
 wrangler secret put JWT_SECRET    # Set secrets (also: BLUESKY_HANDLE, BLUESKY_APP_PASSWORD)
+
+# VitePress documentation site (Cloudflare Pages)
+# Automatic deployment via GitHub integration:
+# - Push to main → auto-deploys to https://atrarium-docs.pages.dev
+# - Build command: cd docs-site && npm install && npm run docs:build
+# - Build output: docs-site/.vitepress/dist
+
+# Manual deployment (if needed)
+cd docs-site
+npm run docs:build
+wrangler pages deploy .vitepress/dist --project-name=atrarium-docs
 ```
 
 ### Database Management
@@ -223,12 +267,13 @@ The client fetches actual post content from Bluesky's AppView using these URIs.
 - [x] Membership management (join, leave, role-based access)
 - [x] Authentication (JWT with DID verification)
 - [x] Scheduled jobs (post deletion sync, feed health check)
-- [x] Test suite (contract tests + integration tests)
+- [x] Test suite (contract tests + integration tests + docs tests)
+- [x] **VitePress documentation site** (20 pages, EN/JA, deployed to Cloudflare Pages)
 
 ### 🚧 In Progress / Pending
 - [ ] React dashboard (UI for community/feed management)
 - [ ] Firehose integration (Durable Objects for real-time indexing)
-- [ ] Production deployment configuration
+- [ ] Production deployment configuration for Workers
 
 ### 📅 Future Phases
 - Achievement system (Phase 1)
@@ -299,6 +344,7 @@ Tests use `@cloudflare/vitest-pool-workers` to simulate Cloudflare Workers envir
 - **Environment**: D1 and KV bindings configured in [vitest.config.ts](vitest.config.ts)
 - **Contract Tests**: API endpoint validation ([tests/contract/](tests/contract/))
 - **Integration Tests**: End-to-end workflows ([tests/integration/](tests/integration/))
+- **Documentation Tests**: VitePress validation ([tests/docs-site/](tests/docs-site/)) using [vitest.docs.config.ts](vitest.docs.config.ts)
 
 ```bash
 # Run all tests
@@ -306,6 +352,9 @@ npm test
 
 # Run specific test
 npx vitest run tests/contract/feed-generator/get-feed-skeleton.test.ts
+
+# Run documentation tests
+npm run test:docs
 
 # Debug tests
 npm run test:watch
