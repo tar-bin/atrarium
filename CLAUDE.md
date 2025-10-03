@@ -6,8 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Atrarium is a community management system built on AT Protocol (Bluesky), designed for small communities (10-200 people). It replaces expensive Mastodon/Misskey servers with a serverless architecture on Cloudflare Workers, reducing costs by 95% ($30-150/month → $5/month) and operational time by 80%.
 
-**Current Phase**: Phase 0 (MVP Development, Weeks 1-16)
-**Target**: Basic Custom Feed implementation and first community migration
+**Current Phase**: Phase 0 (MVP Implementation Completed)
+**Status**: Backend implemented, tests passing, dashboard pending
 
 ## Architecture
 
@@ -32,84 +32,127 @@ The system implements AT Protocol's Feed Generator specification to create custo
 
 ## Project Structure
 
-**Current Status**: Pre-implementation (Phase 0 planning stage). No implementation files exist yet - only documentation.
-
-**Planned Structure** (to be created):
+**Implemented Structure**:
 ```
 src/                    # Cloudflare Workers backend (TypeScript)
-├── index.ts           # Main entry point, router, Feed Generator API
-├── firehose.ts        # Durable Objects for Firehose WebSocket connection
-├── feed-generator.ts  # Feed skeleton generation logic
-├── filters.ts         # Post filtering (hashtags, keywords, DIDs)
-├── auth.ts           # JWT authentication for dashboard
-├── utils.ts          # Shared utilities
-└── types.ts          # TypeScript type definitions
+├── index.ts           # Main entry point, Hono router, scheduled jobs
+├── routes/            # API route handlers
+│   ├── feed-generator.ts  # AT Protocol Feed Generator API
+│   ├── auth.ts            # Authentication endpoints
+│   ├── communities.ts     # Community management
+│   ├── theme-feeds.ts     # Theme feed CRUD
+│   ├── posts.ts           # Post submission/indexing
+│   └── memberships.ts     # Membership management
+├── models/            # Database models (D1 queries)
+│   ├── community.ts
+│   ├── theme-feed.ts
+│   ├── membership.ts
+│   ├── post-index.ts
+│   ├── achievement.ts
+│   └── owner-transition-log.ts
+├── services/          # Business logic services
+│   ├── atproto.ts         # AT Protocol client
+│   ├── auth.ts            # JWT authentication
+│   ├── cache.ts           # KV cache operations
+│   └── db.ts              # Database utilities
+├── schemas/           # Validation schemas
+│   └── validation.ts      # Zod schemas
+├── utils/             # Utilities
+│   └── did.ts             # DID resolution
+└── types.ts           # TypeScript type definitions
 
-dashboard/             # React frontend (not started)
-├── src/
-│   ├── App.tsx
-│   ├── components/   # CommunityList, ThemeFeedForm, Stats
-│   └── pages/        # Home, Community, Settings
-├── vite.config.ts
-└── package.json
+tests/                 # Test suite (Vitest + Cloudflare Workers)
+├── contract/          # API contract tests
+│   ├── dashboard/         # Dashboard API tests
+│   └── feed-generator/    # Feed Generator API tests
+├── integration/       # Integration tests
+└── helpers/           # Test utilities
+    ├── setup.ts           # Test database setup
+    └── test-env.ts        # Test environment config
 
-schema.sql            # D1 database schema (to be created)
-wrangler.toml        # Cloudflare Workers configuration (to be created)
+schema.sql            # D1 database schema (SQLite)
+wrangler.toml        # Cloudflare Workers configuration
+vitest.config.ts     # Vitest configuration for Cloudflare Workers
 ```
 
-**Existing Documentation**:
+**Documentation**:
+- [README.md](README.md) - Primary documentation (English) - **source of truth**
+- [README.ja.md](README.ja.md) - Japanese translation (maintain sync with README.md)
 - [docs/01-overview.md](docs/01-overview.md) - Project overview and design philosophy
 - [docs/02-system-design.md](docs/02-system-design.md) - Architecture and database design
 - [docs/03-implementation.md](docs/03-implementation.md) - Week-by-week implementation plan
 - [docs/development-spec.md](docs/development-spec.md) - Complete development specification
 
+**Documentation Policy**:
+- **English (README.md)** is the primary/canonical version
+- **Other languages (README.ja.md, etc.)** are translations that should be kept in sync
+- When updating project information, always update README.md first, then sync translations
+
 ## Database Schema
 
-Four main tables:
+Six main tables (see [schema.sql](schema.sql)):
 
-1. **communities**: Community metadata (id, name, stage, parent_id, feed_mix, member_count)
-2. **theme_feeds**: Theme feed configurations (filter_config as JSON: hashtags/keywords/authors)
-3. **memberships**: User membership (composite key: community_id + user_did, roles: member/moderator/owner)
-4. **post_index**: Post URI index (uri, feed_id, author_did, created_at, has_media)
+1. **communities**: Community metadata (id, name, stage, parent_id, feed_mix_own/parent/global, member_count, post_count)
+2. **theme_feeds**: Theme feed configurations (id, community_id, name, status, posts_7d, active_users_7d)
+3. **memberships**: User membership (composite key: community_id + user_did, roles: owner/moderator/member)
+4. **post_index**: Post URI index (uri, feed_id, author_did, created_at, has_media, langs)
+5. **owner_transition_log**: Owner succession history (community_id, previous_owner_did, new_owner_did, reason)
+6. **achievements**: User achievements (user_did, achievement_id, community_id, unlocked_at) - Phase 1+
 
-Feed configurations use JSON fields. For example, `filter_config`:
-```json
-{
-  "hashtags": ["#React", "#TypeScript"],
-  "keywords": ["webdev", "frontend"],
-  "authors": ["did:plc:xxx"]
-}
-```
+**Key Constraints**:
+- `stage IN ('theme', 'community', 'graduated')`
+- `feed_mix_own + feed_mix_parent + feed_mix_global = 1.0`
+- `role IN ('owner', 'moderator', 'member')`
+- `status IN ('active', 'warning', 'archived')`
+- All timestamps are Unix epoch (INTEGER)
 
 ## Development Commands
 
-**Note**: These commands are for the planned implementation. The project is currently in the planning phase.
-
-### Setup (Phase 0, Weeks 1-4)
+### Setup
 ```bash
-# Install Wrangler CLI
+# Install dependencies
+npm install
+
+# Install Wrangler CLI (if not already installed)
 npm install -g wrangler
-wrangler login                           # Authenticate with Cloudflare
+wrangler login
 
 # Create Cloudflare resources
 wrangler d1 create atrarium-db          # Create D1 database
 wrangler kv:namespace create POST_CACHE  # Create KV namespace
-wrangler d1 execute atrarium-db --file=./schema.sql  # Apply schema (once created)
 
-# After creating resources, update wrangler.toml with the generated IDs
+# Apply database schema
+wrangler d1 execute atrarium-db --file=./schema.sql
 
-# Install dependencies (once package.json exists)
-npm install                              # Install backend dependencies
-cd dashboard && npm install && cd ..     # Install frontend dependencies (Phase 0, Weeks 13-16)
+# Update wrangler.toml with generated IDs
+# Uncomment and add database_id and KV namespace id from above commands
 ```
 
-### Development (once implemented)
+### Development
 ```bash
-npm run dev              # Run Workers locally (Miniflare)
-npm run dashboard:dev    # Run React dashboard (port 3000, Phase 0, Weeks 13-16)
-npm run typecheck       # Type checking without emit
-npm run test            # Run tests with vitest
-wrangler tail           # View live logs from production
+npm run dev          # Run Workers locally with Miniflare
+npm run typecheck    # TypeScript type checking (no emit)
+npm test             # Run all tests with Vitest
+npm run test:watch   # Run tests in watch mode
+
+# Code quality
+npm run lint         # ESLint
+npm run format       # Prettier
+```
+
+### Testing
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run specific test file
+npx vitest run tests/contract/feed-generator/get-feed-skeleton.test.ts
+
+# The test suite uses @cloudflare/vitest-pool-workers for Cloudflare Workers environment
+# Database schema is automatically loaded from tests/helpers/setup.ts
 ```
 
 ### Deployment
@@ -169,41 +212,58 @@ The client fetches actual post content from Bluesky's AppView using these URIs.
 3. Return URIs with cursor for pagination
 4. Client fetches full post data from Bluesky AppView
 
-## Phase 0 Scope (MVP)
+## Implementation Status
 
-### Implementing (Weeks 1-16)
-- D1 database setup with schema.sql
-- Basic Feed Generator API (/.well-known/did.json, getFeedSkeleton)
-- Hashtag-based filtering in Durable Objects
-- Post indexing to D1
-- Simple React dashboard (community list, theme feed creation form)
+### ✅ Completed (Phase 0 MVP)
+- [x] D1 database schema (6 tables with indexes)
+- [x] Feed Generator API (DID document, getFeedSkeleton, describeFeedGenerator)
+- [x] Community management (create, list, get)
+- [x] Theme feed management (create, list, health metrics)
+- [x] Post indexing (submit, retrieve by feed)
+- [x] Membership management (join, leave, role-based access)
+- [x] Authentication (JWT with DID verification)
+- [x] Scheduled jobs (post deletion sync, feed health check)
+- [x] Test suite (contract tests + integration tests)
 
-### Not Implementing (Later Phases)
-- Membership management (Phase 1)
+### 🚧 In Progress / Pending
+- [ ] React dashboard (UI for community/feed management)
+- [ ] Firehose integration (Durable Objects for real-time indexing)
+- [ ] Production deployment configuration
+
+### 📅 Future Phases
 - Achievement system (Phase 1)
-- Automated archiving of inactive feeds (Phase 1)
-- Dynamic feed mixing (80% own / 15% parent / 5% global) (Phase 2)
+- Automated feed archiving (Phase 1)
+- Dynamic feed mixing (Phase 2)
 - Community graduation/splitting (Phase 2)
 
 ## Common Patterns
 
+### Architecture
+- **Router**: Hono framework with type-safe routing
+- **Models**: Database access layer (D1 prepared statements)
+- **Services**: Business logic (AT Protocol client, auth, cache)
+- **Routes**: HTTP handlers organized by domain
+- **Validation**: Zod schemas in [src/schemas/validation.ts](src/schemas/validation.ts)
+
 ### TypeScript Types
-All types are defined in [src/types.ts](src/types.ts). Key interfaces:
-- `Community`: stage ('theme' | 'community' | 'graduated'), feed_mix ratios
-- `ThemeFeed`: filter_config, health_metrics (JSON fields)
-- `FilterConfig`: hashtags, keywords, authors arrays
-- `PostIndex`: uri (AT Protocol URI: at://did:plc:xxx/app.bsky.feed.post/yyy)
+All types are defined in [src/types.ts](src/types.ts). Key patterns:
+- **Entities**: `Community`, `ThemeFeed`, `Membership`, `PostIndex` (camelCase)
+- **Database Rows**: `CommunityRow`, `ThemeFeedRow` (snake_case from D1)
+- **API Types**: `CreateCommunityRequest`, `CommunityResponse` (request/response)
+- **Enums**: `CommunityStage`, `ThemeFeedStatus`, `MembershipRole`, `TransitionReason`
 
 ### Authentication
-Uses JWT with DID verification. Payload contains:
-```typescript
-{ did: "did:plc:xxx", handle: "user.bsky.social", iat, exp }
-```
+JWT-based authentication with DID verification ([src/services/auth.ts](src/services/auth.ts)):
+- Dashboard JWT: `{ iss, sub, aud, handle, iat, exp, jti }`
+- Service JWT: `{ iss, aud, exp, iat, jti, lxm }` (for AT Protocol)
+- Middleware: `authMiddleware()` in routes requiring authentication
+- Roles: `owner` (full control), `moderator` (moderation), `member` (view only)
 
-Roles: owner (full control), moderator (moderation), member (view only)
-
-### Rate Limiting
-Target: 100 requests/hour/user (implement in Phase 1)
+### Database Patterns
+- **Row mapping**: Models convert snake_case rows to camelCase entities
+- **Prepared statements**: Always use for SQL injection prevention
+- **Transactions**: Not used in Phase 0 (D1 limitation), manual rollback via try-catch
+- **Timestamps**: Unix epoch (seconds) stored as INTEGER
 
 ## Performance Targets
 
@@ -233,16 +293,45 @@ Target: 100 requests/hour/user (implement in Phase 1)
 - **Feed URIs**: Format is `at://did:plc:xxx/app.bsky.feed.generator/feed-id`
 - **Cache TTL**: KV cache expires after 7 days (604800 seconds)
 
-### Testing
-```bash
-# Seed test data (once schema.sql and seeds exist)
-wrangler d1 execute atrarium-db --file=seeds/test-data.sql
+### Testing Strategy
+Tests use `@cloudflare/vitest-pool-workers` to simulate Cloudflare Workers environment:
+- **Setup**: [tests/helpers/setup.ts](tests/helpers/setup.ts) loads schema before all tests
+- **Environment**: D1 and KV bindings configured in [vitest.config.ts](vitest.config.ts)
+- **Contract Tests**: API endpoint validation ([tests/contract/](tests/contract/))
+- **Integration Tests**: End-to-end workflows ([tests/integration/](tests/integration/))
 
-# Local development with Miniflare
+```bash
+# Run all tests
+npm test
+
+# Run specific test
+npx vitest run tests/contract/feed-generator/get-feed-skeleton.test.ts
+
+# Debug tests
+npm run test:watch
+```
+
+### Local Development
+```bash
+# Run Workers locally (with Miniflare)
 npm run dev
 
-# Monitor production logs
+# The dev server includes:
+# - D1 database (in-memory SQLite)
+# - KV namespace (in-memory)
+# - CORS enabled for local dashboard development
+```
+
+### Production Monitoring
+```bash
+# View live logs
+wrangler tail
+
+# View logs with formatting
 wrangler tail --format pretty
+
+# Run queries on production D1
+wrangler d1 execute atrarium-db --command "SELECT * FROM communities LIMIT 5"
 ```
 
 ### Cloudflare Limits to Keep in Mind

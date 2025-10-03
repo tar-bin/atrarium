@@ -8,6 +8,7 @@
     "deploy": "wrangler deploy",
     "test": "vitest",
     "test:watch": "vitest --watch",
+    "test:docs": "vitest run --config vitest.docs.config.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src tests --ext .ts",
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\""
@@ -18,21 +19,23 @@
     "community",
     "cloudflare-workers"
   ],
-  "author": "",
+  "author": "https://github.com/tar-bin",
   "license": "MIT",
   "dependencies": {
     "@atproto/api": "^0.13.16",
-    "@atproto/xrpc-server": "^0.7.4",
     "@atproto/identity": "^0.4.3",
+    "@atproto/xrpc-server": "^0.7.4",
     "hono": "^4.6.14",
-    "zod": "^3.23.8",
-    "jose": "^5.9.6"
+    "jose": "^5.9.6",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20241127.0",
     "@cloudflare/vitest-pool-workers": "^0.5.30",
+    "@cloudflare/workers-types": "^4.20241127.0",
+    "@types/glob": "^8.1.0",
     "@types/node": "^22.10.2",
     "eslint": "^9.16.0",
+    "glob": "^11.0.3",
     "prettier": "^3.4.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8",

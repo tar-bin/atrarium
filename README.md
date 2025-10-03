@@ -2,6 +2,8 @@
 
 **Small ecosystems on AT Protocol**
 
+English | [日本語](./README.ja.md)
+
 Atrarium is a community management system built on the AT Protocol, designed to help small community managers (10-200 people) run sustainable, thriving communities without the operational burden of traditional federated servers.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -33,7 +35,7 @@ Small Mastodon/Misskey servers (10-200 people) face critical challenges:
 
 | Challenge | Impact |
 |-----------|--------|
-| **High operational costs** | $2,000-10,000/month + 5 hours/week |
+| **High operational costs** | $30-150/month + 5 hours/week |
 | **Isolation and decline** | 50-70% close within 1-2 years |
 | **Federation risks** | Can be cut off by large servers anytime |
 | **Technical complexity** | DB corruption, SSL, updates, etc. |
@@ -68,26 +70,36 @@ Atrarium leverages AT Protocol's design to fundamentally solve these problems:
 
 ```
 ┌─────────────────────────┐
-│  Cloudflare Workers     │ ← Feed Generator API
-│  - Custom Feeds         │
-│  - Filtering            │
+│  Cloudflare Workers     │ ← Feed Generator API (Hono)
+│  - AT Protocol Endpoints│    • /.well-known/did.json
+│  - Dashboard API        │    • /xrpc/app.bsky.feed.*
+│  - Scheduled Jobs       │    • /api/* (Dashboard)
 └──────────┬──────────────┘
            │
     ┌──────┴──────┐
     │             │
 ┌───▼──┐    ┌────▼─────┐
-│ D1   │    │ Bluesky  │
-│ Meta │    │ Firehose │
+│ D1   │    │ KV Cache │
+│ DB   │    │ (7 days) │
 └──────┘    └──────────┘
 ```
 
 ### Tech Stack
 
-- **Cloudflare Workers**: Serverless edge computing ($5/month)
-- **D1 Database**: Serverless SQLite (free tier sufficient)
-- **Durable Objects**: Firehose connection maintenance
-- **React + Vite**: Management dashboard
+**Backend (Implemented)**:
+- **Cloudflare Workers**: Serverless edge computing with Hono framework
+- **D1 Database**: SQLite database (6 tables with indexes)
+- **KV Namespace**: Post metadata cache (7-day TTL)
+- **TypeScript 5.7**: Strict type safety with Zod validation
+- **Vitest**: Testing with `@cloudflare/vitest-pool-workers`
+
+**Frontend (Pending)**:
+- **React + Vite**: Management dashboard (not yet implemented)
 - **Cloudflare Pages**: Dashboard hosting (free)
+
+**External Services**:
+- **AT Protocol**: `@atproto/api`, `@atproto/xrpc-server`, `@atproto/identity`
+- **Bluesky Firehose**: WebSocket (Durable Objects integration pending)
 
 ---
 
@@ -103,57 +115,92 @@ Atrarium leverages AT Protocol's design to fundamentally solve these problems:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/atrarium.git
+git clone https://github.com/tar-bin/atrarium.git
 cd atrarium
 
 # Install dependencies
 npm install
 
-# Install Wrangler CLI
+# Install Wrangler CLI (if not already installed)
 npm install -g wrangler
-
-# Login to Cloudflare
 wrangler login
 
-# Create D1 database
+# Create Cloudflare resources
 wrangler d1 create atrarium-db
-
-# Create KV namespace
 wrangler kv:namespace create POST_CACHE
+
+# Update wrangler.toml with generated IDs
+# Uncomment [[d1_databases]] and [[kv_namespaces]] sections
+# Add database_id and namespace id from above commands
 
 # Apply database schema
 wrangler d1 execute atrarium-db --file=./schema.sql
 
-# Set up environment variables
-cp .env.example .env
-# Edit .env with your configuration
-
-# Deploy to Cloudflare Workers
-npm run deploy
+# Set secrets (for production deployment)
+wrangler secret put JWT_SECRET
+wrangler secret put BLUESKY_HANDLE      # Optional
+wrangler secret put BLUESKY_APP_PASSWORD # Optional
 ```
 
-### Quick Start
+### Development
 
 ```bash
-# Run locally
+# Run Workers locally (with Miniflare)
 npm run dev
 
-# Deploy to production
+# Type checking
+npm run typecheck
+
+# Run tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Code quality
+npm run lint
+npm run format
+```
+
+### Deployment
+
+```bash
+# Deploy to Cloudflare Workers
 npm run deploy
 
-# View logs
+# View production logs
 wrangler tail
+
+# Query production database
+wrangler d1 execute atrarium-db --command "SELECT * FROM communities LIMIT 5"
 ```
 
 ---
 
 ## 📖 Documentation
 
+- [CLAUDE.md](./CLAUDE.md) - Development guide for Claude Code
 - [Project Overview & Design Philosophy](./docs/01-overview.md)
 - [System Design](./docs/02-system-design.md)
 - [Implementation Guide](./docs/03-implementation.md)
 - [API Reference](./docs/api-reference.md)
 - [Market Research](./docs/market-research.md)
+
+### API Endpoints
+
+**AT Protocol Feed Generator**:
+- `GET /.well-known/did.json` - DID document
+- `GET /xrpc/app.bsky.feed.describeFeedGenerator` - Feed generator description
+- `GET /xrpc/app.bsky.feed.getFeedSkeleton` - Feed skeleton (post URIs)
+
+**Dashboard API** (requires JWT authentication):
+- `POST /api/auth/login` - Login with Bluesky DID
+- `GET /api/communities` - List communities
+- `POST /api/communities` - Create community
+- `GET /api/communities/:id/theme-feeds` - List theme feeds
+- `POST /api/communities/:id/theme-feeds` - Create theme feed
+- `POST /api/posts` - Submit post to index
+- `POST /api/communities/:id/memberships` - Join community
 
 ---
 
@@ -198,50 +245,72 @@ wrangler tail
 
 ---
 
-## 🌟 Key Features
+## 🌟 Implemented Features
 
-### 1. Custom Feed Generator
-- Display community member posts
-- Filter by hashtags/keywords
-- AT Protocol standard Feed Generator API
+### 1. AT Protocol Feed Generator ✅
+- **DID Document**: `did:web` based identification
+- **Feed Skeleton API**: Returns post URIs for custom feeds
+- **Feed Description**: Metadata for feed discovery
+- Fully compliant with AT Protocol Feed Generator specification
 
-### 2. Community Management
-- Membership management (join/leave)
-- Moderator permissions
-- Post statistics and activity analysis
+### 2. Community Management ✅
+- **Create Communities**: Theme → Community → Graduated stages
+- **Membership System**: Owner/Moderator/Member roles
+- **Theme Feeds**: Multiple feeds per community
+- **Health Metrics**: 7-day post count and active user tracking
+- **Parent-Child Relationships**: Hierarchical community structure
 
-### 3. Automation
-- Automatic detection and archiving of inactive communities
-- Theme feed promotion suggestions
-- Automatic handling when moderators are absent
+### 3. Post Indexing ✅
+- **Submit Posts**: Index AT-URIs to feeds
+- **KV Cache**: 7-day TTL for post metadata
+- **Multi-language Support**: BCP-47 language codes
+- **Media Detection**: Track posts with media attachments
 
-### 4. Flexible Growth Model
-- Theme Feeds (lightweight, trial)
-- Sub-Communities (independent operation)
-- Dynamic parent-child relationships
+### 4. Automation (Scheduled Jobs) ✅
+- **Post Deletion Sync**: Remove deleted posts from Bluesky (every 12 hours)
+- **Feed Health Check**: Update activity metrics and status
+- **Inactivity Detection**: Auto-archive inactive feeds (active → warning → archived)
+
+### 5. Security & Authentication ✅
+- **JWT Authentication**: DID-based authentication for dashboard
+- **Role-based Access Control**: Owner/Moderator/Member permissions
+- **CORS Configuration**: Secure cross-origin requests
+- **Prepared Statements**: SQL injection prevention
+
+### 6. Testing ✅
+- **Contract Tests**: API endpoint validation (Dashboard + Feed Generator)
+- **Integration Tests**: End-to-end workflows
+- **Cloudflare Workers Environment**: Testing with `@cloudflare/vitest-pool-workers`
 
 ---
 
 ## 🗺️ Roadmap
 
-### Phase 0: MVP (Weeks 1-16)
-- [x] Project planning
-- [x] Market research
-- [ ] Basic Custom Feed implementation
-- [ ] Simple dashboard
-- [ ] First community migration
+### Phase 0: MVP ✅ (Completed)
+- [x] Project planning and market research
+- [x] D1 database schema (6 tables with indexes)
+- [x] AT Protocol Feed Generator API
+- [x] Community and theme feed management
+- [x] Membership system with role-based access
+- [x] Post indexing with KV cache
+- [x] JWT authentication with DID verification
+- [x] Scheduled jobs (post sync, health checks)
+- [x] Comprehensive test suite (contract + integration)
 
-### Phase 1: Core Features (Months 3-10)
-- [ ] Firehose integration
-- [ ] Membership management
-- [ ] Moderator functions
-- [ ] Community directory
+### Phase 1: Production Ready (Next)
+- [ ] **React Dashboard**: UI for community/feed management
+- [ ] **Firehose Integration**: Real-time post indexing via Durable Objects
+- [ ] **Production Deployment**: Cloudflare Workers + Pages deployment
+- [ ] **Monitoring & Alerts**: Error tracking and performance monitoring
+- [ ] **Achievement System**: User achievements and gamification
+- [ ] **Community Directory**: Discover and browse communities
 
-### Phase 2: Discovery (Months 11-18)
-- [ ] Custom Feeds optimization
-- [ ] Starter Packs strategy
-- [ ] Dynamic mixing (80-15-5%)
-- [ ] Analytics dashboard
+### Phase 2: Ecosystem & Scale (Future)
+- [ ] **Dynamic Feed Mixing**: 80% own / 15% parent / 5% global
+- [ ] **Starter Packs Integration**: Community onboarding
+- [ ] **Analytics Dashboard**: Activity trends and insights
+- [ ] **Community Graduation**: Auto-promotion from theme to community
+- [ ] **Moderation Tools**: Advanced moderation workflows
 
 ---
 
@@ -259,25 +328,62 @@ We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for de
 
 ### Development Guidelines
 
-- Follow the existing code style
-- Write tests for new features
-- Update documentation as needed
-- Keep commits atomic and well-described
+- **Code Style**: Follow existing TypeScript patterns (see [CLAUDE.md](./CLAUDE.md))
+- **Testing**: Write tests for all new features using Vitest
+  - Contract tests for API endpoints
+  - Integration tests for workflows
+- **Database**: Always use prepared statements for D1 queries
+- **Types**: Define types in [src/types.ts](src/types.ts) (Entity + Row + API)
+- **Documentation**: Update README and CLAUDE.md for major changes
+- **Commits**: Atomic commits with clear messages
+
+### Project Structure
+
+```
+src/
+├── index.ts           # Main entry point (Hono router + scheduled jobs)
+├── routes/            # API route handlers
+├── models/            # Database models (D1 queries)
+├── services/          # Business logic (AT Protocol, auth, cache)
+├── schemas/           # Zod validation schemas
+└── types.ts           # TypeScript type definitions
+
+tests/
+├── contract/          # API contract tests
+├── integration/       # End-to-end workflow tests
+└── helpers/           # Test utilities and setup
+```
 
 ---
 
 ## 📊 Project Status
 
-- **Current Phase**: Phase 0 (MVP Development)
-- **Status**: Active Development
-- **First Release Target**: Q1 2026
+- **Current Phase**: Phase 0 → Phase 1 Transition
+- **Backend**: ✅ Implemented and tested (all core APIs working)
+- **Frontend**: 🚧 Dashboard pending implementation
+- **Database**: ✅ Schema complete (6 tables, all migrations done)
+- **Tests**: ✅ 11 test files passing (contract + integration)
+- **Deployment**: 🚧 Production configuration pending
+- **Documentation**: ✅ [VitePress documentation site](https://atrarium-docs.pages.dev) (English + Japanese)
+- **First Release Target**: Q2 2025
+
+---
+
+## 📚 Documentation
+
+- **[Documentation Site](https://atrarium-docs.pages.dev)** - Complete documentation (EN/JA)
+- **[CLAUDE.md](./CLAUDE.md)** - Development guide for Claude Code
+- **[Project Overview](./docs/01-overview.md)** - Vision and design philosophy
+- **[System Design](./docs/02-system-design.md)** - Architecture and database
+- **[Implementation Plan](./docs/03-implementation.md)** - Week-by-week roadmap
 
 ---
 
 ## 💬 Community
 
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/atrarium/discussions)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/atrarium/issues)
+- **GitHub**: [tar-bin/atrarium](https://github.com/tar-bin/atrarium)
+- **Discussions**: [GitHub Discussions](https://github.com/tar-bin/atrarium/discussions)
+- **Issues**: [GitHub Issues](https://github.com/tar-bin/atrarium/issues)
 - **Bluesky**: [@atrarium.community](https://bsky.app/profile/atrarium.community)
 
 ---
@@ -298,9 +404,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📚 Related Projects
 
-- [atproto](https://github.com/bluesky-social/atproto) - AT Protocol implementation
-- [feed-generator](https://github.com/bluesky-social/feed-generator) - Feed Generator starter kit
-- [indigo](https://github.com/bluesky-social/indigo) - Go implementation of atproto
+- [atproto](https://github.com/bluesky-social/atproto) - AT Protocol TypeScript implementation (used in this project)
+- [feed-generator](https://github.com/bluesky-social/feed-generator) - Official Feed Generator starter kit
+- [Hono](https://hono.dev/) - Ultrafast web framework for Cloudflare Workers
 
 ---
 
