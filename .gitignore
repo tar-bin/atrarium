@@ -182,3 +182,4 @@ temp/
 .wrangler/
 .mf/
 worker/
+/test-results/
