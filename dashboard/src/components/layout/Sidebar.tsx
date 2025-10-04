@@ -1,19 +1,22 @@
-import { UserSession } from '@/types';
 import { Button } from '@/components/ui/button';
+import { Link, useRouterState } from '@tanstack/react-router';
+import { usePDS } from '@/contexts/PDSContext';
 import { X } from 'lucide-react';
 
 interface SidebarProps {
-  currentPath: string;
-  isOpen: boolean;
-  onClose: () => void;
-  user?: Pick<UserSession, 'handle' | 'did' | 'isAuthenticated'> | null;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
-export function Sidebar({ currentPath, isOpen, onClose, user }: SidebarProps) {
+export function Sidebar({ isOpen = true, onClose = () => {} }: SidebarProps) {
+  const { session } = usePDS();
+  const routerState = useRouterState();
+  const currentPath = routerState.location.pathname;
+
   const navItems = [
     { href: '/', label: 'Home' },
     { href: '/communities', label: 'Communities' },
-    { href: '/moderation-log', label: 'Moderation Log' },
+    { href: '/moderation', label: 'Moderation Log' },
   ];
 
   return (
@@ -38,9 +41,9 @@ export function Sidebar({ currentPath, isOpen, onClose, user }: SidebarProps) {
       {/* Navigation Links */}
       <nav className="flex-1 space-y-2">
         {navItems.map((item) => (
-          <a
+          <Link
             key={item.href}
-            href={item.href}
+            to={item.href}
             aria-current={currentPath === item.href ? 'page' : undefined}
             className={`block rounded-md px-3 py-2 text-sm font-medium transition-colors ${
               currentPath === item.href
@@ -49,16 +52,16 @@ export function Sidebar({ currentPath, isOpen, onClose, user }: SidebarProps) {
             }`}
           >
             {item.label}
-          </a>
+          </Link>
         ))}
       </nav>
 
       {/* User Info */}
-      {user?.isAuthenticated && user.handle && (
+      {session.isAuthenticated && session.handle && (
         <div className="mt-auto border-t pt-4">
           <div className="text-sm">
-            <p className="font-medium">{user.handle}</p>
-            <p className="truncate text-xs text-muted-foreground">{user.did}</p>
+            <p className="font-medium">{session.handle}</p>
+            <p className="truncate text-xs text-muted-foreground">{session.did}</p>
           </div>
         </div>
       )}

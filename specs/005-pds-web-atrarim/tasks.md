@@ -572,7 +572,7 @@
 
 ## Phase 3.6: Global State & Context
 
-- [ ] **T054** - Create PDS session context in `dashboard/src/contexts/PDSContext.tsx`
+- [x] **T054** - Create PDS session context in `dashboard/src/contexts/PDSContext.tsx`
   - Create: React Context for PDS session (UserSession state)
   - Implement: `usePDS()` hook
   - Implement: `login(handle, password)` function (calls `loginToPDS`, stores session in localStorage)
@@ -580,12 +580,14 @@
   - Implement: Session restoration on app load (check localStorage)
   - Wrap: App in PDSContext.Provider in `main.tsx`
   - Verify: Session persists across page refreshes
+  - **COMPLETED**: PDSContext with login/logout, session persistence, integrated with Layout components
 
-- [ ] **T055** - Setup TanStack Query client in `dashboard/src/lib/queryClient.ts`
+- [x] **T055** - Setup TanStack Query client in `dashboard/src/lib/queryClient.ts`
   - Create: QueryClient instance with default options (staleTime, cacheTime)
   - Export: queryClient
   - Update: `dashboard/src/main.tsx` to wrap App in QueryClientProvider
   - Verify: TanStack Query DevTools work in development
+  - **COMPLETED**: QueryClient configured, QueryClientProvider + ReactQueryDevtools added to main.tsx
 
 ---
 

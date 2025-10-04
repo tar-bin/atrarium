@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import type { BskyAgent } from '@atproto/api';
-import { loginToPDS, getSessionDID, getSessionHandle } from '@/lib/pds';
+import { usePDS } from '@/contexts/PDSContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Form,
@@ -28,10 +27,11 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 interface PDSLoginFormProps {
   pdsUrl: string;
-  onSuccess: (result: { agent: BskyAgent; did: string; handle: string }) => void;
+  onSuccess?: () => void;
 }
 
 export function PDSLoginForm({ pdsUrl, onSuccess }: PDSLoginFormProps) {
+  const { login } = usePDS();
   const [error, setError] = useState<string | null>(null);
 
   const form = useForm<LoginFormData>({
@@ -45,19 +45,10 @@ export function PDSLoginForm({ pdsUrl, onSuccess }: PDSLoginFormProps) {
   const handleSubmit = async (data: LoginFormData) => {
     try {
       setError(null);
-      const agent = await loginToPDS(data.handle, data.password);
-
-      const did = getSessionDID(agent);
-      const handle = getSessionHandle(agent);
-
-      if (!did || !handle) {
-        throw new Error('Failed to retrieve session information');
+      await login(data.handle, data.password);
+      if (onSuccess) {
+        onSuccess();
       }
-
-      // Store session in localStorage
-      localStorage.setItem('pds_session', JSON.stringify({ did, handle }));
-
-      onSuccess({ agent, did, handle });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to login to PDS');
     }

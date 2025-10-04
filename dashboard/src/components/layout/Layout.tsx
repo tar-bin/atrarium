@@ -9,9 +9,9 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   return (
     <div className="grid min-h-screen grid-cols-[auto_1fr]">
-      <Sidebar currentPath={window.location.pathname} isOpen={true} onClose={() => {}} />
+      <Sidebar />
       <div className="flex flex-col">
-        <Header user={null} onLogout={() => {}} />
+        <Header />
         <main className="flex-1 p-6">{children}</main>
       </div>
     </div>

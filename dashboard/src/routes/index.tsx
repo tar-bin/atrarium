@@ -1,12 +1,17 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { PDSLoginForm } from '@/components/pds/PDSLoginForm';
+import { usePDS } from '@/contexts/PDSContext';
 
 export const Route = createFileRoute('/')({
   component: HomePage,
 });
 
 function HomePage() {
+  const { session } = usePDS();
+  const pdsUrl = import.meta.env.VITE_PDS_URL || 'http://localhost:3000';
+
   return (
     <div className="space-y-6">
       <Card>
@@ -32,7 +37,12 @@ function HomePage() {
         </CardContent>
       </Card>
 
-      {/* PDS Login section will be added in Phase 3.6 with context */}
+      {/* PDS Login section */}
+      {!session.isAuthenticated && (
+        <div className="flex justify-center">
+          <PDSLoginForm pdsUrl={pdsUrl} />
+        </div>
+      )}
     </div>
   );
 }
