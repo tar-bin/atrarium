@@ -1,10 +1,11 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { loginToPDS, getSessionDID, getSessionHandle } from '@/lib/pds';
+import { loginToPDS, getSessionDID, getSessionHandle, resumeSession } from '@/lib/pds';
 import type { UserSession } from '@/types';
 
 interface PDSContextValue {
   session: UserSession;
+  agent: UserSession['agent'];
   login: (handle: string, password: string) => Promise<void>;
   logout: () => void;
 }
@@ -12,11 +13,6 @@ interface PDSContextValue {
 const PDSContext = createContext<PDSContextValue | undefined>(undefined);
 
 const SESSION_STORAGE_KEY = 'pds_session';
-
-interface StoredSession {
-  did: string;
-  handle: string;
-}
 
 export function PDSProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<UserSession>({
@@ -31,18 +27,30 @@ export function PDSProvider({ children }: { children: ReactNode }) {
     const storedSessionStr = localStorage.getItem(SESSION_STORAGE_KEY);
     if (storedSessionStr) {
       try {
-        const storedSession: StoredSession = JSON.parse(storedSessionStr);
-        // Note: We can't restore the agent from localStorage (it has methods)
-        // But we consider the user authenticated if they have session metadata
-        // They can re-login if they need the agent for posting
-        setSession({
-          agent: null,
-          did: storedSession.did,
-          handle: storedSession.handle,
-          isAuthenticated: true, // Set to true since they have valid session
-        });
+        const storedSessionData = JSON.parse(storedSessionStr);
+        // Attempt to resume session with stored session data
+        resumeSession(storedSessionData)
+          .then((agent) => {
+            const did = getSessionDID(agent);
+            const handle = getSessionHandle(agent);
+            if (did && handle) {
+              setSession({
+                agent,
+                did,
+                handle,
+                isAuthenticated: true,
+              });
+            } else {
+              // Session data is invalid, clear it
+              localStorage.removeItem(SESSION_STORAGE_KEY);
+            }
+          })
+          .catch((error) => {
+            console.error('Failed to restore session:', error);
+            localStorage.removeItem(SESSION_STORAGE_KEY);
+          });
       } catch (error) {
-        console.error('Failed to restore session:', error);
+        console.error('Failed to parse stored session:', error);
         localStorage.removeItem(SESSION_STORAGE_KEY);
       }
     }
@@ -54,7 +62,7 @@ export function PDSProvider({ children }: { children: ReactNode }) {
       const did = getSessionDID(agent);
       const sessionHandle = getSessionHandle(agent);
 
-      if (!did || !sessionHandle) {
+      if (!did || !sessionHandle || !agent.session) {
         throw new Error('Failed to retrieve session information');
       }
 
@@ -67,12 +75,8 @@ export function PDSProvider({ children }: { children: ReactNode }) {
 
       setSession(newSession);
 
-      // Store session metadata (not the agent itself)
-      const sessionToStore: StoredSession = {
-        did,
-        handle: sessionHandle,
-      };
-      localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessionToStore));
+      // Store full session data for resumeSession
+      localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(agent.session));
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
@@ -90,7 +94,7 @@ export function PDSProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <PDSContext.Provider value={{ session, login, logout }}>
+    <PDSContext.Provider value={{ session, agent: session.agent, login, logout }}>
       {children}
     </PDSContext.Provider>
   );

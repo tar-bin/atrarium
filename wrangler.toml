@@ -3,17 +3,19 @@ main = "src/index.ts"
 compatibility_date = "2024-10-22"
 compatibility_flags = ["nodejs_compat"]
 
-# D1 Database Binding (Run: wrangler d1 create atrarium-db)
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "atrarium-db"
-# database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+# D1 Database Binding
+# For local development, Wrangler will use a local SQLite database
+[[d1_databases]]
+binding = "DB"
+database_name = "atrarium-db"
+database_id = "local-dev-db"  # For production: Run `wrangler d1 create atrarium-db` and replace with actual ID
 
-# KV Namespace Binding (Run: wrangler kv:namespace create POST_CACHE)
-# [[kv_namespaces]]
-# binding = "POST_CACHE"
-# id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-# preview_id = "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy"
+# KV Namespace Binding
+# For local development, Wrangler will use in-memory KV
+[[kv_namespaces]]
+binding = "POST_CACHE"
+id = "local-dev-kv"  # For production: Run `wrangler kv:namespace create POST_CACHE` and replace with actual ID
+preview_id = "local-dev-kv-preview"
 
 # Environment Variables
 [vars]

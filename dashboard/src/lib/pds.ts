@@ -77,3 +77,21 @@ export function getSessionDID(agent: BskyAgent): string | null {
 export function getSessionHandle(agent: BskyAgent): string | null {
   return agent.session?.handle || null;
 }
+
+/**
+ * Resume session from stored session data
+ * @param sessionData Stored session data from previous login
+ * @returns Authenticated BskyAgent with restored session
+ * @throws Error if session resume fails
+ */
+export async function resumeSession(sessionData: any): Promise<BskyAgent> {
+  const agent = createPDSAgent();
+
+  try {
+    await agent.resumeSession(sessionData);
+    return agent;
+  } catch (error) {
+    console.error('[PDS] Session resume failed:', error);
+    throw new Error('Failed to resume session. Please login again.');
+  }
+}

@@ -4,10 +4,11 @@ import { Button } from '@/components/ui/button';
 import { stripHashtag } from '@/lib/hashtag';
 import { Copy, Hash, TrendingUp, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Link } from '@tanstack/react-router';
 
 interface FeedCardProps {
   feed: Feed;
-  onClick: () => void;
+  onClick?: () => void;
 }
 
 export function FeedCard({ feed, onClick }: FeedCardProps) {
@@ -35,14 +36,19 @@ export function FeedCard({ feed, onClick }: FeedCardProps) {
     <Card className="transition-shadow hover:shadow-md">
       <CardHeader>
         <div className="flex items-start justify-between">
-          <CardTitle
-            role="button"
-            aria-label={feed.name}
-            className="cursor-pointer text-lg"
-            onClick={onClick}
+          <Link
+            to="/communities/$communityId/feeds/$feedId"
+            params={{ communityId: feed.communityId, feedId: feed.id }}
           >
-            {feed.name}
-          </CardTitle>
+            <CardTitle
+              role="button"
+              aria-label={feed.name}
+              className="cursor-pointer text-lg hover:underline"
+              onClick={onClick}
+            >
+              {feed.name}
+            </CardTitle>
+          </Link>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">

@@ -112,6 +112,23 @@ VITE_API_URL=http://localhost:8787
 VITE_PDS_URL=http://localhost:3000
 ```
 
+### Load Test Data
+
+To populate your local database with test data for development:
+
+```bash
+# From the root directory
+./scripts/load-test-data.sh
+```
+
+This creates:
+- 5 test communities (anime, tech, games, manga, web3)
+- 9 theme feeds with hashtags
+- 20 sample posts
+- 17 user memberships
+
+See [../seeds/README.md](../seeds/README.md) for details on test users and data.
+
 ## Development
 
 ### Start Development Server
@@ -121,6 +138,13 @@ npm run dev
 ```
 
 Starts Vite dev server at `http://localhost:5173`
+
+**Note for DevContainer users**: Hot module replacement (HMR) uses polling to detect file changes. If you notice that changes aren't being reflected automatically:
+1. Save the file (Ctrl+S / Cmd+S)
+2. Wait 1-2 seconds for the polling interval
+3. The browser should auto-reload
+
+The polling interval is set to 1000ms (1 second) in `vite.config.ts`.
 
 ### Generate Route Tree
 

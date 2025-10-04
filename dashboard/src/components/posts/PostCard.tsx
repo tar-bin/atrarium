@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import type { Post } from '@/types';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,8 +10,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Image, EyeOff } from 'lucide-react';
+import { EyeOff } from 'lucide-react';
 import { formatRelativeTime } from '@/lib/date';
+
+// Helper function to get avatar from DID
+function getAvatarUrl(did: string): string {
+  const hash = did.split(':').pop()?.slice(0, 8) || 'default';
+  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${hash}`;
+}
+
+// Helper function to get dummy image for posts with media
+function getPostImageUrl(uri: string): string {
+  const hash = uri.split('/').pop()?.slice(0, 8) || 'default';
+  return `https://picsum.photos/seed/${hash}/600/400`;
+}
 
 interface PostCardProps {
   post: Post;
@@ -42,51 +53,67 @@ export function PostCard({ post, canModerate, onHide }: PostCardProps) {
 
   return (
     <>
-      <Card data-testid="post-card">
-        <CardContent className="pt-6">
-          <div className="space-y-3">
-            {/* Header: Author and timestamp */}
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-mono text-muted-foreground">{post.authorDid}</span>
-              <span className="text-xs text-muted-foreground">
+      <article data-testid="post-card" className="border-b border-border bg-card p-4 hover:bg-accent/50 transition-colors">
+        <div className="flex gap-3">
+          {/* Avatar */}
+          <img
+            src={getAvatarUrl(post.authorDid)}
+            alt="Avatar"
+            className="h-10 w-10 rounded-full flex-shrink-0"
+          />
+
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            {/* Header */}
+            <div className="flex items-baseline gap-2 mb-1">
+              <span className="font-semibold text-sm truncate">
+                @{post.authorDid.split(':').pop()?.slice(0, 12)}
+              </span>
+              <span className="text-xs text-muted-foreground flex-shrink-0">
                 {formatRelativeTime(post.createdAt)}
               </span>
             </div>
 
             {/* Post text */}
-            <p className="whitespace-pre-wrap">{post.text}</p>
+            <p className="text-sm whitespace-pre-wrap break-words mb-3">{post.text}</p>
 
-            {/* Indicators */}
-            <div className="flex items-center gap-2">
-              {post.hasMedia && (
-                <Badge variant="outline" data-testid="media-indicator">
-                  <Image className="mr-1 h-3 w-3" />
-                  Media
-                </Badge>
-              )}
-              {post.moderationStatus === 'hidden' && (
-                <Badge variant="destructive">
-                  <EyeOff className="mr-1 h-3 w-3" />
-                  Hidden
-                </Badge>
-              )}
-            </div>
+            {/* Post image */}
+            {post.hasMedia && (
+              <div className="mb-3 rounded-2xl overflow-hidden border border-border">
+                <img
+                  src={getPostImageUrl(post.uri)}
+                  alt="Post media"
+                  className="w-full"
+                />
+              </div>
+            )}
 
-            {/* Moderation actions */}
-            {canModerate && post.moderationStatus !== 'hidden' && (
-              <div className="flex justify-end">
+            {/* Indicators & Actions */}
+            <div className="flex items-center justify-between">
+              <div>
+                {post.moderationStatus === 'hidden' && (
+                  <Badge variant="destructive" className="text-xs">
+                    <EyeOff className="mr-1 h-3 w-3" />
+                    Hidden
+                  </Badge>
+                )}
+              </div>
+
+              {/* Moderation actions */}
+              {canModerate && post.moderationStatus !== 'hidden' && (
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant="ghost"
                   onClick={handleHideClick}
+                  className="text-xs h-7"
                 >
                   Hide
                 </Button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </article>
 
       {/* Confirmation Dialog */}
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>

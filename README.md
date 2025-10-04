@@ -213,6 +213,27 @@ npm run dev
 
 For detailed dashboard documentation, see [dashboard/README.md](./dashboard/README.md).
 
+### Load Test Data
+
+To quickly populate your local database with test data:
+
+```bash
+# Load schema and test data
+./scripts/load-test-data.sh
+
+# Or manually:
+npx wrangler d1 execute atrarium-db --local --file=seeds/dev-data.sql
+```
+
+**Test data includes:**
+- 5 communities (anime, tech, games, manga, web3)
+- 9 theme feeds with unique hashtags
+- 20 sample posts (18 approved, 2 hidden)
+- 17 user memberships across communities
+- 3 moderation actions
+
+For details, see [seeds/README.md](./seeds/README.md).
+
 ---
 
 ## 📖 Documentation

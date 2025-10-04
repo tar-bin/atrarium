@@ -42,9 +42,9 @@ export function PostList({
   }
 
   return (
-    <div className="space-y-4">
-      {posts.map((post) => (
-        <div key={post.uri} data-testid="post-card">
+    <div className="border border-border rounded-lg overflow-hidden bg-card">
+      {posts.map((post, index) => (
+        <div key={post.uri} data-testid="post-card" className={index === posts.length - 1 ? '' : ''}>
           <PostCard post={post} canModerate={canModerate} onHide={onHidePost} />
         </div>
       ))}
