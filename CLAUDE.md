@@ -7,8 +7,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Atrarium is a community management system built on AT Protocol (Bluesky), designed for small communities (10-200 people). It replaces expensive Mastodon/Misskey servers with a serverless architecture on Cloudflare Workers, reducing costs by 95% ($30-150/month → $5/month) and operational time by 80%.
 
 **Current Phase**: Phase 0 → Phase 1 Transition
-**Status**: Backend complete, VitePress docs live, dashboard pending
-**Active Branch**: `003-id` (Direct Feed Posting with Hashtags + Moderation)
+**Status**: Backend complete, VitePress docs live, dashboard implemented
+**Active Branch**: `005-pds-web-atrarim` (Web Dashboard with Local PDS Integration)
 
 ## Architecture
 
@@ -16,8 +16,16 @@ Atrarium is a community management system built on AT Protocol (Bluesky), design
 - **Backend**: Cloudflare Workers + Durable Objects (TypeScript)
 - **Database**: Cloudflare D1 (SQLite)
 - **Cache**: Cloudflare KV
-- **Frontend**: React 18 + Vite + Tailwind CSS (Cloudflare Pages)
-- **External**: AT Protocol (@atproto/api), Bluesky Firehose (WebSocket)
+- **Frontend (Dashboard)**:
+  - React 19 + TypeScript + Vite
+  - TanStack Router v1 (file-based routing)
+  - TanStack Query v5 (server state)
+  - TanStack Table v8 (data tables)
+  - shadcn/ui (Radix UI + Tailwind CSS)
+  - react-hook-form + Zod (form validation)
+  - i18next (EN/JA translations)
+  - Cloudflare Pages (hosting)
+- **External**: AT Protocol (@atproto/api), Bluesky Firehose (WebSocket), Local PDS (testing)
 
 ### Core Components
 
@@ -89,6 +97,43 @@ tests/                 # Test suite (Vitest + Cloudflare Workers)
 └── helpers/           # Test utilities
     ├── setup.ts           # Test database setup
     └── test-env.ts        # Test environment config
+
+dashboard/            # React web dashboard (Phase 0-1)
+├── src/
+│   ├── components/          # React components
+│   │   ├── communities/        # Community management components
+│   │   ├── feeds/              # Feed management components
+│   │   ├── posts/              # Post creation & display components
+│   │   ├── moderation/         # Moderation components
+│   │   ├── pds/                # PDS login component
+│   │   ├── layout/             # Layout components (Header, Sidebar, Layout)
+│   │   └── ui/                 # shadcn/ui components (button, card, etc.)
+│   ├── routes/              # TanStack Router file-based routes
+│   │   ├── __root.tsx          # Root route with Layout
+│   │   ├── index.tsx           # Home page
+│   │   ├── communities/        # Community routes
+│   │   └── moderation.tsx      # Moderation log page
+│   ├── contexts/            # React Context providers
+│   │   └── PDSContext.tsx      # PDS session management
+│   ├── lib/                 # Utilities
+│   │   ├── api.ts              # API client (placeholder)
+│   │   ├── pds.ts              # PDS integration (@atproto/api)
+│   │   ├── queryClient.ts      # TanStack Query client
+│   │   └── utils.ts            # Tailwind utilities
+│   ├── i18n/                # i18next translations
+│   │   ├── index.ts            # i18n setup
+│   │   └── locales/            # EN/JA translations
+│   ├── types.ts             # TypeScript type definitions
+│   ├── router.tsx           # TanStack Router instance
+│   └── main.tsx             # Entry point
+├── tests/               # Component & integration tests
+│   ├── components/          # Component tests (Vitest + Testing Library)
+│   ├── integration/         # Integration tests (DEFERRED)
+│   └── helpers/             # Test utilities
+├── package.json         # Dashboard dependencies (React 19, TanStack, shadcn/ui)
+├── vite.config.ts       # Vite configuration
+├── tsconfig.json        # TypeScript configuration
+└── README.md            # Dashboard setup guide
 
 docs/                 # VitePress documentation site
 ├── en/                   # English documentation (10 pages)
@@ -190,6 +235,14 @@ npm run docs:dev     # Start VitePress dev server (http://localhost:5173)
 npm run docs:build   # Build static site
 npm run docs:preview # Preview production build
 
+# Dashboard (Web UI)
+cd dashboard
+npm install          # Install dashboard dependencies (first time only)
+npm run dev          # Start dashboard dev server (http://localhost:5173)
+npm run build        # Build production bundle
+npm run preview      # Preview production build
+npm test             # Run dashboard tests
+
 # Code quality
 npm run lint         # ESLint
 npm run format       # Prettier
@@ -240,6 +293,17 @@ wrangler secret put JWT_SECRET    # Set secrets (also: BLUESKY_HANDLE, BLUESKY_A
 cd docs
 npm run docs:build
 wrangler pages deploy .vitepress/dist --project-name=atrarium-docs
+
+# Dashboard (Cloudflare Pages)
+# Recommended deployment via GitHub integration:
+# - Build command: cd dashboard && npm install && npm run build
+# - Build output: dashboard/dist
+# - Environment variables: VITE_API_URL, VITE_PDS_URL
+
+# Manual deployment (if needed)
+cd dashboard
+npm run build
+wrangler pages deploy dist --project-name=atrarium-dashboard
 ```
 
 ### Database Management
@@ -308,11 +372,21 @@ The client fetches actual post content from Bluesky's AppView using these URIs.
 - [x] **Hashtag-based feed posting** (003-id: system-generated unique hashtags per feed)
 - [x] **Moderation system** (003-id: hide posts, block users, moderation logs)
 - [x] **Local PDS integration** (003-id: DevContainer with Bluesky PDS for testing)
+- [x] **React dashboard** (005-pds-web-atrarim: full web UI with PDS integration)
+  - [x] Component library (15 components: communities, feeds, posts, moderation, PDS login)
+  - [x] TanStack Router (file-based routing with type-safe params)
+  - [x] TanStack Query (server state management)
+  - [x] shadcn/ui components (Radix UI + Tailwind CSS)
+  - [x] PDS session management (localStorage persistence)
+  - [x] i18n support (EN/JA translations)
+  - [x] Component tests (Vitest + Testing Library)
+  - [x] Production build (427KB gzip, <500KB target)
 
 ### 🚧 In Progress / Pending
-- [ ] React dashboard (UI for community/feed management)
+- [ ] Dashboard API integration (currently using placeholder client)
 - [ ] Firehose integration (Durable Objects for real-time indexing)
 - [ ] Production deployment configuration for Workers
+- [ ] Dashboard deployment to Cloudflare Pages
 
 ### 📅 Future Phases
 - Achievement system (Phase 1)

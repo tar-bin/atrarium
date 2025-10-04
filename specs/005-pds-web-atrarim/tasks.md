@@ -677,17 +677,19 @@
   - Test: Hide post → removed from public view
   - Verify: All user stories work end-to-end with real backend + PDS
 
-- [ ] **T069** - Build production bundle and verify
+- [x] **T069** - Build production bundle and verify
   - Run: `npm run build` in dashboard/
   - Check: Bundle size is reasonable (<500KB gzip for main chunk)
   - Run: `npm run preview` to test production build
   - Verify: Production build works correctly, no console errors
+  - **COMPLETED**: Build successful, bundle size 427.87 KB gzip (<500KB target ✅)
 
-- [ ] **T070** - Update CLAUDE.md with dashboard information
+- [x] **T070** - Update CLAUDE.md with dashboard information
   - Add: Dashboard section with tech stack and structure
   - Update: Active branch to 005-pds-web-atrarim
   - Update: Development commands (dashboard-specific)
   - Verify: CLAUDE.md is accurate and helpful for future development
+  - **COMPLETED**: Updated tech stack, project structure, dev commands, implementation status
 
 ---
 
