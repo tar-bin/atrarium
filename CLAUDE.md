@@ -8,6 +8,7 @@ Atrarium is a community management system built on AT Protocol (Bluesky), design
 
 **Current Phase**: Phase 0 → Phase 1 Transition
 **Status**: Backend complete, VitePress docs live, dashboard pending
+**Active Branch**: `003-id` (Direct Feed Posting with Hashtags + Moderation)
 
 ## Architecture
 
@@ -42,30 +43,44 @@ src/                    # Cloudflare Workers backend (TypeScript)
 │   ├── communities.ts     # Community management
 │   ├── theme-feeds.ts     # Theme feed CRUD
 │   ├── posts.ts           # Post submission/indexing
-│   └── memberships.ts     # Membership management
+│   ├── memberships.ts     # Membership management
+│   └── moderation.ts      # Moderation API (hide/unhide posts, block users) - 003-id
 ├── models/            # Database models (D1 queries)
 │   ├── community.ts
 │   ├── theme-feed.ts
 │   ├── membership.ts
 │   ├── post-index.ts
+│   ├── feed-blocklist.ts  # Feed-specific user blocklist - 003-id
+│   ├── moderation-log.ts  # Moderation action history - 003-id
 │   ├── achievement.ts
 │   └── owner-transition-log.ts
 ├── services/          # Business logic services
 │   ├── atproto.ts         # AT Protocol client
 │   ├── auth.ts            # JWT authentication
 │   ├── cache.ts           # KV cache operations
+│   ├── moderation.ts      # Moderation business logic - 003-id
 │   └── db.ts              # Database utilities
 ├── schemas/           # Validation schemas
 │   └── validation.ts      # Zod schemas
 ├── utils/             # Utilities
-│   └── did.ts             # DID resolution
+│   ├── did.ts             # DID resolution
+│   └── hashtag.ts         # Feed hashtag generation - 003-id
 └── types.ts           # TypeScript type definitions
 
 tests/                 # Test suite (Vitest + Cloudflare Workers)
 ├── contract/          # API contract tests
 │   ├── dashboard/         # Dashboard API tests
+│   │   ├── post-to-feed-with-hashtag.test.ts  # Hashtag posting - 003-id
+│   │   └── moderation.test.ts                 # Moderation API - 003-id
 │   └── feed-generator/    # Feed Generator API tests
+│       └── get-feed-skeleton-with-hashtags.test.ts  # Hashtag filtering - 003-id
 ├── integration/       # Integration tests
+│   ├── hashtag-indexing-flow.test.ts   # End-to-end hashtag flow - 003-id
+│   ├── moderation-flow.test.ts         # End-to-end moderation - 003-id
+│   └── pds-posting.test.ts             # PDS integration test - 003-id
+├── unit/              # Unit tests
+│   ├── feed-hashtag-generator.test.ts  # Hashtag generation - 003-id
+│   └── membership-validation.test.ts   # Membership checks - 003-id
 ├── docs/              # VitePress documentation tests
 │   ├── navigation.test.ts  # Navigation structure validation
 │   ├── i18n.test.ts        # i18n parity check (en ↔ ja)
@@ -112,21 +127,31 @@ vitest.docs.config.ts # Vitest configuration for documentation tests
 
 ## Database Schema
 
-Six main tables (see [schema.sql](schema.sql)):
+Eight main tables (see [schema.sql](schema.sql) and [migrations/003-add-feed-hashtags.sql](migrations/003-add-feed-hashtags.sql)):
 
 1. **communities**: Community metadata (id, name, stage, parent_id, feed_mix_own/parent/global, member_count, post_count)
-2. **theme_feeds**: Theme feed configurations (id, community_id, name, status, posts_7d, active_users_7d)
+2. **theme_feeds**: Theme feed configurations (id, community_id, name, status, **hashtag**, posts_7d, active_users_7d)
 3. **memberships**: User membership (composite key: community_id + user_did, roles: owner/moderator/member)
-4. **post_index**: Post URI index (uri, feed_id, author_did, created_at, has_media, langs)
-5. **owner_transition_log**: Owner succession history (community_id, previous_owner_did, new_owner_did, reason)
-6. **achievements**: User achievements (user_did, achievement_id, community_id, unlocked_at) - Phase 1+
+4. **post_index**: Post URI index (uri, feed_id, author_did, created_at, has_media, langs, **moderation_status**, **indexed_at**)
+5. **feed_blocklist**: User blocklist per feed (feed_id, blocked_user_did, reason, blocked_by_did) - **003-id**
+6. **moderation_logs**: Moderation action history (action, target_uri, feed_id, moderator_did, reason) - **003-id**
+7. **owner_transition_log**: Owner succession history (community_id, previous_owner_did, new_owner_did, reason)
+8. **achievements**: User achievements (user_did, achievement_id, community_id, unlocked_at) - Phase 1+
 
 **Key Constraints**:
 - `stage IN ('theme', 'community', 'graduated')`
 - `feed_mix_own + feed_mix_parent + feed_mix_global = 1.0`
 - `role IN ('owner', 'moderator', 'member')`
 - `status IN ('active', 'warning', 'archived')`
+- `moderation_status IN ('approved', 'hidden', 'reported')` - **003-id**
+- `action IN ('hide_post', 'unhide_post', 'block_user', 'unblock_user', 'remove_member')` - **003-id**
 - All timestamps are Unix epoch (INTEGER)
+
+**Hashtag System (003-id)**:
+- Each theme feed has a unique system-generated hashtag (`#atr_xxxxx` format)
+- Posts include feed hashtags to associate with specific feeds
+- Membership verification ensures only community members can post
+- No automatic filter-based matching (direct feed association)
 
 ## Development Commands
 
@@ -168,6 +193,21 @@ npm run docs:preview # Preview production build
 # Code quality
 npm run lint         # ESLint
 npm run format       # Prettier
+```
+
+### Development with Local PDS (DevContainer)
+```bash
+# Open project in DevContainer (VS Code)
+# This automatically starts a local Bluesky PDS for testing
+
+# Setup test accounts (run after DevContainer starts)
+.devcontainer/setup-pds.sh
+
+# Run PDS integration tests
+npx vitest run tests/integration/pds-posting.test.ts
+
+# PDS is available at http://localhost:3000 (or http://pds:3000 from container)
+# Environment variable: PDS_URL=http://pds:3000
 ```
 
 ### Testing
@@ -255,7 +295,7 @@ The client fetches actual post content from Bluesky's AppView using these URIs.
 ## Implementation Status
 
 ### ✅ Completed (Phase 0 MVP)
-- [x] D1 database schema (6 tables with indexes)
+- [x] D1 database schema (8 tables with indexes)
 - [x] Feed Generator API (DID document, getFeedSkeleton, describeFeedGenerator)
 - [x] Community management (create, list, get)
 - [x] Theme feed management (create, list, health metrics)
@@ -263,8 +303,11 @@ The client fetches actual post content from Bluesky's AppView using these URIs.
 - [x] Membership management (join, leave, role-based access)
 - [x] Authentication (JWT with DID verification)
 - [x] Scheduled jobs (post deletion sync, feed health check)
-- [x] Test suite (contract tests + integration tests + docs tests)
+- [x] Test suite (contract tests + integration tests + unit tests + docs tests)
 - [x] **VitePress documentation site** (20 pages, EN/JA, deployed to Cloudflare Pages)
+- [x] **Hashtag-based feed posting** (003-id: system-generated unique hashtags per feed)
+- [x] **Moderation system** (003-id: hide posts, block users, moderation logs)
+- [x] **Local PDS integration** (003-id: DevContainer with Bluesky PDS for testing)
 
 ### 🚧 In Progress / Pending
 - [ ] React dashboard (UI for community/feed management)
@@ -333,14 +376,19 @@ JWT-based authentication with DID verification ([src/services/auth.ts](src/servi
 - **Post URIs**: Format is `at://did:plc:xxx/app.bsky.feed.post/yyy`
 - **Feed URIs**: Format is `at://did:plc:xxx/app.bsky.feed.generator/feed-id`
 - **Cache TTL**: KV cache expires after 7 days (604800 seconds)
+- **Feed Hashtags**: Format is `#atr_xxxxx` (8-character hex, system-generated, unique per feed) - **003-id**
+- **Moderation**: Only moderators/owners can hide posts or block users - **003-id**
+- **Membership Validation**: Posts must be from community members (verified via memberships table) - **003-id**
 
 ### Testing Strategy
 Tests use `@cloudflare/vitest-pool-workers` to simulate Cloudflare Workers environment:
-- **Setup**: [tests/helpers/setup.ts](tests/helpers/setup.ts) loads schema before all tests
+- **Setup**: [tests/helpers/setup.ts](tests/helpers/setup.ts) loads schema + migrations before all tests
 - **Environment**: D1 and KV bindings configured in [vitest.config.ts](vitest.config.ts)
 - **Contract Tests**: API endpoint validation ([tests/contract/](tests/contract/))
 - **Integration Tests**: End-to-end workflows ([tests/integration/](tests/integration/))
-- **Documentation Tests**: VitePress validation ([tests/docs-site/](tests/docs-site/)) using [vitest.docs.config.ts](vitest.docs.config.ts)
+- **Unit Tests**: Isolated logic validation ([tests/unit/](tests/unit/)) - **003-id**
+- **Documentation Tests**: VitePress validation ([tests/docs/](tests/docs/)) using [vitest.docs.config.ts](vitest.docs.config.ts)
+- **PDS Integration**: Real Bluesky PDS testing in DevContainer ([tests/integration/pds-posting.test.ts](tests/integration/pds-posting.test.ts)) - **003-id**
 
 ```bash
 # Run all tests
@@ -348,6 +396,17 @@ npm test
 
 # Run specific test
 npx vitest run tests/contract/feed-generator/get-feed-skeleton.test.ts
+
+# Run hashtag-related tests (003-id)
+npx vitest run tests/contract/dashboard/post-to-feed-with-hashtag.test.ts
+npx vitest run tests/integration/hashtag-indexing-flow.test.ts
+
+# Run moderation tests (003-id)
+npx vitest run tests/contract/dashboard/moderation.test.ts
+npx vitest run tests/integration/moderation-flow.test.ts
+
+# Run PDS integration test (requires DevContainer)
+npx vitest run tests/integration/pds-posting.test.ts
 
 # Run documentation tests
 npm run test:docs

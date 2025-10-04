@@ -1,0 +1,153 @@
+openapi: 3.0.0
+info:
+  title: Post to Feed API
+  description: |
+    Create a post in a specific feed by automatically appending the feed's unique hashtag.
+    User must be a member of the feed's community.
+  version: 1.0.0
+
+paths:
+  /api/posts:
+    post:
+      summary: Create a post in a specific feed
+      description: |
+        Creates a post with the specified content and automatically appends the feed's
+        unique hashtag (#atr_xxxxx). The post is saved to the user's PDS via AT Protocol.
+      operationId: createPostWithHashtag
+      tags:
+        - Posts
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - feedId
+                - text
+              properties:
+                feedId:
+                  type: string
+                  description: ID of the feed to post to
+                  example: "feed-tech-topics-123"
+                text:
+                  type: string
+                  description: Post content (hashtag will be auto-appended)
+                  maxLength: 300
+                  example: "Just deployed a new feature using Cloudflare Workers!"
+                media:
+                  type: array
+                  description: Optional media attachments
+                  items:
+                    type: object
+                    properties:
+                      url:
+                        type: string
+                        format: uri
+                      alt:
+                        type: string
+                  maxItems: 4
+      responses:
+        '201':
+          description: Post created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  postUri:
+                    type: string
+                    description: AT Protocol URI of the created post
+                    example: "at://did:plc:abc123/app.bsky.feed.post/xyz789"
+                  hashtags:
+                    type: array
+                    description: Hashtags appended to the post
+                    items:
+                      type: string
+                    example: ["#atr_f7a3b2c1"]
+                  finalText:
+                    type: string
+                    description: Final post text with appended hashtags
+                    example: "Just deployed a new feature using Cloudflare Workers! #atr_f7a3b2c1"
+        '400':
+          description: Bad request (feed not found, invalid input)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                feedNotFound:
+                  summary: Feed does not exist
+                  value:
+                    error: "Feed not found"
+                    code: "FEED_NOT_FOUND"
+                invalidText:
+                  summary: Text exceeds maximum length
+                  value:
+                    error: "Text exceeds 300 characters"
+                    code: "INVALID_INPUT"
+        '401':
+          description: Unauthorized (missing or invalid JWT)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                code: "UNAUTHORIZED"
+        '403':
+          description: Forbidden (user is not a member of the community)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "User is not a member of this community"
+                code: "NOT_A_MEMBER"
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Rate limit exceeded: maximum 10 posts per minute"
+                code: "RATE_LIMIT_EXCEEDED"
+          headers:
+            Retry-After:
+              description: Seconds until rate limit resets
+              schema:
+                type: integer
+                example: 30
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      required:
+        - error
+        - code
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+        code:
+          type: string
+          description: Machine-readable error code
+        details:
+          type: object
+          description: Optional additional error details

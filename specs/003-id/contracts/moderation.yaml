@@ -1,0 +1,330 @@
+openapi: 3.0.0
+info:
+  title: Moderation API
+  description: |
+    Moderation endpoints for community managers to hide posts,
+    block users, and review reported content.
+  version: 1.0.0
+
+paths:
+  /api/moderation/hide-post:
+    post:
+      summary: Hide a post from feeds
+      description: |
+        Marks a post as hidden. The post remains in the user's PDS but
+        is excluded from all feed skeleton responses.
+        Requires moderator role.
+      operationId: hidePost
+      tags:
+        - Moderation
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - postUri
+              properties:
+                postUri:
+                  type: string
+                  description: AT Protocol URI of the post to hide
+                  example: "at://did:plc:user123/app.bsky.feed.post/abc789"
+                reason:
+                  type: string
+                  description: Reason for hiding the post
+                  example: "Violates community guidelines"
+      responses:
+        '200':
+          description: Post hidden successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  postUri:
+                    type: string
+                    example: "at://did:plc:user123/app.bsky.feed.post/abc789"
+                  moderationStatus:
+                    type: string
+                    enum: [hidden]
+                    example: "hidden"
+        '403':
+          description: Forbidden (user lacks moderator role)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Post not found in feed index
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/moderation/unhide-post:
+    post:
+      summary: Unhide a previously hidden post
+      description: |
+        Marks a hidden post as approved, making it visible in feeds again.
+        Requires moderator role.
+      operationId: unhidePost
+      tags:
+        - Moderation
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - postUri
+              properties:
+                postUri:
+                  type: string
+                  description: AT Protocol URI of the post to unhide
+      responses:
+        '200':
+          description: Post unhidden successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  moderationStatus:
+                    type: string
+                    enum: [approved]
+        '403':
+          description: Forbidden (user lacks moderator role)
+        '404':
+          description: Post not found
+
+  /api/moderation/block-user:
+    post:
+      summary: Block a user from a feed or community
+      description: |
+        Adds a user to the blocklist. All their posts will be excluded
+        from the specified feed (or all community feeds if communityId provided).
+        Requires moderator role.
+      operationId: blockUser
+      tags:
+        - Moderation
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - userDid
+              properties:
+                userDid:
+                  type: string
+                  description: DID of the user to block
+                  example: "did:plc:user123"
+                feedId:
+                  type: string
+                  description: Specific feed ID to block from (optional if communityId provided)
+                  example: "feed-tech-topics-123"
+                communityId:
+                  type: string
+                  description: Block from all feeds in this community (alternative to feedId)
+                  example: "community-abc"
+                reason:
+                  type: string
+                  description: Reason for blocking
+                  example: "Repeated spam"
+      responses:
+        '200':
+          description: User blocked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  blockedUserDid:
+                    type: string
+                    example: "did:plc:user123"
+                  affectedFeeds:
+                    type: array
+                    description: List of feed IDs affected
+                    items:
+                      type: string
+                    example: ["feed-tech-123", "feed-general-456"]
+                  affectedPosts:
+                    type: integer
+                    description: Number of posts removed from feeds
+                    example: 42
+        '400':
+          description: Bad request (must provide feedId OR communityId)
+        '403':
+          description: Forbidden (user lacks moderator role)
+
+  /api/moderation/unblock-user:
+    post:
+      summary: Unblock a previously blocked user
+      description: |
+        Removes a user from the blocklist. Their posts will appear in feeds again.
+        Requires moderator role.
+      operationId: unblockUser
+      tags:
+        - Moderation
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - userDid
+                - feedId
+              properties:
+                userDid:
+                  type: string
+                  description: DID of the user to unblock
+                feedId:
+                  type: string
+                  description: Feed ID to unblock from
+      responses:
+        '200':
+          description: User unblocked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '403':
+          description: Forbidden
+        '404':
+          description: Block record not found
+
+  /api/moderation/logs:
+    get:
+      summary: Get moderation action logs
+      description: |
+        Retrieve audit log of moderation actions for accountability.
+        Requires moderator role.
+      operationId: getModerationLogs
+      tags:
+        - Moderation
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: feedId
+          in: query
+          required: false
+          description: Filter by feed ID
+          schema:
+            type: string
+        - name: communityId
+          in: query
+          required: false
+          description: Filter by community ID
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Moderation logs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  logs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ModerationLog'
+                  cursor:
+                    type: string
+        '403':
+          description: Forbidden
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      required:
+        - error
+        - code
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+
+    ModerationLog:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 123
+        action:
+          type: string
+          enum:
+            - hide_post
+            - unhide_post
+            - block_user
+            - unblock_user
+            - remove_member
+          example: "hide_post"
+        targetUri:
+          type: string
+          description: Post URI or user DID
+          example: "at://did:plc:user123/app.bsky.feed.post/abc"
+        feedId:
+          type: string
+          nullable: true
+          example: "feed-tech-123"
+        communityId:
+          type: string
+          nullable: true
+          example: "community-abc"
+        moderatorDid:
+          type: string
+          example: "did:plc:moderator456"
+        reason:
+          type: string
+          nullable: true
+          example: "Spam content"
+        performedAt:
+          type: integer
+          description: Unix timestamp
+          example: 1699999999

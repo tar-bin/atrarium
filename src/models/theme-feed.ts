@@ -22,22 +22,48 @@ export class ThemeFeedModel {
   }
 
   /**
-   * Create a new theme feed
+   * Generate a unique hashtag for a feed (#atr_[8-hex])
+   * Retries on collision (max 3 attempts)
+   */
+  private async generateUniqueHashtag(maxRetries = 3): Promise<string> {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      const uuid = crypto.randomUUID().replace(/-/g, '');
+      const shortId = uuid.slice(0, 8);
+      const hashtag = `#atr_${shortId}`;
+
+      // Check uniqueness
+      const existing = await this.db.queryOne<{ id: string }>(
+        `SELECT id FROM theme_feeds WHERE hashtag = ?`,
+        hashtag
+      );
+
+      if (!existing) {
+        return hashtag;
+      }
+    }
+
+    throw new Error('Failed to generate unique hashtag after 3 attempts');
+  }
+
+  /**
+   * Create a new theme feed with unique hashtag
    */
   async create(communityId: string, data: CreateThemeFeedRequest): Promise<ThemeFeed> {
     const id = generateUUID();
     const now = getCurrentTimestamp();
+    const hashtag = await this.generateUniqueHashtag();
 
     await this.db.execute(
       `INSERT INTO theme_feeds (
-        id, community_id, name, description, status,
+        id, community_id, name, description, status, hashtag,
         posts_7d, active_users_7d, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       id,
       communityId,
       data.name,
       data.description || null,
       'active',
+      hashtag,
       0,
       0,
       now
@@ -49,6 +75,7 @@ export class ThemeFeedModel {
       name: data.name,
       description: data.description || null,
       status: 'active',
+      hashtag,
       lastPostAt: null,
       posts7d: 0,
       activeUsers7d: 0,
@@ -64,6 +91,19 @@ export class ThemeFeedModel {
     const row = await this.db.queryOne<ThemeFeedRow>(
       `SELECT * FROM theme_feeds WHERE id = ?`,
       id
+    );
+
+    if (!row) return null;
+    return this.rowToThemeFeed(row);
+  }
+
+  /**
+   * Get theme feed by hashtag
+   */
+  async getByHashtag(hashtag: string): Promise<ThemeFeed | null> {
+    const row = await this.db.queryOne<ThemeFeedRow>(
+      `SELECT * FROM theme_feeds WHERE hashtag = ?`,
+      hashtag
     );
 
     if (!row) return null;
@@ -253,6 +293,7 @@ export class ThemeFeedModel {
       name: row.name,
       description: row.description,
       status: row.status as ThemeFeedStatus,
+      hashtag: row.hashtag,
       lastPostAt: row.last_post_at,
       posts7d: row.posts_7d,
       activeUsers7d: row.active_users_7d,

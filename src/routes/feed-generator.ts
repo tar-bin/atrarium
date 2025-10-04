@@ -131,9 +131,9 @@ app.get('/xrpc/app.bsky.feed.getFeedSkeleton', async (c) => {
       return c.json(cached);
     }
 
-    // Query database for post URIs
+    // Query database for post URIs with moderation filtering and membership validation
     const postIndexModel = new PostIndexModel(c.env);
-    const { posts, cursor: nextCursor } = await postIndexModel.listByFeed(
+    const { uris, cursor: nextCursor } = await postIndexModel.getFeedSkeletonWithMembership(
       feedId,
       limit,
       cursor
@@ -141,7 +141,7 @@ app.get('/xrpc/app.bsky.feed.getFeedSkeleton', async (c) => {
 
     // Build feed skeleton (URIs only, no content)
     const skeleton: FeedSkeleton = {
-      feed: posts.map((post) => ({ post: post.uri })),
+      feed: uris.map((uri) => ({ post: uri })),
       cursor: nextCursor,
     };
 

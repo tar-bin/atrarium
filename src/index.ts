@@ -13,6 +13,7 @@ import communityRoutes from './routes/communities';
 import themeFeedRoutes from './routes/theme-feeds';
 import postRoutes from './routes/posts';
 import membershipRoutes from './routes/memberships';
+import moderationRoutes from './routes/moderation';
 
 // Import models for scheduled jobs
 import { ThemeFeedModel } from './models/theme-feed';
@@ -75,6 +76,7 @@ app.route('/api/communities', communityRoutes);
 app.route('/api/communities', themeFeedRoutes);
 app.route('/api/posts', postRoutes);
 app.route('/api/communities', membershipRoutes);
+app.route('/api/moderation', moderationRoutes);
 
 // Health check
 app.get('/health', (c) => {

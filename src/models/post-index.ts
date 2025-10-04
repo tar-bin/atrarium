@@ -1,7 +1,7 @@
 // Atrarium MVP - Post Index Model
 // CRUD operations with AT-URI validation
 
-import type { Env, PostIndex, PostIndexRow, SubmitPostRequest } from '../types';
+import type { Env, PostIndex, PostIndexRow, SubmitPostRequest, ModerationStatus } from '../types';
 import { DatabaseService, getCurrentTimestamp, parseJsonField } from '../services/db';
 
 // ============================================================================
@@ -29,14 +29,16 @@ export class PostIndexModel {
     const langs = null; // TODO: Fetch from Bluesky PDS
 
     const result = await this.db.execute(
-      `INSERT INTO post_index (uri, feed_id, author_did, created_at, has_media, langs)
-      VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO post_index (uri, feed_id, author_did, created_at, has_media, langs, moderation_status, indexed_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       data.uri,
       data.feedId,
       authorDid,
       now,
       hasMedia ? 1 : 0,
-      langs ? JSON.stringify(langs) : null
+      langs ? JSON.stringify(langs) : null,
+      'approved',
+      now
     );
 
     // Get the auto-incremented ID
@@ -50,6 +52,8 @@ export class PostIndexModel {
       createdAt: now,
       hasMedia,
       langs,
+      moderationStatus: 'approved',
+      indexedAt: now,
     };
   }
 
@@ -178,6 +182,94 @@ export class PostIndexModel {
     return result?.count || 0;
   }
 
+  /**
+   * Update moderation status for a post
+   */
+  async updateModerationStatus(uri: string, newStatus: ModerationStatus): Promise<boolean> {
+    const result = await this.db.execute(
+      `UPDATE post_index SET moderation_status = ? WHERE uri = ?`,
+      newStatus,
+      uri
+    );
+
+    return result.meta.changes > 0;
+  }
+
+  /**
+   * Get posts by moderation status
+   */
+  async getPostsByModerationStatus(
+    feedId: string,
+    status: ModerationStatus,
+    limit = 50
+  ): Promise<PostIndex[]> {
+    const result = await this.db.query<PostIndexRow>(
+      `SELECT * FROM post_index
+       WHERE feed_id = ? AND moderation_status = ?
+       ORDER BY created_at DESC
+       LIMIT ?`,
+      feedId,
+      status,
+      limit
+    );
+
+    return result.results?.map((row) => this.rowToPostIndex(row)) || [];
+  }
+
+  /**
+   * Get feed skeleton with membership validation and moderation filtering
+   * This is the main query for Feed Generator API
+   */
+  async getFeedSkeletonWithMembership(
+    feedId: string,
+    limit = 50,
+    cursor?: string
+  ): Promise<{ uris: string[]; cursor?: string }> {
+    // Parse cursor
+    let cursorTimestamp = Date.now();
+    let cursorId = Number.MAX_SAFE_INTEGER;
+
+    if (cursor) {
+      const [ts, id] = cursor.split('::');
+      cursorTimestamp = parseInt(ts || '0', 10);
+      cursorId = parseInt(id || '0', 10);
+    }
+
+    // Query with INNER JOIN memberships + LEFT JOIN feed_blocklist
+    const result = await this.db.query<{ uri: string; created_at: number; id: number }>(
+      `SELECT p.uri, p.created_at, p.id
+       FROM post_index p
+       INNER JOIN theme_feeds f ON p.feed_id = f.id
+       INNER JOIN memberships m ON p.author_did = m.user_did AND m.community_id = f.community_id
+       LEFT JOIN feed_blocklist b ON b.feed_id = p.feed_id AND b.blocked_user_did = p.author_did
+       WHERE p.feed_id = ?
+         AND p.moderation_status = 'approved'
+         AND b.blocked_user_did IS NULL
+         AND (p.created_at < ? OR (p.created_at = ? AND p.id < ?))
+       ORDER BY p.created_at DESC, p.id DESC
+       LIMIT ?`,
+      feedId,
+      cursorTimestamp,
+      cursorTimestamp,
+      cursorId,
+      limit + 1
+    );
+
+    const rows = result.results || [];
+    const uris = rows.slice(0, limit).map((row) => row.uri);
+
+    // Generate next cursor
+    let nextCursor: string | undefined;
+    if (rows.length > limit) {
+      const lastRow = rows[limit];
+      if (lastRow) {
+        nextCursor = `${lastRow.created_at}::${lastRow.id}`;
+      }
+    }
+
+    return { uris, cursor: nextCursor };
+  }
+
   // ============================================================================
   // Helper Methods
   // ============================================================================
@@ -205,6 +297,8 @@ export class PostIndexModel {
       createdAt: row.created_at,
       hasMedia: row.has_media === 1,
       langs: parseJsonField<string[]>(row.langs),
+      moderationStatus: (row.moderation_status as ModerationStatus) || 'approved',
+      indexedAt: row.indexed_at,
     };
   }
 }

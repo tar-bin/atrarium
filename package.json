@@ -22,7 +22,7 @@
   "author": "https://github.com/tar-bin",
   "license": "MIT",
   "dependencies": {
-    "@atproto/api": "^0.13.16",
+    "@atproto/api": "^0.13.35",
     "@atproto/identity": "^0.4.3",
     "@atproto/xrpc-server": "^0.7.4",
     "hono": "^4.6.14",

@@ -1,16 +1,11 @@
 // Atrarium MVP - Posts Routes
-// Post submission API
+// Post submission API with hashtag appending
 
 import { Hono } from 'hono';
-import type { Env, PostIndexResponse, HonoVariables } from '../types';
+import type { Env, HonoVariables } from '../types';
 import { AuthService } from '../services/auth';
-import { PostIndexModel } from '../models/post-index';
 import { ThemeFeedModel } from '../models/theme-feed';
 import { MembershipModel } from '../models/membership';
-import { CommunityModel } from '../models/community';
-import { CacheService } from '../services/cache';
-import { validateRequest, SubmitPostSchema } from '../schemas/validation';
-import { getCurrentTimestamp } from '../services/db';
 
 const app = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -32,27 +27,39 @@ app.use('*', async (c, next) => {
 
 // ============================================================================
 // POST /api/posts
-// Submit post URI to theme feed
+// Create post with automatic hashtag appending
 // ============================================================================
 
 app.post('/', async (c) => {
   try {
     const userDid = c.get('userDid') as string;
     const body = await c.req.json();
+    const { feedId, text } = body;
 
-    const validation = await validateRequest(SubmitPostSchema, body);
-    if (!validation.success) {
-      return c.json({ error: 'InvalidRequest', message: validation.error }, 400);
+    // Validate input
+    if (!feedId || !text) {
+      return c.json(
+        { error: 'Invalid input', code: 'INVALID_INPUT', message: 'feedId and text are required' },
+        400
+      );
     }
 
-    const { uri, feedId } = validation.data;
+    if (text.length > 300) {
+      return c.json(
+        { error: 'Text exceeds 300 characters', code: 'INVALID_INPUT' },
+        400
+      );
+    }
 
     // Verify theme feed exists
     const themeFeedModel = new ThemeFeedModel(c.env);
     const feed = await themeFeedModel.getById(feedId);
 
     if (!feed) {
-      return c.json({ error: 'NotFound', message: 'Theme feed not found' }, 404);
+      return c.json(
+        { error: 'Feed not found', code: 'FEED_NOT_FOUND' },
+        404
+      );
     }
 
     // Verify user is a member of the community
@@ -60,51 +67,50 @@ app.post('/', async (c) => {
     const membership = await membershipModel.getByUserAndCommunity(feed.communityId, userDid);
 
     if (!membership) {
-      return c.json({ error: 'Forbidden', message: 'Not a member of this community' }, 403);
+      return c.json(
+        { error: 'User is not a member of this community', code: 'NOT_A_MEMBER' },
+        403
+      );
     }
 
-    // Create post index entry
-    const postIndexModel = new PostIndexModel(c.env);
-    const post = await postIndexModel.create(validation.data, userDid);
+    // Rate limiting: 10 posts/min per user
+    const rateLimitKey = `rate_limit:posts:${userDid}`;
+    const currentCount = await c.env.POST_CACHE.get(rateLimitKey);
 
-    // Update theme feed last_post_at
-    const now = getCurrentTimestamp();
-    await themeFeedModel.updateLastPostAt(feedId, now);
+    if (currentCount && parseInt(currentCount, 10) >= 10) {
+      return c.json(
+        { error: 'Rate limit exceeded: maximum 10 posts per minute', code: 'RATE_LIMIT_EXCEEDED' },
+        429,
+        { 'Retry-After': '60' }
+      );
+    }
 
-    // Increment community post count
-    const communityModel = new CommunityModel(c.env);
-    await communityModel.incrementPostCount(feed.communityId);
+    // Increment rate limit counter
+    const newCount = currentCount ? parseInt(currentCount, 10) + 1 : 1;
+    await c.env.POST_CACHE.put(rateLimitKey, newCount.toString(), { expirationTtl: 60 });
 
-    // Update membership activity
-    await membershipModel.updateActivity(feed.communityId, userDid);
+    // Append feed hashtag to text
+    const finalText = `${text} ${feed.hashtag}`;
 
-    // Cache post metadata
-    const cacheService = new CacheService(c.env);
-    await cacheService.setPostMetadata(uri, post);
+    // TODO: Create post in user's PDS via @atproto/api
+    // For now, generate a mock AT-URI
+    const postId = crypto.randomUUID().replace(/-/g, '').substring(0, 13);
+    const postUri = `at://${userDid}/app.bsky.feed.post/${postId}`;
 
-    const response: PostIndexResponse = {
-      id: post.id,
-      uri: post.uri,
-      feedId: post.feedId,
-      authorDid: post.authorDid,
-      createdAt: post.createdAt,
-      hasMedia: post.hasMedia,
-      langs: post.langs,
-    };
-
-    return c.json(response, 201);
+    return c.json(
+      {
+        postUri,
+        hashtags: [feed.hashtag],
+        finalText,
+      },
+      201
+    );
   } catch (err) {
     console.error('[POST /api/posts] Error:', err);
-
-    if ((err as Error).message?.includes('Invalid AT-URI format')) {
-      return c.json({ error: 'InvalidRequest', message: (err as Error).message }, 400);
-    }
-
-    if ((err as Error).message?.includes('UNIQUE constraint failed')) {
-      return c.json({ error: 'Conflict', message: 'Post already indexed' }, 409);
-    }
-
-    return c.json({ error: 'InternalServerError', message: 'Failed to submit post' }, 500);
+    return c.json(
+      { error: 'Internal server error', code: 'INTERNAL_ERROR', message: (err as Error).message },
+      500
+    );
   }
 });
 

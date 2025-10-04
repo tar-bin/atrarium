@@ -27,6 +27,8 @@ export type CommunityStage = 'theme' | 'community' | 'graduated';
 export type ThemeFeedStatus = 'active' | 'warning' | 'archived';
 export type MembershipRole = 'owner' | 'moderator' | 'member';
 export type TransitionReason = 'deletion' | 'inactivity' | 'vacation' | 'manual';
+export type ModerationStatus = 'approved' | 'hidden' | 'reported';
+export type ModerationAction = 'hide_post' | 'unhide_post' | 'block_user' | 'unblock_user' | 'remove_member';
 
 export interface Community {
   id: string; // UUID v4
@@ -50,6 +52,7 @@ export interface ThemeFeed {
   name: string;
   description: string | null;
   status: ThemeFeedStatus;
+  hashtag: string; // Format: #atr_[8-hex]
   lastPostAt: number | null; // Unix epoch
   posts7d: number;
   activeUsers7d: number;
@@ -73,6 +76,8 @@ export interface PostIndex {
   createdAt: number; // Unix epoch
   hasMedia: boolean;
   langs: string[] | null; // BCP-47 language codes
+  moderationStatus: ModerationStatus;
+  indexedAt: number; // Unix epoch (Firehose detection time)
 }
 
 export interface OwnerTransitionLog {
@@ -90,6 +95,25 @@ export interface Achievement {
   achievementId: string; // e.g., 'first_join', 'first_split'
   communityId: string | null;
   unlockedAt: number; // Unix epoch
+}
+
+export interface FeedBlocklist {
+  feedId: string;
+  blockedUserDid: string;
+  reason: string | null;
+  blockedByDid: string;
+  blockedAt: number; // Unix epoch
+}
+
+export interface ModerationLog {
+  id: number; // AUTOINCREMENT
+  action: ModerationAction;
+  targetUri: string; // Post URI or user DID
+  feedId: string | null;
+  communityId: string | null;
+  moderatorDid: string;
+  reason: string | null;
+  performedAt: number; // Unix epoch
 }
 
 // ============================================================================
@@ -118,6 +142,7 @@ export interface ThemeFeedRow {
   name: string;
   description: string | null;
   status: string;
+  hashtag: string;
   last_post_at: number | null;
   posts_7d: number;
   active_users_7d: number;
@@ -141,6 +166,8 @@ export interface PostIndexRow {
   created_at: number;
   has_media: number; // 0 or 1 (SQLite boolean)
   langs: string | null; // JSON string
+  moderation_status: string;
+  indexed_at: number;
 }
 
 export interface OwnerTransitionLogRow {
@@ -150,6 +177,25 @@ export interface OwnerTransitionLogRow {
   new_owner_did: string;
   reason: string;
   transitioned_at: number;
+}
+
+export interface FeedBlocklistRow {
+  feed_id: string;
+  blocked_user_did: string;
+  reason: string | null;
+  blocked_by_did: string;
+  blocked_at: number;
+}
+
+export interface ModerationLogRow {
+  id: number;
+  action: string;
+  target_uri: string;
+  feed_id: string | null;
+  community_id: string | null;
+  moderator_did: string;
+  reason: string | null;
+  performed_at: number;
 }
 
 // ============================================================================

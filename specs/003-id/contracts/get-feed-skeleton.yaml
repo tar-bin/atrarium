@@ -1,0 +1,169 @@
+openapi: 3.0.0
+info:
+  title: Feed Skeleton API (AT Protocol)
+  description: |
+    AT Protocol Feed Generator endpoint that returns a skeleton of post URIs.
+    Updated to filter by moderation status and membership validation.
+  version: 1.0.0
+
+paths:
+  /xrpc/app.bsky.feed.getFeedSkeleton:
+    get:
+      summary: Get feed skeleton (AT Protocol standard endpoint)
+      description: |
+        Returns a list of post URIs for the specified feed, filtered by:
+        - Moderation status (only 'approved' posts)
+        - Active membership (author must be current community member)
+        - Blocklist (excluded users don't appear)
+      operationId: getFeedSkeleton
+      tags:
+        - Feed Generator
+      parameters:
+        - name: feed
+          in: query
+          required: true
+          description: AT Protocol feed URI
+          schema:
+            type: string
+            format: uri
+            example: "at://did:plc:xyz789/app.bsky.feed.generator/tech-topics"
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of posts to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: cursor
+          in: query
+          required: false
+          description: Pagination cursor from previous response
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Feed skeleton successfully generated
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - feed
+                properties:
+                  feed:
+                    type: array
+                    description: List of post references
+                    items:
+                      type: object
+                      required:
+                        - post
+                      properties:
+                        post:
+                          type: string
+                          description: AT Protocol post URI
+                          example: "at://did:plc:abc123/app.bsky.feed.post/xyz789"
+                  cursor:
+                    type: string
+                    description: Pagination cursor for next page (if more results exist)
+                    example: "1699999999::post-uri-hash"
+              examples:
+                withPosts:
+                  summary: Feed with posts
+                  value:
+                    feed:
+                      - post: "at://did:plc:user1/app.bsky.feed.post/post1"
+                      - post: "at://did:plc:user2/app.bsky.feed.post/post2"
+                      - post: "at://did:plc:user3/app.bsky.feed.post/post3"
+                    cursor: "1699999999::post1"
+                emptyFeed:
+                  summary: Empty feed
+                  value:
+                    feed: []
+        '400':
+          description: Bad request (invalid feed URI, invalid cursor)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ATProtoError'
+              examples:
+                invalidFeedUri:
+                  summary: Malformed feed URI
+                  value:
+                    error: "InvalidRequest"
+                    message: "Invalid feed URI format"
+                invalidCursor:
+                  summary: Invalid pagination cursor
+                  value:
+                    error: "InvalidRequest"
+                    message: "Invalid cursor format"
+        '404':
+          description: Feed not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ATProtoError'
+              example:
+                error: "NotFound"
+                message: "Feed not found"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ATProtoError'
+
+components:
+  schemas:
+    ATProtoError:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: AT Protocol error code
+          enum:
+            - InvalidRequest
+            - NotFound
+            - AuthRequired
+            - Forbidden
+            - RateLimitExceeded
+            - InternalServerError
+        message:
+          type: string
+          description: Human-readable error message
+
+  x-implementation-notes: |
+    ## Filtering Logic
+
+    This endpoint filters posts through multiple layers:
+
+    1. **Hashtag Match**: Post contains feed's #atr_xxxxx hashtag
+    2. **Membership Validation**: Post author is current community member
+    3. **Moderation Status**: Only posts with moderation_status='approved'
+    4. **Blocklist Check**: Author is not in feed_blocklist
+
+    ## SQL Query (Reference)
+
+    ```sql
+    SELECT p.uri
+    FROM post_index p
+    INNER JOIN theme_feeds f ON p.feed_id = f.id
+    INNER JOIN memberships m ON p.author_did = m.user_did AND m.community_id = f.community_id
+    LEFT JOIN feed_blocklist b ON b.feed_id = p.feed_id AND b.blocked_user_did = p.author_did
+    WHERE p.feed_id = ?
+      AND p.moderation_status = 'approved'
+      AND b.blocked_user_did IS NULL
+    ORDER BY p.created_at DESC
+    LIMIT ?;
+    ```
+
+    ## Changes from Original Implementation
+
+    - Added: moderation_status filter
+    - Added: membership JOIN (validates author is current member)
+    - Added: blocklist exclusion
+    - Behavior: Hidden posts and blocked users no longer appear in feed

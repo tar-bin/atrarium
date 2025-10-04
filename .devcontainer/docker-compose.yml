@@ -1,0 +1,66 @@
+services:
+  # Main development container
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mcr.microsoft.com/devcontainers/base:noble
+    volumes:
+      - ../..:/workspaces:cached
+    command: sleep infinity
+    # ネットワーク設定を変更：共有ではなく同じネットワークに参加
+    networks:
+      - atrarium-network
+    depends_on:
+      pds:
+        condition: service_started
+    environment:
+      # PDSへのアクセスはサービス名経由に変更
+      PDS_URL: http://pds:3000
+
+  # Bluesky PDS for local testing
+  pds:
+    image: ghcr.io/bluesky-social/pds:latest
+    container_name: atrarium-pds-test
+    networks:
+      - atrarium-network
+    ports:
+      - "3000:3000"  # PDS API
+    environment:
+      # Basic configuration for local testing
+      PDS_HOSTNAME: localhost
+      PDS_PORT: "3000"
+      PDS_DATA_DIRECTORY: /pds
+      PDS_BLOBSTORE_DISK_LOCATION: /pds/blocks
+      PDS_DID_PLC_URL: https://plc.directory
+      PDS_BSKY_APP_VIEW_URL: https://api.bsky.app
+      PDS_BSKY_APP_VIEW_DID: did:web:api.bsky.app
+      PDS_REPORT_SERVICE_URL: https://mod.bsky.app
+      PDS_REPORT_SERVICE_DID: did:plc:ar7c4by46qjdydhdevvrndac
+      PDS_CRAWLERS: https://bsky.network
+      # Development secrets (DO NOT use in production)
+      PDS_JWT_SECRET: dev-jwt-secret-atrarium-local-testing-only
+      PDS_ADMIN_PASSWORD: admin-dev-password
+      PDS_REPO_SIGNING_KEY_K256_PRIVATE_KEY_HEX: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      PLC_ROTATION_KEY_K256_PRIVATE_KEY_HEX: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      PDS_PLC_ROTATION_KEY_K256_PRIVATE_KEY_HEX: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      # Database
+      PDS_DB_SQLITE_LOCATION: /pds/pds.sqlite
+      # Logging
+      LOG_LEVEL: info
+      NODE_ENV: development
+      # 開発モードを有効化（HTTPSチェックを無効化）
+      PDS_DEV_MODE: "true"
+      # 招待コード不要（開発用）
+      PDS_INVITE_REQUIRED: "false"
+    volumes:
+      - pds-data:/pds
+    restart: unless-stopped
+
+networks:
+  atrarium-network:
+    driver: bridge
+
+volumes:
+  pds-data:
+    driver: local
