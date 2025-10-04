@@ -200,20 +200,20 @@
 
 ### Layout Component Tests
 
-- [ ] **T014** - [P] Component test for Layout in `dashboard/tests/components/layout/Layout.test.tsx`
+- [x] **T014** - [P] Component test for Layout in `dashboard/tests/components/layout/Layout.test.tsx`
   - Test: Renders children inside layout
   - Test: Renders Sidebar and Header components
   - Test: Responsive grid layout applies correct classes
   - Verify: Test FAILS (component doesn't exist yet)
 
-- [ ] **T015** - [P] Component test for Sidebar in `dashboard/tests/components/layout/Sidebar.test.tsx`
+- [x] **T015** - [P] Component test for Sidebar in `dashboard/tests/components/layout/Sidebar.test.tsx`
   - Test: Highlights active menu item based on currentPath
   - Test: Displays navigation links (Home, Communities, Moderation Log)
   - Test: Shows user info when authenticated
   - Test: Calls onClose when close button clicked (mobile)
   - Verify: Test FAILS (component doesn't exist yet)
 
-- [ ] **T016** - [P] Component test for Header in `dashboard/tests/components/layout/Header.test.tsx`
+- [x] **T016** - [P] Component test for Header in `dashboard/tests/components/layout/Header.test.tsx`
   - Test: Displays app title "Atrarium Dashboard"
   - Test: Shows user handle when authenticated
   - Test: Logout button calls onLogout callback
@@ -221,26 +221,26 @@
 
 ### Community Component Tests
 
-- [ ] **T017** - [P] Component test for CommunityList in `dashboard/tests/components/communities/CommunityList.test.tsx`
+- [x] **T017** - [P] Component test for CommunityList in `dashboard/tests/components/communities/CommunityList.test.tsx`
   - Test: Renders CommunityCard for each community
   - Test: Shows loading spinner when loading=true
   - Test: Shows error message when error is set
   - Test: "Create Community" button calls onCreateClick
   - Verify: Test FAILS (component doesn't exist yet)
 
-- [ ] **T018** - [P] Component test for CommunityCard in `dashboard/tests/components/communities/CommunityCard.test.tsx`
+- [x] **T018** - [P] Component test for CommunityCard in `dashboard/tests/components/communities/CommunityCard.test.tsx`
   - Test: Displays community name, member count, post count
   - Test: onClick callback triggers when card clicked
   - Test: Shows stage badge (Theme/Community/Graduated)
   - Verify: Test FAILS (component doesn't exist yet)
 
-- [ ] **T019** - [P] Component test for CommunityDetail in `dashboard/tests/components/communities/CommunityDetail.test.tsx`
+- [x] **T019** - [P] Component test for CommunityDetail in `dashboard/tests/components/communities/CommunityDetail.test.tsx`
   - Test: Displays community info (name, description, stats)
   - Test: Renders FeedList component with feeds prop
   - Test: "Create Feed" button calls onCreateFeedClick
   - Verify: Test FAILS (component doesn't exist yet)
 
-- [ ] **T020** - [P] Component test for CreateCommunityModal in `dashboard/tests/components/communities/CreateCommunityModal.test.tsx`
+- [x] **T020** - [P] Component test for CreateCommunityModal in `dashboard/tests/components/communities/CreateCommunityModal.test.tsx`
   - Test: Validates name field (1-50 characters required)
   - Test: Validates description field (optional, max 500 chars)
   - Test: Calls onSubmit with form data
@@ -248,7 +248,7 @@
   - Test: Closes modal on successful submission
   - Verify: Test FAILS (component doesn't exist yet)
 
-- [ ] **T020a** - [P] Component test for CommunitySettings in `dashboard/tests/components/communities/CommunitySettings.test.tsx`
+- [x] **T020a** - [P] Component test for CommunitySettings in `dashboard/tests/components/communities/CommunitySettings.test.tsx`
   - Test: Only visible to community owner
   - Test: Edit form validates name (1-50 chars) and description
   - Test: Update button calls API with updated data
@@ -258,26 +258,26 @@
 
 ### Feed Component Tests
 
-- [ ] **T021** - [P] Component test for FeedList in `dashboard/tests/components/feeds/FeedList.test.tsx`
+- [x] **T021** - [P] Component test for FeedList in `dashboard/tests/components/feeds/FeedList.test.tsx`
   - Test: Renders FeedCard for each feed
   - Test: Shows empty state when feeds array is empty
   - Test: Shows loading spinner when loading=true
   - Verify: Test FAILS (component doesn't exist yet)
 
-- [ ] **T022** - [P] Component test for FeedCard in `dashboard/tests/components/feeds/FeedCard.test.tsx`
+- [x] **T022** - [P] Component test for FeedCard in `dashboard/tests/components/feeds/FeedCard.test.tsx`
   - Test: Displays feed name, hashtag, stats (posts7d, activeUsers7d)
   - Test: Copy button copies hashtag to clipboard
   - Test: onClick callback triggers when card clicked
   - Verify: Test FAILS (component doesn't exist yet)
 
-- [ ] **T023** - [P] Component test for FeedDetail in `dashboard/tests/components/feeds/FeedDetail.test.tsx`
+- [x] **T023** - [P] Component test for FeedDetail in `dashboard/tests/components/feeds/FeedDetail.test.tsx`
   - Test: Displays feed info (name, hashtag, stats)
   - Test: Renders PostList component
   - Test: Renders CreatePostForm when user authenticated
   - Test: Shows "Login to post" message when not authenticated
   - Verify: Test FAILS (component doesn't exist yet)
 
-- [ ] **T024** - [P] Component test for CreateFeedModal in `dashboard/tests/components/feeds/CreateFeedModal.test.tsx`
+- [x] **T024** - [P] Component test for CreateFeedModal in `dashboard/tests/components/feeds/CreateFeedModal.test.tsx`
   - Test: Validates name field (1-50 characters required)
   - Test: Calls onSubmit with form data
   - Test: Shows generated hashtag with copy button on success
@@ -286,14 +286,14 @@
 
 ### Post Component Tests
 
-- [ ] **T025** - [P] Component test for PostList in `dashboard/tests/components/posts/PostList.test.tsx`
+- [x] **T025** - [P] Component test for PostList in `dashboard/tests/components/posts/PostList.test.tsx`
   - Test: Renders PostCard for each post
   - Test: Shows empty state when posts array is empty
   - Test: Shows loading spinner when loading=true
   - Test: Passes onHidePost to PostCard
   - Verify: Test FAILS (component doesn't exist yet)
 
-- [ ] **T026** - [P] Component test for PostCard in `dashboard/tests/components/posts/PostCard.test.tsx`
+- [x] **T026** - [P] Component test for PostCard in `dashboard/tests/components/posts/PostCard.test.tsx`
   - Test: Displays author DID, text, timestamp
   - Test: Shows "has media" indicator when hasMedia=true
   - Test: Shows moderation status badge when hidden
@@ -301,7 +301,7 @@
   - Test: "Hide" button only visible when canModerate=true
   - Verify: Test FAILS (component doesn't exist yet)
 
-- [ ] **T027** - [P] Component test for CreatePostForm in `dashboard/tests/components/posts/CreatePostForm.test.tsx`
+- [x] **T027** - [P] Component test for CreatePostForm in `dashboard/tests/components/posts/CreatePostForm.test.tsx`
   - Test: Validates text field (max 300 characters including hashtag)
   - Test: Shows character counter
   - Test: Previews final text with appended hashtag
@@ -312,14 +312,14 @@
 
 ### Moderation Component Tests
 
-- [ ] **T028** - [P] Component test for ModerationLog in `dashboard/tests/components/moderation/ModerationLog.test.tsx`
+- [x] **T028** - [P] Component test for ModerationLog in `dashboard/tests/components/moderation/ModerationLog.test.tsx`
   - Test: Renders table with columns (Action, Target, Moderator, Reason, Time)
   - Test: Sorts actions by performedAt DESC
   - Test: Shows empty state when actions array is empty
   - Test: Shows loading spinner when loading=true
   - Verify: Test FAILS (component doesn't exist yet)
 
-- [ ] **T029** - [P] Component test for ModerationActions in `dashboard/tests/components/moderation/ModerationActions.test.tsx`
+- [x] **T029** - [P] Component test for ModerationActions in `dashboard/tests/components/moderation/ModerationActions.test.tsx`
   - Test: Shows "Hide" button for posts with status='approved'
   - Test: Shows "Unhide" button for posts with status='hidden'
   - Test: Shows "Block User" button for targetType='user'
@@ -328,7 +328,7 @@
 
 ### PDS Component Tests
 
-- [ ] **T030** - [P] Component test for PDSLoginForm in `dashboard/tests/components/pds/PDSLoginForm.test.tsx`
+- [x] **T030** - [P] Component test for PDSLoginForm in `dashboard/tests/components/pds/PDSLoginForm.test.tsx`
   - Test: Validates handle field (required, format: handle.domain)
   - Test: Validates password field (required)
   - Test: Calls onSuccess with agent, DID, handle on successful login
