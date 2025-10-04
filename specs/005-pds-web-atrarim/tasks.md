@@ -48,7 +48,7 @@
 
 **CRITICAL: These backend tasks MUST complete before frontend implementation**
 
-- [ ] **T000a** - [P] Add PATCH /api/communities/:id endpoint in `src/routes/communities.ts`
+- [x] **T000a** - [P] Add PATCH /api/communities/:id endpoint in `src/routes/communities.ts`
   - Implement: Update community name and/or description
   - Validate: Name (1-50 chars if provided), ownerDid matches authenticated user
   - Query: `UPDATE communities SET name = ?, description = ?, updated_at = ? WHERE id = ? AND owner_did = ?`
@@ -56,8 +56,9 @@
   - Register: Route in Hono app (`.patch('/api/communities/:id', handler)`)
   - Add: Contract test in `tests/contract/dashboard/update-community.test.ts`
   - Verify: Test passes, endpoint returns updated community, type exported for oRPC
+  - **COMPLETED**: Endpoint exists, validation schemas updated (50 char limit), 7 tests passing
 
-- [ ] **T000b** - [P] Add POST /api/communities/:id/close endpoint in `src/routes/communities.ts`
+- [x] **T000b** - [P] Add POST /api/communities/:id/close endpoint in `src/routes/communities.ts`
   - **Schema Note**: `communities` table has `archived_at` column (schema.sql:L22) - use this for archiving
   - Implement: Archive/close community by setting `archived_at` timestamp
   - Validate: ownerDid matches authenticated user
@@ -67,23 +68,26 @@
   - Add: Contract test in `tests/contract/dashboard/close-community.test.ts`
   - Test cases: Success (owner), Forbidden (non-owner), Conflict (already archived)
   - Verify: Test passes, community.archived_at set, type exported for oRPC
+  - **COMPLETED**: Endpoint implemented with CommunityModel.isArchived() helper, 5 tests passing
 
-- [ ] **T000c** - Verify backend exports AppType for oRPC in `src/index.ts`
+- [x] **T000c** - Verify backend exports AppType for oRPC in `src/index.ts`
   - Check: `export type AppType = typeof app` exists at end of file
   - If missing: Add `export type AppType = typeof app;` after Hono app definition
   - Verify: TypeScript compiles without errors
   - Verify: oRPC client in T010 can import AppType successfully
   - Note: This enables end-to-end type safety between backend and frontend
+  - **COMPLETED**: AppType export added, TypeScript compiles without errors
 
 ---
 
 ## Phase 3.1: Project Setup & Configuration
 
-- [ ] **T001** - Initialize Vite + React + TypeScript project in `dashboard/` directory
+- [x] **T001** - Initialize Vite + React + TypeScript project in `dashboard/` directory
   - Run: `npm create vite@latest dashboard -- --template react-ts`
   - Verify: `dashboard/package.json`, `dashboard/vite.config.ts`, `dashboard/tsconfig.json` created
+  - **COMPLETED**: Dashboard directory created with Vite React TypeScript template
 
-- [ ] **T002** - Install core dependencies in `dashboard/`
+- [x] **T002** - Install core dependencies in `dashboard/`
   - Install: `react@18`, `react-dom@18`, `typescript@5.3+`, `vite@5`, `@vitejs/plugin-react`
   - Install: `@tanstack/react-query@5`, `@tanstack/react-router@1`, `@tanstack/react-table@8`
   - Install: `@atproto/api`, `hono`, `orpc`
@@ -91,13 +95,15 @@
   - Install: `react-i18next`, `i18next`, `i18next-browser-languagedetector`
   - Install: `lucide-react`, `date-fns`, `react-error-boundary`
   - Verify: All dependencies listed in `dashboard/package.json`
+  - **COMPLETED**: All dependencies installed (278 packages audited)
 
-- [ ] **T003** - [P] Install and configure Tailwind CSS in `dashboard/`
+- [x] **T003** - [P] Install and configure Tailwind CSS in `dashboard/`
   - Install: `tailwindcss@3`, `postcss`, `autoprefixer` (dev)
   - Run: `npx tailwindcss init -p`
   - Configure: `dashboard/tailwind.config.js` with content paths `["./index.html", "./src/**/*.{ts,tsx}"]`
   - Update: `dashboard/src/index.css` with Tailwind directives (`@tailwind base; @tailwind components; @tailwind utilities;`)
   - Verify: Tailwind classes work in App.tsx
+  - **COMPLETED**: Tailwind CSS configured, index.css updated with directives
 
 - [ ] **T004** - [P] Install and initialize shadcn/ui in `dashboard/`
   - Run: `npx shadcn-ui@latest init`
