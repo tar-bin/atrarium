@@ -1,4 +1,4 @@
-import { Feed, Post } from '@/types';
+import type { Feed, Post } from '@/types';
 import type { BskyAgent } from '@atproto/api';
 import { PostList } from '@/components/posts/PostList';
 import { CreatePostForm } from '@/components/posts/CreatePostForm';
@@ -57,7 +57,7 @@ export function FeedDetail({ feed, posts, isAuthenticated, agent }: FeedDetailPr
 
       {/* Post Form */}
       {isAuthenticated && agent ? (
-        <CreatePostForm feedHashtag={feed.hashtag} onSuccess={handlePostSuccess} />
+        <CreatePostForm agent={agent} feedHashtag={feed.hashtag} onSuccess={handlePostSuccess} />
       ) : (
         <Card>
           <CardContent className="py-6">

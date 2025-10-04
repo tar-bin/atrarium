@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Post } from '@/types';
+import type { Post } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';

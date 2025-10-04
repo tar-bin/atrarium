@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ModerationStatus } from '@/types';
+import type { ModerationStatus } from '@/types';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,

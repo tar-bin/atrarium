@@ -1,4 +1,4 @@
-import { Community } from '@/types';
+import type { Community } from '@/types';
 import { CommunityCard } from './CommunityCard';
 import { Button } from '@/components/ui/button';
 

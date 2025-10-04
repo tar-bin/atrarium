@@ -23,7 +23,7 @@ const createPostSchema = z.object({
     .string()
     .min(1, 'Post text is required')
     .refine(
-      (text) => {
+      () => {
         // The text + space + hashtag must not exceed 300 characters
         // We'll check this in the form component since hashtag is external
         return true;

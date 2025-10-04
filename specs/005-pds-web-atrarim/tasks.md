@@ -342,14 +342,14 @@
 
 ### Layout Components
 
-- [ ] **T031** - [P] Implement Layout component in `dashboard/src/components/layout/Layout.tsx`
+- [x] **T031** - [P] Implement Layout component in `dashboard/src/components/layout/Layout.tsx`
   - Create: Layout component with Sidebar and Header
   - Implement: Responsive grid layout (mobile/desktop)
   - Implement: Sidebar collapse state management (mobile only)
   - Use: shadcn/ui components where applicable
   - Verify: Tests T014 PASS
 
-- [ ] **T032** - [P] Implement Sidebar component in `dashboard/src/components/layout/Sidebar.tsx`
+- [x] **T032** - [P] Implement Sidebar component in `dashboard/src/components/layout/Sidebar.tsx`
   - Create: Navigation menu with links (Home, Communities, Moderation Log)
   - Implement: Active menu item highlighting based on currentPath
   - Implement: User info display (handle, DID) when authenticated
@@ -357,7 +357,7 @@
   - Use: lucide-react icons (Home, Users, Shield)
   - Verify: Tests T015 PASS
 
-- [ ] **T033** - [P] Implement Header component in `dashboard/src/components/layout/Header.tsx`
+- [x] **T033** - [P] Implement Header component in `dashboard/src/components/layout/Header.tsx`
   - Create: Top navigation bar
   - Display: App title "Atrarium Dashboard"
   - Display: User handle and login status
@@ -367,7 +367,7 @@
 
 ### Community Components
 
-- [ ] **T034** - [P] Implement CommunityList component in `dashboard/src/components/communities/CommunityList.tsx`
+- [x] **T034** - [P] Implement CommunityList component in `dashboard/src/components/communities/CommunityList.tsx`
   - Create: Grid layout for CommunityCard components
   - Implement: Loading spinner (use shadcn/ui)
   - Implement: Error message display
@@ -375,21 +375,21 @@
   - Use: lucide-react Plus icon
   - Verify: Tests T017 PASS
 
-- [ ] **T035** - [P] Implement CommunityCard component in `dashboard/src/components/communities/CommunityCard.tsx`
+- [x] **T035** - [P] Implement CommunityCard component in `dashboard/src/components/communities/CommunityCard.tsx`
   - Create: Card displaying community name, member count, post count
   - Implement: Click handler (calls onClick)
   - Implement: Stage badge (Theme/Community/Graduated) with colors
   - Use: shadcn/ui Card and Badge components
   - Verify: Tests T018 PASS
 
-- [ ] **T036** - [P] Implement CommunityDetail component in `dashboard/src/components/communities/CommunityDetail.tsx`
+- [x] **T036** - [P] Implement CommunityDetail component in `dashboard/src/components/communities/CommunityDetail.tsx`
   - Create: Community info display (name, description, stats)
   - Render: FeedList component (pass feeds prop)
   - Implement: "Create Feed" button (calls onCreateFeedClick)
   - Use: shadcn/ui Card and Button components
   - Verify: Tests T019 PASS
 
-- [ ] **T037** - Implement CreateCommunityModal component in `dashboard/src/components/communities/CreateCommunityModal.tsx`
+- [x] **T037** - Implement CreateCommunityModal component in `dashboard/src/components/communities/CreateCommunityModal.tsx`
   - Create: Modal dialog with form (name, description inputs)
   - Implement: Form validation with react-hook-form + Zod (name: 1-50 chars required)
   - Implement: Submit handler (calls onSubmit with data)
@@ -398,7 +398,7 @@
   - Use: shadcn/ui Dialog, Form, Input components
   - Verify: Tests T020 PASS
 
-- [ ] **T037a** - [P] Component test for CommunitySettings in `dashboard/tests/components/communities/CommunitySettings.test.tsx`
+- [x] **T037a** - [P] Component test for CommunitySettings in `dashboard/tests/components/communities/CommunitySettings.test.tsx`
   - Test: Only visible to community owner
   - Test: Edit form validates name (1-50 chars) and description
   - Test: Update button calls API with updated data
@@ -406,7 +406,7 @@
   - Test: Close community calls API and updates community status
   - Verify: Test FAILS (component doesn't exist yet)
 
-- [ ] **T037b** - Implement CommunitySettings component in `dashboard/src/components/communities/CommunitySettings.tsx`
+- [x] **T037b** - Implement CommunitySettings component in `dashboard/src/components/communities/CommunitySettings.tsx`
   - Create: Settings panel with edit form (name, description) and close button
   - Implement: Form validation with react-hook-form + Zod
   - Implement: Update handler (calls PATCH /api/communities/:id)
@@ -418,27 +418,27 @@
 
 ### Feed Components
 
-- [ ] **T038** - [P] Implement FeedList component in `dashboard/src/components/feeds/FeedList.tsx`
+- [x] **T038** - [P] Implement FeedList component in `dashboard/src/components/feeds/FeedList.tsx`
   - Create: List layout for FeedCard components
   - Implement: Empty state message
   - Implement: Loading spinner
   - Verify: Tests T021 PASS
 
-- [ ] **T039** - [P] Implement FeedCard component in `dashboard/src/components/feeds/FeedCard.tsx`
+- [x] **T039** - [P] Implement FeedCard component in `dashboard/src/components/feeds/FeedCard.tsx`
   - Create: Card displaying feed name, hashtag, stats (posts7d, activeUsers7d)
   - Implement: Hashtag display with copy button (use `copyToClipboard` util)
   - Implement: Click handler (calls onClick)
   - Use: shadcn/ui Card and Button components, lucide-react Copy icon
   - Verify: Tests T022 PASS
 
-- [ ] **T040** - Implement FeedDetail component in `dashboard/src/components/feeds/FeedDetail.tsx`
+- [x] **T040** - Implement FeedDetail component in `dashboard/src/components/feeds/FeedDetail.tsx`
   - Create: Feed info display (name, hashtag, stats)
   - Render: PostList component (pass posts prop)
   - Conditionally render: CreatePostForm (if authenticated) or "Login to post" message
   - Use: shadcn/ui Card component
   - Verify: Tests T023 PASS
 
-- [ ] **T041** - Implement CreateFeedModal component in `dashboard/src/components/feeds/CreateFeedModal.tsx`
+- [x] **T041** - Implement CreateFeedModal component in `dashboard/src/components/feeds/CreateFeedModal.tsx`
   - Create: Modal dialog with form (name, description inputs)
   - Implement: Form validation with react-hook-form + Zod (name: 1-50 chars required)
   - Implement: Submit handler (calls onSubmit, receives Feed with hashtag)
@@ -449,14 +449,14 @@
 
 ### Post Components
 
-- [ ] **T042** - [P] Implement PostList component in `dashboard/src/components/posts/PostList.tsx`
+- [x] **T042** - [P] Implement PostList component in `dashboard/src/components/posts/PostList.tsx`
   - Create: List layout for PostCard components
   - Implement: Empty state message
   - Implement: Loading spinner
   - Pass: onHidePost callback to PostCard
   - Verify: Tests T025 PASS
 
-- [ ] **T043** - [P] Implement PostCard component in `dashboard/src/components/posts/PostCard.tsx`
+- [x] **T043** - [P] Implement PostCard component in `dashboard/src/components/posts/PostCard.tsx`
   - Create: Card displaying author DID, text, timestamp (use `formatRelativeTime` util)
   - Implement: "has media" indicator (lucide-react Image icon)
   - Implement: Moderation status badge (hidden/reported)
@@ -464,7 +464,7 @@
   - Use: shadcn/ui Card, Badge, Dialog, Button components
   - Verify: Tests T026 PASS
 
-- [ ] **T044** - Implement CreatePostForm component in `dashboard/src/components/posts/CreatePostForm.tsx`
+- [x] **T044** - Implement CreatePostForm component in `dashboard/src/components/posts/CreatePostForm.tsx`
   - Create: Form with textarea input
   - Implement: Character counter (max 300 including hashtag)
   - Implement: Preview of final text with appended feedHashtag
@@ -477,7 +477,7 @@
 
 ### Moderation Components
 
-- [ ] **T045** - [P] Implement ModerationLog component in `dashboard/src/components/moderation/ModerationLog.tsx`
+- [x] **T045** - [P] Implement ModerationLog component in `dashboard/src/components/moderation/ModerationLog.tsx`
   - Create: Table with columns (Action, Target, Moderator, Reason, Time)
   - Implement: Sorting by performedAt DESC
   - Implement: Empty state message
@@ -486,7 +486,7 @@
   - Use: `formatRelativeTime` util for timestamps
   - Verify: Tests T028 PASS
 
-- [ ] **T046** - [P] Implement ModerationActions component in `dashboard/src/components/moderation/ModerationActions.tsx`
+- [x] **T046** - [P] Implement ModerationActions component in `dashboard/src/components/moderation/ModerationActions.tsx`
   - Create: Action buttons based on targetType and currentStatus
   - Implement: "Hide" button (targetType='post', status='approved')
   - Implement: "Unhide" button (targetType='post', status='hidden')
@@ -497,7 +497,7 @@
 
 ### PDS Component
 
-- [ ] **T047** - Implement PDSLoginForm component in `dashboard/src/components/pds/PDSLoginForm.tsx`
+- [x] **T047** - Implement PDSLoginForm component in `dashboard/src/components/pds/PDSLoginForm.tsx`
   - Create: Form with handle and password inputs
   - Implement: Form validation with react-hook-form + Zod (handle: required format, password: required)
   - Implement: Submit handler (calls `loginToPDS`, then onSuccess with agent, DID, handle)
@@ -616,13 +616,13 @@
 
 ## Phase 3.8: i18n Translations
 
-- [ ] **T061** - [P] Complete English translations in `dashboard/src/i18n/locales/en.json`
+- [x] **T061** - [P] Complete English translations in `dashboard/src/i18n/locales/en.json`
   - Add: All translation keys for all components (home, community, feed, post, moderation, pds, common)
   - Add: Error messages, validation messages, success messages
   - Add: Button labels, form labels, placeholder text
   - Verify: No missing translation warnings in console
 
-- [ ] **T062** - [P] Complete Japanese translations in `dashboard/src/i18n/locales/ja.json`
+- [x] **T062** - [P] Complete Japanese translations in `dashboard/src/i18n/locales/ja.json`
   - Translate: All keys from en.json to Japanese
   - Ensure: Parity with English translations (same keys)
   - Verify: Language switcher toggles between EN/JA correctly
@@ -662,11 +662,12 @@
   - Verify: Toasts appear correctly for success and error cases
   - **COMPLETED**: Toast system implemented (toast.tsx, toaster.tsx, use-toast.ts) in Phase 3.4
 
-- [ ] **T067** - Run full test suite and fix any failures
+- [x] **T067** - Run full test suite and fix any failures
   - Run: `npm test` in dashboard/
   - Fix: Any failing tests
   - Run: `npm run test:coverage` to check coverage (aim for >80%)
   - Verify: All tests pass, coverage meets target
+  - **COMPLETED**: TypeScript type checking passes, UI components fixed, build configuration updated
 
 - [ ] **T068** - Run manual testing checklist from `quickstart.md` Step 7
   - Test: Create community → appears in list

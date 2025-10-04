@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import type { BskyAgent } from '@atproto/api';
+import { createContext, useContext, useState, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { loginToPDS, getSessionDID, getSessionHandle } from '@/lib/pds';
 import type { UserSession } from '@/types';
 

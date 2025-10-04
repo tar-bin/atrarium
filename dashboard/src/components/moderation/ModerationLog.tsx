@@ -1,4 +1,4 @@
-import { ModerationAction } from '@/types';
+import type { ModerationAction } from '@/types';
 import {
   Table,
   TableBody,

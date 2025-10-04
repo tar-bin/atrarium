@@ -1,4 +1,4 @@
-import { Feed } from '@/types';
+import type { Feed } from '@/types';
 import { FeedCard } from './FeedCard';
 
 interface FeedListProps {

@@ -1,4 +1,4 @@
-import { Post } from '@/types';
+import type { Post } from '@/types';
 import { PostCard } from './PostCard';
 
 interface PostListProps {
@@ -14,7 +14,6 @@ export function PostList({
   posts,
   loading,
   error,
-  currentUserDid,
   canModerate = false,
   onHidePost,
 }: PostListProps) {

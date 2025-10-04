@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { CommunityList } from '@/components/communities/CommunityList';
 import { CreateCommunityModal } from '@/components/communities/CreateCommunityModal';
 import { useState } from 'react';
+import type { Community } from '@/types';
 
 export const Route = createFileRoute('/communities/')({
   component: CommunitiesPage,
@@ -11,7 +12,7 @@ function CommunitiesPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // TODO: Replace with TanStack Query in Phase 3.6
-  const mockCommunities = [];
+  const mockCommunities: Community[] = [];
   const loading = false;
   const error = null;
 

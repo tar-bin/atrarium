@@ -1,4 +1,4 @@
-import { Community, Feed } from '@/types';
+import type { Community, Feed } from '@/types';
 import { FeedList } from '@/components/feeds/FeedList';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

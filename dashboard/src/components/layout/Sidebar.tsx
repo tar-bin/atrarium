@@ -8,7 +8,7 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
-export function Sidebar({ isOpen = true, onClose = () => {} }: SidebarProps) {
+export function Sidebar({ onClose = () => {} }: SidebarProps) {
   const { session } = usePDS();
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;

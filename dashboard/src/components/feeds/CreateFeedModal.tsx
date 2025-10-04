@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Feed } from '@/types';
+import type { Feed } from '@/types';
 import {
   Dialog,
   DialogContent,
