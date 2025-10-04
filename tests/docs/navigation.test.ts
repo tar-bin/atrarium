@@ -36,8 +36,8 @@ interface NavigationConfig {
 describe('Navigation Structure Validation', () => {
   test('sidebar has identical structure across locales', async () => {
     // This test will import locale configs once they exist
-    const enConfigPath = resolve(__dirname, '../../docs-site/.vitepress/locales/en.ts')
-    const jaConfigPath = resolve(__dirname, '../../docs-site/.vitepress/locales/ja.ts')
+    const enConfigPath = resolve(__dirname, '../../docs/.vitepress/locales/en.ts')
+    const jaConfigPath = resolve(__dirname, '../../docs/.vitepress/locales/ja.ts')
 
     // Initially should fail - configs don't exist yet
     expect(existsSync(enConfigPath)).toBe(true)
@@ -79,10 +79,10 @@ describe('Navigation Structure Validation', () => {
   })
 
   test('edit link pattern resolves to correct GitHub path', () => {
-    const editPattern = 'https://github.com/tar-bin/atrarium/edit/main/docs-site/en/:path'
+    const editPattern = 'https://github.com/tar-bin/atrarium/edit/main/docs/en/:path'
     const pagePath = 'guide/overview.md'
     const expectedUrl = editPattern.replace(':path', pagePath)
 
-    expect(expectedUrl).toBe('https://github.com/tar-bin/atrarium/edit/main/docs-site/en/guide/overview.md')
+    expect(expectedUrl).toBe('https://github.com/tar-bin/atrarium/edit/main/docs/en/guide/overview.md')
   })
 })

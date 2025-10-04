@@ -66,7 +66,7 @@ tests/                 # Test suite (Vitest + Cloudflare Workers)
 │   ├── dashboard/         # Dashboard API tests
 │   └── feed-generator/    # Feed Generator API tests
 ├── integration/       # Integration tests
-├── docs-site/         # VitePress documentation tests
+├── docs/              # VitePress documentation tests
 │   ├── navigation.test.ts  # Navigation structure validation
 │   ├── i18n.test.ts        # i18n parity check (en ↔ ja)
 │   ├── links.test.ts       # Link validation (no 404s)
@@ -75,7 +75,7 @@ tests/                 # Test suite (Vitest + Cloudflare Workers)
     ├── setup.ts           # Test database setup
     └── test-env.ts        # Test environment config
 
-docs-site/            # VitePress documentation site
+docs/                 # VitePress documentation site
 ├── en/                   # English documentation (10 pages)
 │   ├── guide/               # Getting started guides
 │   ├── architecture/        # System design docs
@@ -102,15 +102,11 @@ vitest.docs.config.ts # Vitest configuration for documentation tests
 - **[Documentation Site](https://atrarium-docs.pages.dev)** - VitePress documentation (EN/JA) - **primary reference**
 - [README.md](README.md) - Project summary (English) - **source of truth for project info**
 - [README.ja.md](README.ja.md) - Japanese translation (maintain sync with README.md)
-- [docs/01-overview.md](docs/01-overview.md) - Project overview and design philosophy
-- [docs/02-system-design.md](docs/02-system-design.md) - Architecture and database design
-- [docs/03-implementation.md](docs/03-implementation.md) - Week-by-week implementation plan
-- [docs/development-spec.md](docs/development-spec.md) - Complete development specification
 
 **Documentation Policy**:
 - **English (README.md)** is the primary/canonical version for project information
-- **VitePress docs** (`docs-site/`) provide comprehensive guides, architecture details, and API references
-- **Other languages (README.ja.md, docs-site/ja/)** are translations that should be kept in sync
+- **VitePress docs** (`docs/`) provide comprehensive guides, architecture details, and API references
+- **Other languages (README.ja.md, docs/ja/)** are translations that should be kept in sync
 - When updating project information, always update README.md first, then sync translations
 - VitePress docs follow i18n contract: every `en/*.md` must have corresponding `ja/*.md`
 
@@ -163,7 +159,7 @@ npm run test:watch   # Run tests in watch mode
 npm run test:docs    # Run VitePress documentation tests
 
 # Documentation site
-cd docs-site
+cd docs
 npm install          # Install VitePress dependencies (first time only)
 npm run docs:dev     # Start VitePress dev server (http://localhost:5173)
 npm run docs:build   # Build static site
@@ -197,11 +193,11 @@ wrangler secret put JWT_SECRET    # Set secrets (also: BLUESKY_HANDLE, BLUESKY_A
 # VitePress documentation site (Cloudflare Pages)
 # Automatic deployment via GitHub integration:
 # - Push to main → auto-deploys to https://atrarium-docs.pages.dev
-# - Build command: cd docs-site && npm install && npm run docs:build
-# - Build output: docs-site/.vitepress/dist
+# - Build command: cd docs && npm install && npm run docs:build
+# - Build output: docs/.vitepress/dist
 
 # Manual deployment (if needed)
-cd docs-site
+cd docs
 npm run docs:build
 wrangler pages deploy .vitepress/dist --project-name=atrarium-docs
 ```

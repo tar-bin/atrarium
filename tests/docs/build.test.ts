@@ -4,7 +4,7 @@ import { existsSync } from 'fs'
 import { resolve } from 'path'
 
 describe('Build Validation', () => {
-  const docsRoot = resolve(__dirname, '../../docs-site')
+  const docsRoot = resolve(__dirname, '../../docs')
   const distDir = resolve(docsRoot, '.vitepress/dist')
 
   test('VitePress build succeeds without errors', () => {

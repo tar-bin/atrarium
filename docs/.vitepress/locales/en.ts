@@ -43,7 +43,7 @@ export const enNavigation: DefaultTheme.Config = {
 
   // Edit link configuration
   editLink: {
-    pattern: 'https://github.com/tar-bin/atrarium/edit/main/docs-site/en/:path',
+    pattern: 'https://github.com/tar-bin/atrarium/edit/main/docs/en/:path',
     text: 'Edit this page on GitHub'
   },
 

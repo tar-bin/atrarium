@@ -4,7 +4,7 @@ import { resolve } from 'path'
 import { sync as globSync } from 'glob'
 
 describe('Link Validation', () => {
-  const docsRoot = resolve(__dirname, '../../docs-site')
+  const docsRoot = resolve(__dirname, '../../docs')
 
   test('all internal links resolve to existing pages', () => {
     const allPages = globSync('**/*.md', { cwd: docsRoot })

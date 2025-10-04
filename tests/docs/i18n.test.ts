@@ -4,7 +4,7 @@ import { resolve, relative } from 'path'
 import { sync as globSync } from 'glob'
 
 describe('i18n Parity Validation', () => {
-  const docsRoot = resolve(__dirname, '../../docs-site')
+  const docsRoot = resolve(__dirname, '../../docs')
   const enDir = resolve(docsRoot, 'en')
   const jaDir = resolve(docsRoot, 'ja')
 
