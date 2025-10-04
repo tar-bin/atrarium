@@ -1,0 +1,51 @@
+{
+  "app": {
+    "title": "Atrarium ダッシュボード"
+  },
+  "common": {
+    "loading": "読み込み中...",
+    "error": "エラーが発生しました",
+    "submit": "送信",
+    "cancel": "キャンセル",
+    "save": "保存",
+    "delete": "削除",
+    "close": "閉じる",
+    "confirm": "確認"
+  },
+  "home": {
+    "welcome": "Atrarium ダッシュボードへようこそ",
+    "description": "コミュニティとテーマフィードを管理"
+  },
+  "community": {
+    "list": "コミュニティ",
+    "create": "コミュニティを作成",
+    "name": "コミュニティ名",
+    "description": "説明",
+    "members": "メンバー",
+    "posts": "投稿"
+  },
+  "feed": {
+    "list": "フィード",
+    "create": "フィードを作成",
+    "name": "フィード名",
+    "hashtag": "ハッシュタグ",
+    "copyHashtag": "ハッシュタグをコピー"
+  },
+  "post": {
+    "create": "投稿を作成",
+    "text": "投稿テキスト",
+    "submit": "投稿"
+  },
+  "moderation": {
+    "title": "モデレーションログ",
+    "hidePost": "投稿を非表示",
+    "unhidePost": "投稿を表示",
+    "blockUser": "ユーザーをブロック"
+  },
+  "pds": {
+    "login": "PDSにログイン",
+    "handle": "ハンドル",
+    "password": "パスワード",
+    "url": "PDS URL"
+  }
+}

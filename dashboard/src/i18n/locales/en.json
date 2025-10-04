@@ -1,0 +1,51 @@
+{
+  "app": {
+    "title": "Atrarium Dashboard"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "close": "Close",
+    "confirm": "Confirm"
+  },
+  "home": {
+    "welcome": "Welcome to Atrarium Dashboard",
+    "description": "Manage your communities and theme feeds"
+  },
+  "community": {
+    "list": "Communities",
+    "create": "Create Community",
+    "name": "Community Name",
+    "description": "Description",
+    "members": "Members",
+    "posts": "Posts"
+  },
+  "feed": {
+    "list": "Feeds",
+    "create": "Create Feed",
+    "name": "Feed Name",
+    "hashtag": "Hashtag",
+    "copyHashtag": "Copy Hashtag"
+  },
+  "post": {
+    "create": "Create Post",
+    "text": "Post Text",
+    "submit": "Post"
+  },
+  "moderation": {
+    "title": "Moderation Log",
+    "hidePost": "Hide Post",
+    "unhidePost": "Unhide Post",
+    "blockUser": "Block User"
+  },
+  "pds": {
+    "login": "Login to PDS",
+    "handle": "Handle",
+    "password": "Password",
+    "url": "PDS URL"
+  }
+}

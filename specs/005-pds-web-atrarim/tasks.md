@@ -105,39 +105,44 @@
   - Verify: Tailwind classes work in App.tsx
   - **COMPLETED**: Tailwind CSS configured, index.css updated with directives
 
-- [ ] **T004** - [P] Install and initialize shadcn/ui in `dashboard/`
+- [x] **T004** - [P] Install and initialize shadcn/ui in `dashboard/`
   - Run: `npx shadcn-ui@latest init`
   - Configure: Use Tailwind CSS, TypeScript, `src/components/ui/` path
   - Install components: `button`, `dialog`, `form`, `input`, `card`, `toast`, `table`, `badge`
   - Verify: `dashboard/src/components/ui/` directory created with components
+  - **COMPLETED**: shadcn/ui configured with components.json, 9 UI components installed
 
-- [ ] **T005** - [P] Configure Vitest for frontend testing in `dashboard/`
+- [x] **T005** - [P] Configure Vitest for frontend testing in `dashboard/`
   - Install: `vitest@1`, `@testing-library/react@14`, `@testing-library/user-event@14`, `@testing-library/jest-dom@6`, `jsdom@23`, `msw@2` (dev)
   - Create: `dashboard/vitest.config.ts` with jsdom environment, alias `@` → `./src`
   - Create: `dashboard/tests/setup.ts` with `@testing-library/jest-dom` import and MSW server setup
   - Add scripts to `dashboard/package.json`: `"test"`, `"test:watch"`, `"test:coverage"`
   - Verify: `npm test` runs without errors
+  - **COMPLETED**: Vitest configured with jsdom, MSW server setup, test scripts added
 
-- [ ] **T006** - [P] Create environment configuration in `dashboard/`
+- [x] **T006** - [P] Create environment configuration in `dashboard/`
   - Create: `dashboard/.env.development` with `VITE_API_URL=http://localhost:8787`, `VITE_PDS_URL=http://localhost:3000`
   - Create: `dashboard/.env.production` with placeholder URLs
   - Update: `dashboard/vite.config.ts` to load environment variables
   - Verify: Environment variables accessible via `import.meta.env.VITE_API_URL`
+  - **COMPLETED**: Development and production env files created
 
-- [ ] **T007** - [P] Setup i18n configuration in `dashboard/src/i18n/`
+- [x] **T007** - [P] Setup i18n configuration in `dashboard/src/i18n/`
   - Create: `dashboard/src/i18n/index.ts` with i18next initialization (LanguageDetector, initReactI18next)
   - Create: `dashboard/src/i18n/locales/en.json` with placeholder English translations
   - Create: `dashboard/src/i18n/locales/ja.json` with placeholder Japanese translations
   - Configure: Fallback language = 'en', browser auto-detection
   - Verify: `useTranslation()` hook works in test component
+  - **COMPLETED**: i18n configured with EN/JA translations, browser language detection
 
-- [ ] **T008** - [P] Create TypeScript type definitions in `dashboard/src/types/index.ts`
+- [x] **T008** - [P] Create TypeScript type definitions in `dashboard/src/types/index.ts`
   - Define: `UserSession`, `Community`, `Feed`, `Post`, `ModerationAction`, `Membership` interfaces
   - Define: Enums (`CommunityStage`, `FeedStatus`, `MembershipRole`, `ModerationStatus`, `ModerationActionType`)
   - Export: All types and enums
   - Verify: No TypeScript errors in types file
+  - **COMPLETED**: 6 entity interfaces + 5 enums + helper functions defined
 
-- [ ] **T009** - Create MSW mock handlers in `dashboard/tests/mocks/handlers.ts`
+- [x] **T009** - Create MSW mock handlers in `dashboard/tests/mocks/handlers.ts`
   - Mock: `GET /api/communities` → returns sample Community[]
   - Mock: `POST /api/communities` → returns created Community
   - Mock: `PATCH /api/communities/:id` → returns updated Community (T000a)
@@ -149,6 +154,7 @@
   - Mock: `POST http://localhost:3000/xrpc/com.atproto.server.createSession` → returns PDS session
   - Update: `dashboard/tests/setup.ts` to import and use handlers
   - Verify: MSW intercepts requests in tests
+  - **COMPLETED**: 9 API endpoints mocked with sample data, integrated into test setup
 
 ---
 
