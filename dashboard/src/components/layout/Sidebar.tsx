@@ -17,7 +17,6 @@ export function Sidebar({ onClose = () => {} }: SidebarProps) {
   const navigate = useNavigate();
 
   const navItems = [
-    { href: '/', label: 'Home' },
     { href: '/communities', label: 'Communities' },
     { href: '/moderation', label: 'Moderation Log' },
   ];

@@ -1,8 +1,8 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, redirect, Navigate } from '@tanstack/react-router';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { PDSLoginForm } from '@/components/pds/PDSLoginForm';
 import { usePDS } from '@/contexts/PDSContext';
+import { useEffect } from 'react';
 
 export const Route = createFileRoute('/')({
   component: HomePage,
@@ -12,45 +12,26 @@ function HomePage() {
   const { session } = usePDS();
   const pdsUrl = import.meta.env.VITE_PDS_URL || 'http://localhost:3000';
 
-  return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-3xl">Welcome to Atrarium Dashboard</CardTitle>
-          <CardDescription>
-            Manage your communities, feeds, and moderation in one place
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="mb-4 text-muted-foreground">
-            Atrarium is a community management system built on AT Protocol (Bluesky).
-            Create communities, organize themed feeds, and moderate content from this dashboard.
-          </p>
-          <div className="flex gap-4">
-            <Link to="/communities">
-              <Button>Browse Communities</Button>
-            </Link>
-            <Link to="/moderation">
-              <Button variant="outline">View Moderation Log</Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
+  // Redirect to communities if already logged in
+  if (session.isAuthenticated) {
+    return <Navigate to="/communities" />;
+  }
 
-      {/* PDS Login section */}
-      {!session.isAuthenticated ? (
-        <div className="flex justify-center">
-          <PDSLoginForm pdsUrl={pdsUrl} />
-        </div>
-      ) : (
+  return (
+    <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+      <div className="w-full max-w-md">
         <Card>
-          <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">
-              You are logged in as <span className="font-medium">{session.handle}</span>
-            </p>
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl">Welcome to Atrarium</CardTitle>
+            <CardDescription>
+              Login to manage your communities and feeds
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PDSLoginForm pdsUrl={pdsUrl} />
           </CardContent>
         </Card>
-      )}
+      </div>
     </div>
   );
 }
