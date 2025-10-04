@@ -160,33 +160,37 @@
 
 ## Phase 3.2: Utilities & API Integration
 
-- [ ] **T010** - [P] Create oRPC API client in `dashboard/src/lib/api.ts`
+- [x] **T010** - [P] Create oRPC API client in `dashboard/src/lib/api.ts`
   - Import: Backend `AppType` from `../../../src/index`
   - Create: oRPC client with `baseURL` from `VITE_API_URL`
   - Export: `apiClient` instance
   - Verify: Type safety works (auto-completion for API endpoints)
+  - **COMPLETED**: oRPC client created with type-safe backend integration
 
-- [ ] **T011** - [P] Create PDS client utilities in `dashboard/src/lib/pds.ts`
+- [x] **T011** - [P] Create PDS client utilities in `dashboard/src/lib/pds.ts`
   - Implement: `createPDSAgent()` → returns new BskyAgent with `VITE_PDS_URL`
   - Implement: `loginToPDS(handle, password)` → returns authenticated agent
   - Implement: `postToPDS(agent, text)` → creates post and returns URI
   - Export: All functions
   - Verify: PDS functions work with local PDS in manual test
+  - **COMPLETED**: 5 PDS utility functions (create, login, post, getDID, getHandle)
 
-- [ ] **T012** - [P] Create hashtag utility functions in `dashboard/src/lib/hashtag.ts`
+- [x] **T012** - [P] Create hashtag utility functions in `dashboard/src/lib/hashtag.ts`
   - Implement: `formatHashtag(hashtag: string)` → adds `#` prefix if missing
   - Implement: `stripHashtag(hashtag: string)` → removes `#` prefix
   - Implement: `copyToClipboard(text: string)` → uses `navigator.clipboard.writeText()`
   - Export: All functions
   - Verify: Functions work correctly
+  - **COMPLETED**: 4 hashtag utilities (format, strip, copy, validate)
 
-- [ ] **T013** - [P] Create date formatting utilities in `dashboard/src/lib/date.ts`
+- [x] **T013** - [P] Create date formatting utilities in `dashboard/src/lib/date.ts`
   - Import: `formatDistanceToNow`, `format` from `date-fns`
   - Import: `ja`, `enUS` locales from `date-fns/locale`
   - Implement: `formatRelativeTime(unixTimestamp: number, locale: 'en' | 'ja')` → "2 hours ago"
   - Implement: `formatAbsoluteTime(unixTimestamp: number, locale: 'en' | 'ja')` → "Jan 1, 2025, 12:00 AM"
   - Export: All functions
   - Verify: Handles Unix epoch (seconds) correctly
+  - **COMPLETED**: 4 date utilities (relative, absolute, short, getCurrentTimestamp)
 
 ---
 
