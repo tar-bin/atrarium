@@ -1,9 +1,18 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 import { ModerationLog } from '@/components/moderation/ModerationLog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { ModerationAction } from '@/types';
+import { isAuthenticated } from '@/lib/auth';
 
 export const Route = createFileRoute('/moderation')({
+  beforeLoad: () => {
+    if (!isAuthenticated()) {
+      throw redirect({
+        to: '/',
+        search: { redirect: '/moderation' },
+      });
+    }
+  },
   component: ModerationPage,
 });
 

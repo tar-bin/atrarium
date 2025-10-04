@@ -91,7 +91,10 @@ export function CreatePostForm({ agent, feedHashtag, onSuccess }: CreatePostForm
                     <Textarea
                       placeholder="What's on your mind?"
                       rows={4}
-                      {...field}
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      name={field.name}
                     />
                   </FormControl>
                   <FormMessage />

@@ -33,13 +33,13 @@ export function PDSProvider({ children }: { children: ReactNode }) {
       try {
         const storedSession: StoredSession = JSON.parse(storedSessionStr);
         // Note: We can't restore the agent from localStorage (it has methods)
-        // The user will need to login again for a fresh agent
-        // But we can show they were previously logged in
+        // But we consider the user authenticated if they have session metadata
+        // They can re-login if they need the agent for posting
         setSession({
           agent: null,
           did: storedSession.did,
           handle: storedSession.handle,
-          isAuthenticated: false, // Set to false since we don't have agent
+          isAuthenticated: true, // Set to true since they have valid session
         });
       } catch (error) {
         console.error('Failed to restore session:', error);

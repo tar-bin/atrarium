@@ -57,14 +57,18 @@ export function Sidebar({ onClose = () => {} }: SidebarProps) {
       </nav>
 
       {/* User Info */}
-      {session.isAuthenticated && session.handle && (
-        <div className="mt-auto border-t pt-4">
+      <div className="mt-auto border-t pt-4">
+        {session.isAuthenticated && session.handle ? (
           <div className="text-sm">
             <p className="font-medium">{session.handle}</p>
             <p className="truncate text-xs text-muted-foreground">{session.did}</p>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="text-xs text-muted-foreground">
+            Please login to continue
+          </div>
+        )}
+      </div>
     </aside>
   );
 }

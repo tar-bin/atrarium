@@ -38,10 +38,18 @@ function HomePage() {
       </Card>
 
       {/* PDS Login section */}
-      {!session.isAuthenticated && (
+      {!session.isAuthenticated ? (
         <div className="flex justify-center">
           <PDSLoginForm pdsUrl={pdsUrl} />
         </div>
+      ) : (
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-center text-muted-foreground">
+              You are logged in as <span className="font-medium">{session.handle}</span>
+            </p>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

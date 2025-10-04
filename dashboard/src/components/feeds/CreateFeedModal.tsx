@@ -109,7 +109,13 @@ export function CreateFeedModal({ isOpen, onClose, onSubmit }: CreateFeedModalPr
                   <FormItem>
                     <FormLabel>Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Feed name" {...field} />
+                      <Input
+                        placeholder="Feed name"
+                        value={field.value}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -125,7 +131,10 @@ export function CreateFeedModal({ isOpen, onClose, onSubmit }: CreateFeedModalPr
                     <FormControl>
                       <Textarea
                         placeholder="Feed description (optional)"
-                        {...field}
+                        value={field.value}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
                       />
                     </FormControl>
                     <FormMessage />

@@ -82,7 +82,13 @@ export function CreateCommunityModal({
                 <FormItem>
                   <FormLabel>Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Community name" {...field} />
+                    <Input
+                      placeholder="Community name"
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -98,7 +104,10 @@ export function CreateCommunityModal({
                   <FormControl>
                     <Textarea
                       placeholder="Community description (optional)"
-                      {...field}
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      name={field.name}
                     />
                   </FormControl>
                   <FormMessage />

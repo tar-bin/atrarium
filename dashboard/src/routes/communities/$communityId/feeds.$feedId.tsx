@@ -1,8 +1,17 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 import { FeedDetail } from '@/components/feeds/FeedDetail';
 import type { Feed, Post } from '@/types';
+import { isAuthenticated } from '@/lib/auth';
 
 export const Route = createFileRoute('/communities/$communityId/feeds/$feedId')({
+  beforeLoad: ({ params }) => {
+    if (!isAuthenticated()) {
+      throw redirect({
+        to: '/',
+        search: { redirect: `/communities/${params.communityId}/feeds/${params.feedId}` },
+      });
+    }
+  },
   component: FeedDetailPage,
 });
 

@@ -1,11 +1,20 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 import { CommunityDetail } from '@/components/communities/CommunityDetail';
 import { CommunitySettings } from '@/components/communities/CommunitySettings';
 import { CreateFeedModal } from '@/components/feeds/CreateFeedModal';
 import { useState } from 'react';
 import type { Feed } from '@/types';
+import { isAuthenticated } from '@/lib/auth';
 
 export const Route = createFileRoute('/communities/$communityId/')({
+  beforeLoad: ({ params }) => {
+    if (!isAuthenticated()) {
+      throw redirect({
+        to: '/',
+        search: { redirect: `/communities/${params.communityId}` },
+      });
+    }
+  },
   component: CommunityDetailPage,
 });
 
@@ -31,7 +40,7 @@ function CommunityDetailPage() {
   const mockFeeds: Feed[] = [];
   const loading = false;
   const error = null;
-  const currentUserDid = null; // TODO: Get from PDS context
+  const currentUserDid = 'did:plc:owner'; // TODO: Get from PDS context
   const isOwner = currentUserDid === mockCommunity.ownerDid;
 
   const handleCreateFeed = async (data: {

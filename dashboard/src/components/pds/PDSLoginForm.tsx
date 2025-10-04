@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { usePDS } from '@/contexts/PDSContext';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Form,
@@ -32,6 +33,8 @@ interface PDSLoginFormProps {
 
 export function PDSLoginForm({ pdsUrl, onSuccess }: PDSLoginFormProps) {
   const { login } = usePDS();
+  const navigate = useNavigate();
+  const search = useSearch({ from: '/' });
   const [error, setError] = useState<string | null>(null);
 
   const form = useForm<LoginFormData>({
@@ -46,9 +49,14 @@ export function PDSLoginForm({ pdsUrl, onSuccess }: PDSLoginFormProps) {
     try {
       setError(null);
       await login(data.handle, data.password);
+
       if (onSuccess) {
         onSuccess();
       }
+
+      // Redirect to the original page or communities page
+      const redirectTo = (search as { redirect?: string })?.redirect || '/communities';
+      navigate({ to: redirectTo as any });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to login to PDS');
     }
@@ -77,7 +85,13 @@ export function PDSLoginForm({ pdsUrl, onSuccess }: PDSLoginFormProps) {
                 <FormItem>
                   <FormLabel>Handle</FormLabel>
                   <FormControl>
-                    <Input placeholder="alice.test" {...field} />
+                    <Input
+                      placeholder="alice.test"
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -91,7 +105,14 @@ export function PDSLoginForm({ pdsUrl, onSuccess }: PDSLoginFormProps) {
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
+                    <Input
+                      type="password"
+                      placeholder="••••••••"
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
