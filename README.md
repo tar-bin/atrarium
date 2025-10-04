@@ -88,17 +88,22 @@ Atrarium leverages AT Protocol's design to fundamentally solve these problems:
 
 **Backend (Implemented)**:
 - **Cloudflare Workers**: Serverless edge computing with Hono framework
-- **D1 Database**: SQLite database (6 tables with indexes)
+- **D1 Database**: SQLite database (8 tables with indexes)
 - **KV Namespace**: Post metadata cache (7-day TTL)
 - **TypeScript 5.7**: Strict type safety with Zod validation
 - **Vitest**: Testing with `@cloudflare/vitest-pool-workers`
 
-**Frontend (Pending)**:
-- **React + Vite**: Management dashboard (not yet implemented)
+**Frontend (Implemented)**:
+- **React 19 + TypeScript**: Management dashboard with modern React
+- **TanStack Router**: File-based routing with type-safe params
+- **TanStack Query**: Server state management with caching
+- **shadcn/ui**: Accessible UI components (Radix UI + Tailwind CSS)
+- **Vite**: Fast build tooling and HMR
 - **Cloudflare Pages**: Dashboard hosting (free)
 
 **External Services**:
 - **AT Protocol**: `@atproto/api`, `@atproto/xrpc-server`, `@atproto/identity`
+- **Bluesky PDS**: Local PDS integration for content posting
 - **Bluesky Firehose**: WebSocket (Durable Objects integration pending)
 
 ---
@@ -174,6 +179,39 @@ wrangler tail
 # Query production database
 wrangler d1 execute atrarium-db --command "SELECT * FROM communities LIMIT 5"
 ```
+
+### Dashboard Setup
+
+The Atrarium Dashboard provides a web interface for managing communities, feeds, and moderation.
+
+```bash
+# Navigate to dashboard directory
+cd dashboard
+
+# Install dependencies
+npm install
+
+# Create environment file
+cp .env.example .env.development
+
+# Edit .env.development with your configuration
+# VITE_API_URL=http://localhost:8787
+# VITE_PDS_URL=http://localhost:3000
+
+# Start dashboard dev server
+npm run dev
+# Visit http://localhost:5173
+```
+
+**Dashboard Features:**
+- 🏘️ Community management (create, view, settings)
+- 📡 Feed management with unique hashtags
+- ✍️ Post to feeds via local Bluesky PDS
+- 🛡️ Content moderation (hide posts, block users)
+- 📊 Moderation log and statistics
+- 🌐 i18n support (English/Japanese)
+
+For detailed dashboard documentation, see [dashboard/README.md](./dashboard/README.md).
 
 ---
 

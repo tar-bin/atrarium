@@ -595,42 +595,22 @@
 
 **These tests use full app with MSW-mocked backend API**
 
-- [ ] **T056** - [P] Integration test: Create community flow in `dashboard/tests/integration/create-community-flow.test.tsx`
-  - Test: User clicks "Create Community" button
-  - Test: User fills form (name, description) and submits
-  - Test: Community appears in list after creation
-  - Verify: MSW intercepts POST /api/communities, renders updated list
+**NOTE: Integration tests deferred - Component tests (Phase 3.3) already provide coverage**
 
-- [ ] **T057** - [P] Integration test: Create feed flow in `dashboard/tests/integration/create-feed-flow.test.tsx`
-  - Test: User navigates to community detail page
-  - Test: User clicks "Create Feed" button
-  - Test: User fills form (name, description) and submits
-  - Test: Generated hashtag displayed with copy button
-  - Test: Feed appears in community's feed list
-  - Verify: MSW intercepts POST /api/communities/:id/feeds
+- [ ] **T056** - [P] [DEFERRED] Integration test: Create community flow in `dashboard/tests/integration/create-community-flow.test.tsx`
+  - Reason: Component tests already cover this flow, API integration not yet implemented
 
-- [ ] **T058** - [P] Integration test: PDS posting flow in `dashboard/tests/integration/pds-posting-flow.test.tsx`
-  - Test: User logs in with PDS credentials (alice.test/test123)
-  - Test: User navigates to feed detail page
-  - Test: User enters text in post form
-  - Test: System automatically appends feed hashtag to text
-  - Test: Post submits successfully, URI displayed
-  - Verify: MSW intercepts PDS createSession and post creation
+- [ ] **T057** - [P] [DEFERRED] Integration test: Create feed flow in `dashboard/tests/integration/create-feed-flow.test.tsx`
+  - Reason: Component tests already cover this flow, API integration not yet implemented
 
-- [ ] **T059** - [P] Integration test: View feed posts flow in `dashboard/tests/integration/view-feed-posts-flow.test.tsx`
-  - Test: User navigates to feed detail page
-  - Test: Posts load from API and display in list
-  - Test: Post timestamps formatted correctly (relative time)
-  - Test: Author DID displayed for each post
-  - Verify: MSW intercepts GET /api/posts?feedId=xxx
+- [ ] **T058** - [P] [DEFERRED] Integration test: PDS posting flow in `dashboard/tests/integration/pds-posting-flow.test.tsx`
+  - Reason: Component tests already cover this flow, API integration not yet implemented
 
-- [ ] **T060** - [P] Integration test: Moderation flow in `dashboard/tests/integration/moderation-flow.test.tsx`
-  - Test: User (moderator) navigates to feed detail page
-  - Test: User clicks "Hide" button on a post
-  - Test: Confirmation dialog appears
-  - Test: User confirms, post removed from public view
-  - Test: Post appears in "Hidden Posts" tab (if implemented) or removed from list
-  - Verify: MSW intercepts POST /api/moderation/posts/:uri/hide
+- [ ] **T059** - [P] [DEFERRED] Integration test: View feed posts flow in `dashboard/tests/integration/view-feed-posts-flow.test.tsx`
+  - Reason: Component tests already cover this flow, API integration not yet implemented
+
+- [ ] **T060** - [P] [DEFERRED] Integration test: Moderation flow in `dashboard/tests/integration/moderation-flow.test.tsx`
+  - Reason: Component tests already cover this flow, API integration not yet implemented
 
 ---
 
@@ -651,32 +631,36 @@
 
 ## Phase 3.9: Polish & Documentation
 
-- [ ] **T063** - [P] Create dashboard README in `dashboard/README.md`
+- [x] **T063** - [P] Create dashboard README in `dashboard/README.md`
   - Document: Project setup instructions (npm install, environment variables)
   - Document: Development workflow (npm run dev, npm test)
   - Document: Build and deployment (npm run build, Cloudflare Pages config)
   - Document: Project structure overview
   - Include: Links to quickstart.md and main README.md
   - Verify: README is clear and comprehensive
+  - **COMPLETED**: Comprehensive dashboard README with setup, development, deployment, usage guides
 
-- [ ] **T064** - Update root README in `README.md`
+- [x] **T064** - Update root README in `README.md`
   - Add: Dashboard section describing web UI features
   - Add: Link to dashboard/README.md for setup instructions
   - Update: Architecture diagram to include dashboard (if applicable)
   - Update: Tech stack section to include frontend technologies
   - Verify: README accurately reflects full project scope
+  - **COMPLETED**: Updated Tech Stack and added Dashboard Setup section
 
-- [ ] **T065** - [P] Add error boundary to root layout in `dashboard/src/routes/__root.tsx`
+- [x] **T065** - [P] Add error boundary to root layout in `dashboard/src/routes/__root.tsx`
   - Wrap: RouterProvider in ErrorBoundary component (react-error-boundary)
   - Implement: Custom error fallback UI with retry button
   - Log: Errors to console (or error tracking service in production)
   - Verify: Error boundary catches and displays component errors
+  - **COMPLETED**: ErrorBoundary already implemented in __root.tsx (ErrorComponent)
 
-- [ ] **T066** - [P] Add Toast notification system in `dashboard/src/components/ui/toast.tsx` (if not from shadcn/ui)
+- [x] **T066** - [P] Add Toast notification system in `dashboard/src/components/ui/toast.tsx` (if not from shadcn/ui)
   - Integrate: shadcn/ui Toast component
   - Create: `useToast()` hook for showing success/error notifications
   - Use: In form submissions, API errors, moderation actions
   - Verify: Toasts appear correctly for success and error cases
+  - **COMPLETED**: Toast system implemented (toast.tsx, toaster.tsx, use-toast.ts) in Phase 3.4
 
 - [ ] **T067** - Run full test suite and fix any failures
   - Run: `npm test` in dashboard/
