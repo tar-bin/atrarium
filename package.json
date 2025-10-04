@@ -34,6 +34,7 @@
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.5.30",
     "@cloudflare/workers-types": "^4.20241127.0",
+    "@tanstack/router-cli": "^1.132.33",
     "@types/glob": "^8.1.0",
     "@types/node": "^22.10.2",
     "eslint": "^9.16.0",
