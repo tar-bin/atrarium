@@ -173,4 +173,57 @@ app.patch('/:id', async (c) => {
   }
 });
 
+// POST /api/communities/:id/close
+// Close (archive) community (owner only)
+app.post('/:id/close', async (c) => {
+  try {
+    const userDid = c.get('userDid') as string;
+    const communityId = c.req.param('id');
+
+    const membershipModel = new MembershipModel(c.env);
+    const communityModel = new CommunityModel(c.env);
+
+    // Check if community is already archived (before checking existence)
+    const isArchived = await communityModel.isArchived(communityId);
+    if (isArchived) {
+      return c.json(
+        { error: 'Conflict', message: 'Community is already archived' },
+        409
+      );
+    }
+
+    // Check if community exists (only returns non-archived communities)
+    const community = await communityModel.getById(communityId);
+    if (!community) {
+      return c.json({ error: 'NotFound', message: 'Community not found' }, 404);
+    }
+
+    // Check if user is owner
+    const isOwner = await membershipModel.hasRole(communityId, userDid, 'owner');
+    if (!isOwner) {
+      return c.json(
+        { error: 'Forbidden', message: 'Only community owner can close the community' },
+        403
+      );
+    }
+
+    // Archive the community
+    await communityModel.archive(communityId);
+
+    // Return the archived community data
+    const archivedCommunity = {
+      ...community,
+      archivedAt: Math.floor(Date.now() / 1000), // Current timestamp
+    };
+
+    return c.json({ success: true, community: archivedCommunity });
+  } catch (err) {
+    console.error('[POST /api/communities/:id/close] Error:', err);
+    return c.json(
+      { error: 'InternalServerError', message: 'Failed to close community' },
+      500
+    );
+  }
+});
+
 export default app;

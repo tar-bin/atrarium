@@ -148,6 +148,9 @@ async function handleScheduledJob(env: Env, _ctx: ExecutionContext) {
 // Cloudflare Workers Exports
 // ============================================================================
 
+// Export app type for oRPC client type inference
+export type AppType = typeof app;
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     return app.fetch(request, env, ctx);

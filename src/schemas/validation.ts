@@ -16,13 +16,13 @@ export const LoginRequestSchema = z.object({
 // ============================================================================
 
 export const CreateCommunitySchema = z.object({
-  name: z.string().min(1).max(100),
+  name: z.string().min(1).max(50),
   description: z.string().max(500).optional(),
   parentId: z.string().uuid().optional(),
 });
 
 export const UpdateCommunitySchema = z.object({
-  name: z.string().min(1).max(100).optional(),
+  name: z.string().min(1).max(50).optional(),
   description: z.string().max(500).nullable().optional(),
   feedMixOwn: z.number().min(0).max(1).optional(),
   feedMixParent: z.number().min(0).max(1).optional(),
@@ -38,12 +38,12 @@ export const TransitionStageSchema = z.object({
 // ============================================================================
 
 export const CreateThemeFeedSchema = z.object({
-  name: z.string().min(1).max(100),
+  name: z.string().min(1).max(50),
   description: z.string().max(500).optional(),
 });
 
 export const UpdateThemeFeedSchema = z.object({
-  name: z.string().min(1).max(100).optional(),
+  name: z.string().min(1).max(50).optional(),
   description: z.string().max(500).nullable().optional(),
 });
 

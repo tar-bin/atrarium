@@ -229,6 +229,18 @@ export class CommunityModel {
     await this.db.execute(`UPDATE communities SET archived_at = ? WHERE id = ?`, now, id);
   }
 
+  /**
+   * Check if community is already archived
+   */
+  async isArchived(id: string): Promise<boolean> {
+    const row = await this.db.queryOne<{ archived_at: number | null }>(
+      `SELECT archived_at FROM communities WHERE id = ?`,
+      id
+    );
+
+    return row?.archived_at !== null && row?.archived_at !== undefined;
+  }
+
   // ============================================================================
   // Helper Methods
   // ============================================================================

@@ -1,0 +1,332 @@
+# Component Contracts: Dashboard Frontend
+
+# This file defines React component interfaces (props, events, behavior)
+# Format: YAML for readability, maps to TypeScript interfaces
+
+components:
+  # =============================================================================
+  # Layout Components
+  # =============================================================================
+
+  Layout:
+    description: Main application layout with sidebar and content area
+    props:
+      children: ReactNode
+    state:
+      sidebarOpen: boolean (mobile only)
+    behavior:
+      - Renders Sidebar and Header components
+      - Provides responsive grid layout
+      - Manages sidebar collapse on mobile
+
+  Sidebar:
+    description: Navigation sidebar with menu items
+    props:
+      currentPath: string
+      isOpen: boolean (mobile)
+      onClose: () => void (mobile)
+    behavior:
+      - Highlights active menu item based on currentPath
+      - Links: Home, Communities, Moderation Log
+      - Shows user info (handle, DID) if authenticated
+
+  Header:
+    description: Top navigation bar with user actions
+    props:
+      user: UserSession | null
+      onLogout: () => void
+    behavior:
+      - Displays app title "Atrarium Dashboard"
+      - Shows login status and handle
+      - Logout button (calls onLogout)
+
+  # =============================================================================
+  # Community Components
+  # =============================================================================
+
+  CommunityList:
+    description: Grid of community cards
+    props:
+      communities: Community[]
+      loading: boolean
+      error: string | null
+      onCreateClick: () => void
+    behavior:
+      - Renders CommunityCard for each community
+      - Shows loading spinner if loading=true
+      - Shows error message if error is set
+      - "Create Community" button calls onCreateClick
+
+  CommunityCard:
+    description: Single community summary card
+    props:
+      community: Community
+      onClick: () => void
+    behavior:
+      - Displays name, member count, post count
+      - Clickable → calls onClick to navigate to detail page
+      - Shows community stage badge (Theme/Community/Graduated)
+
+  CommunityDetail:
+    description: Community detail view with feeds and members
+    props:
+      community: Community
+      feeds: Feed[]
+      loading: boolean
+      error: string | null
+      onCreateFeedClick: () => void
+    behavior:
+      - Displays community info (name, description, stats)
+      - Renders FeedList component
+      - "Create Feed" button calls onCreateFeedClick
+
+  CreateCommunityModal:
+    description: Modal dialog for creating a new community
+    props:
+      isOpen: boolean
+      onClose: () => void
+      onSubmit: (data: { name: string; description: string }) => Promise<void>
+    state:
+      name: string
+      description: string
+      submitting: boolean
+      error: string | null
+    validation:
+      - name: required, 1-50 characters
+      - description: optional, max 500 characters
+    behavior:
+      - Form with name and description inputs
+      - Validates on submit
+      - Calls onSubmit with data
+      - Shows error if submission fails
+      - Closes modal on success
+
+  # =============================================================================
+  # Feed Components
+  # =============================================================================
+
+  FeedList:
+    description: List of feed cards in a community
+    props:
+      feeds: Feed[]
+      loading: boolean
+      error: string | null
+    behavior:
+      - Renders FeedCard for each feed
+      - Shows empty state if feeds array is empty
+      - Shows loading spinner if loading=true
+
+  FeedCard:
+    description: Single feed summary card
+    props:
+      feed: Feed
+      onClick: () => void
+    behavior:
+      - Displays name, hashtag, stats (posts7d, activeUsers7d)
+      - Hashtag displayed prominently with copy button
+      - Copy button copies hashtag to clipboard
+      - Clickable → calls onClick to navigate to detail page
+
+  FeedDetail:
+    description: Feed detail view with post list and post form
+    props:
+      feed: Feed
+      posts: Post[]
+      loading: boolean
+      error: string | null
+      currentUserDid: string | null
+    behavior:
+      - Displays feed info (name, hashtag, stats)
+      - Renders PostList component
+      - Renders CreatePostForm if user is authenticated
+      - Shows "Login to post" message if not authenticated
+
+  CreateFeedModal:
+    description: Modal dialog for creating a new feed
+    props:
+      isOpen: boolean
+      communityId: string
+      onClose: () => void
+      onSubmit: (data: { name: string; description: string }) => Promise<Feed>
+    state:
+      name: string
+      description: string
+      submitting: boolean
+      error: string | null
+      createdFeed: Feed | null
+    validation:
+      - name: required, 1-50 characters
+      - description: optional, max 500 characters
+    behavior:
+      - Form with name and description inputs
+      - Validates on submit
+      - Calls onSubmit with data
+      - On success: shows generated hashtag with copy button
+      - Shows error if submission fails
+      - "Done" button closes modal
+
+  # =============================================================================
+  # Post Components
+  # =============================================================================
+
+  PostList:
+    description: List of posts in a feed
+    props:
+      posts: Post[]
+      loading: boolean
+      error: string | null
+      currentUserDid: string | null
+      canModerate: boolean
+      onHidePost: (uri: string) => Promise<void>
+    behavior:
+      - Renders PostCard for each post
+      - Shows empty state if posts array is empty
+      - Shows loading spinner if loading=true
+      - Passes onHidePost to PostCard
+
+  PostCard:
+    description: Single post display with moderation actions
+    props:
+      post: Post
+      canModerate: boolean
+      onHide: (uri: string) => Promise<void>
+    behavior:
+      - Displays author DID, text, timestamp
+      - Shows "has media" indicator if hasMedia=true
+      - Shows moderation status badge if hidden
+      - "Hide" button visible if canModerate=true
+      - "Hide" button shows confirmation dialog before calling onHide
+
+  CreatePostForm:
+    description: Form for creating a new post to PDS
+    props:
+      feedHashtag: string
+      onSuccess: (postUri: string) => void
+    state:
+      text: string
+      submitting: boolean
+      error: string | null
+    validation:
+      - text: required, max 300 characters (including hashtag)
+    behavior:
+      - Text area input with character counter
+      - Shows preview of final text with appended hashtag
+      - Submits to PDS via BskyAgent.post()
+      - Automatically appends feedHashtag to text
+      - Calls onSuccess with post URI on success
+      - Shows error message on failure
+      - Clears form on success
+
+  # =============================================================================
+  # Moderation Components
+  # =============================================================================
+
+  ModerationLog:
+    description: Table of moderation actions
+    props:
+      actions: ModerationAction[]
+      loading: boolean
+      error: string | null
+    behavior:
+      - Renders table with columns: Action, Target, Moderator, Reason, Time
+      - Sorts by performedAt DESC (newest first)
+      - Shows empty state if actions array is empty
+      - Shows loading spinner if loading=true
+
+  ModerationActions:
+    description: Moderation action buttons for a post or user
+    props:
+      targetType: 'post' | 'user'
+      targetUri: string
+      feedId: string
+      currentStatus: ModerationStatus (for posts)
+      onHidePost?: () => Promise<void>
+      onUnhidePost?: () => Promise<void>
+      onBlockUser?: () => Promise<void>
+    behavior:
+      - Shows "Hide" button if targetType='post' and status='approved'
+      - Shows "Unhide" button if targetType='post' and status='hidden'
+      - Shows "Block User" button if targetType='user'
+      - All buttons show confirmation dialog before action
+      - Calls respective callback on confirmation
+
+  # =============================================================================
+  # PDS Integration Components
+  # =============================================================================
+
+  PDSLoginForm:
+    description: Form for authenticating with local PDS
+    props:
+      pdsUrl: string
+      onSuccess: (agent: BskyAgent, did: string, handle: string) => void
+    state:
+      handle: string
+      password: string
+      submitting: boolean
+      error: string | null
+    validation:
+      - handle: required, format: handle.domain
+      - password: required
+    behavior:
+      - Form with handle and password inputs
+      - Calls BskyAgent.login() on submit
+      - Stores session in localStorage
+      - Calls onSuccess with agent, DID, handle on success
+      - Shows error message on failure
+      - Displays PDS URL (read-only, from env var)
+
+# =============================================================================
+# Shared Types (referenced by components)
+# =============================================================================
+
+types:
+  UserSession:
+    agent: BskyAgent | null
+    did: string | null
+    handle: string | null
+    isAuthenticated: boolean
+
+  Community:
+    id: string
+    name: string
+    description: string | null
+    stage: 'theme' | 'community' | 'graduated'
+    parentId: string | null
+    ownerDid: string
+    memberCount: number
+    postCount: number
+    createdAt: number
+
+  Feed:
+    id: string
+    communityId: string
+    name: string
+    description: string | null
+    status: 'active' | 'warning' | 'archived'
+    hashtag: string
+    posts7d: number
+    activeUsers7d: number
+    lastPostAt: number | null
+    createdAt: number
+
+  Post:
+    id: number
+    uri: string
+    feedId: string
+    authorDid: string
+    text: string
+    createdAt: number
+    hasMedia: boolean
+    langs: string[] | null
+    moderationStatus: 'approved' | 'hidden' | 'reported'
+    indexedAt: number
+
+  ModerationAction:
+    id: number
+    action: 'hide_post' | 'unhide_post' | 'block_user' | 'unblock_user' | 'remove_member'
+    targetUri: string
+    feedId: string | null
+    communityId: string | null
+    moderatorDid: string
+    reason: string | null
+    performedAt: number
