@@ -2,6 +2,8 @@
 
 **Small ecosystems on AT Protocol**
 
+> ⚠️ **Status**: Under active development. Not ready for production use.
+
 📖 **[Documentation](https://docs.atrarium.net)** | [日本語ドキュメント](https://docs.atrarium.net/ja/)
 
 Atrarium is a community management system built on the AT Protocol, designed to help small community managers (10-200 people) run sustainable, thriving communities without the operational burden of traditional federated servers.
