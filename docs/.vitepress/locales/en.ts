@@ -36,9 +36,7 @@ export const enNavigation: DefaultTheme.Config = {
   nav: [
     { text: 'Guide', link: '/guide/concept', activeMatch: '^/guide/' },
     { text: 'Architecture', link: '/architecture/system-design', activeMatch: '^/architecture/' },
-    { text: 'Reference', link: '/reference/api-reference', activeMatch: '^/reference/' },
-    { text: 'GitHub', link: 'https://github.com/tar-bin/atrarium' },
-    { text: 'Main Site', link: 'https://github.com/tar-bin/atrarium#readme' }
+    { text: 'Reference', link: '/reference/api-reference', activeMatch: '^/reference/' }
   ],
 
   // Edit link configuration

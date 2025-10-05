@@ -36,9 +36,7 @@ export const jaNavigation: DefaultTheme.Config = {
   nav: [
     { text: 'ガイド', link: '/ja/guide/concept', activeMatch: '^/ja/guide/' },
     { text: 'アーキテクチャ', link: '/ja/architecture/system-design', activeMatch: '^/ja/architecture/' },
-    { text: 'リファレンス', link: '/ja/reference/api-reference', activeMatch: '^/ja/reference/' },
-    { text: 'GitHub', link: 'https://github.com/tar-bin/atrarium' },
-    { text: 'メインサイト', link: 'https://github.com/tar-bin/atrarium#readme' }
+    { text: 'リファレンス', link: '/ja/reference/api-reference', activeMatch: '^/ja/reference/' }
   ],
 
   // Edit link configuration
