@@ -413,7 +413,7 @@ Verify `VITE_API_URL` points to running Workers instance:
 
 **Documentation**:
 - [Main README](../README.md) - Project overview (PDS-first architecture)
-- [VitePress Docs](https://atrarium-docs.pages.dev) - Full documentation (EN/JA)
+- [VitePress Docs](https://docs.atrarium.net) - Full documentation (EN/JA)
 - [Database Architecture](../docs/en/architecture/database.md) - PDS-first data storage
 - [Backend Development Guide](../CLAUDE.md) - Cloudflare Workers development
 

@@ -243,7 +243,7 @@ npx vitest run tests/integration/pds-to-feed-flow.test.ts
 
 ## 📖 Documentation
 
-- **[Documentation Site](https://atrarium-docs.pages.dev)** - Complete documentation (EN/JA)
+- **[Documentation Site](https://docs.atrarium.net)** - Complete documentation (EN/JA)
 - [CLAUDE.md](./CLAUDE.md) - Development guide for Claude Code
 - [specs/006-pds-1-db/](./specs/006-pds-1-db/) - PDS-first architecture specification
   - [spec.md](./specs/006-pds-1-db/spec.md) - Functional requirements
@@ -442,7 +442,7 @@ tests/
 - **Frontend**: ✅ Dashboard complete (React 19 + TanStack + shadcn/ui)
 - **Architecture**: ✅ PDS-first with Durable Objects Storage (no D1/KV)
 - **Tests**: ✅ Contract + Integration + Unit + PDS tests passing
-- **Documentation**: ✅ [VitePress site](https://atrarium-docs.pages.dev) (20 pages, EN/JA)
+- **Documentation**: ✅ [VitePress site](https://docs.atrarium.net) (20 pages, EN/JA)
 - **Domain**: ✅ atrarium.net acquired and configured
 - **Next Milestone**: Production deployment + Firehose connection
 - **First Release Target**: Q2 2025
@@ -451,7 +451,7 @@ tests/
 
 ## 📚 Documentation
 
-- **[Documentation Site](https://atrarium-docs.pages.dev)** - Complete documentation (EN/JA)
+- **[Documentation Site](https://docs.atrarium.net)** - Complete documentation (EN/JA)
 - **[CLAUDE.md](./CLAUDE.md)** - Development guide for Claude Code
 - **[Project Overview](./docs/01-overview.md)** - Vision and design philosophy
 - **[System Design](./docs/02-system-design.md)** - Architecture and database
