@@ -86,4 +86,4 @@ order: 1
 - **AT Protocol**: Bluesky Firehose（無料）、AppView API
 - **GitHub**: リポジトリホスティング、CI/CD
 
-詳細は[英語版](/en/architecture/system-design)を参照してください。
+詳細は[英語版](/architecture/system-design)を参照してください。

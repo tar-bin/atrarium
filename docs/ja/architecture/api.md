@@ -91,4 +91,4 @@ curl -H "Authorization: Bearer $JWT_TOKEN" https://atrarium.net/api/communities
 - `stage`（任意）: ステージでフィルタ（theme/community/graduated）
 - `parent_id`（任意）: 親でフィルタ
 
-詳細は[英語版](/en/architecture/api)を参照してください。
+詳細は[英語版](/architecture/api)を参照してください。

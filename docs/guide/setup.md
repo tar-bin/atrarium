@@ -170,6 +170,6 @@ wrangler tail --format pretty
 
 ## Next Steps
 
-- [Quickstart Guide](/en/guide/quickstart) - Common tasks and usage patterns
-- [System Architecture](/en/architecture/system-design) - Understanding the design
-- [API Reference](/en/reference/api-reference) - Endpoint documentation
+- [Quickstart Guide](/guide/quickstart) - Common tasks and usage patterns
+- [System Architecture](/architecture/system-design) - Understanding the design
+- [API Reference](/reference/api-reference) - Endpoint documentation

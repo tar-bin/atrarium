@@ -352,6 +352,6 @@ Access-Control-Allow-Headers: Content-Type, Authorization
 
 ## Related Documentation
 
-- [System Architecture](/en/architecture/system-design)
-- [Database Schema](/en/architecture/database)
-- [Implementation Guide](/en/reference/implementation)
+- [System Architecture](/architecture/system-design)
+- [Database Schema](/architecture/database)
+- [Implementation Guide](/reference/implementation)

@@ -309,7 +309,7 @@ Previous versions of Atrarium used Cloudflare D1 (SQLite) for data storage. The 
 
 ## Related Documentation
 
-- [System Architecture](/en/architecture/system-design)
+- [System Architecture](/architecture/system-design)
 - [AT Protocol Lexicon Schemas](https://github.com/tar-bin/atrarium/tree/main/specs/006-pds-1-db/contracts/lexicon)
 - [Durable Objects Documentation](https://developers.cloudflare.com/durable-objects/)
 - [AT Protocol Specification](https://atproto.com/specs/lexicon)

@@ -909,4 +909,4 @@ export default {
 
 ---
 
-**Next Document: [Implementation Guide](/en/reference/implementation)**
+**Next Document: [Implementation Guide](/reference/implementation)**

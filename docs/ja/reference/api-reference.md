@@ -93,7 +93,7 @@ AT Protocol標準エンドポイント。
 
 **レスポンス**: `200 OK`
 
-詳細は[英語版](/en/reference/api-reference)を参照してください。
+詳細は[英語版](/reference/api-reference)を参照してください。
 
 ## エラーレスポンス
 
