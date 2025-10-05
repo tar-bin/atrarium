@@ -31,6 +31,7 @@ Services:
     📦 PDS:        http://localhost:3000
     🎨 Dashboard:  http://localhost:5173
     ⚙️  Backend:    http://localhost:8787
+    📚 API Docs:   http://localhost:8787/api/docs
 
 EOF
 }
@@ -79,6 +80,7 @@ start_backend() {
     fi
 
     echo -e "${GREEN}✅ Backend will start at http://localhost:8787${NC}"
+    echo -e "${GREEN}✅ API Documentation: http://localhost:8787/api/docs${NC}"
     echo -e "${YELLOW}💡 Press Ctrl+C to stop${NC}"
     npm run dev
 }
@@ -108,6 +110,7 @@ start_all() {
     echo -e "${BLUE}📦 PDS:${NC}        http://localhost:3000"
     echo -e "${BLUE}🎨 Dashboard:${NC}  http://localhost:5173 (will start next)"
     echo -e "${BLUE}⚙️  Backend:${NC}    http://localhost:8787"
+    echo -e "${BLUE}📚 API Docs:${NC}   http://localhost:8787/api/docs"
     echo ""
     echo -e "${YELLOW}📋 Test Accounts:${NC}"
     echo -e "   - alice.test / test123"

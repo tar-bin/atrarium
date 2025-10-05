@@ -96,6 +96,7 @@ Client (Bluesky AppView fetches post content)
 
 **Backend (Implemented)**:
 - **Cloudflare Workers**: Serverless edge computing with Hono framework
+- **oRPC**: Type-safe RPC with automatic OpenAPI generation (`@orpc/server`, `@orpc/openapi`)
 - **Durable Objects**: Per-community feed generators with persistent Storage API
 - **Cloudflare Queues**: Firehose event processing (5000 msg/sec capacity)
 - **AT Protocol**: `@atproto/api` (AtpAgent), `@atproto/identity`
@@ -104,6 +105,7 @@ Client (Bluesky AppView fetches post content)
 
 **Frontend (Implemented)**:
 - **React 19 + TypeScript**: Management dashboard with modern React
+- **oRPC Client**: Type-safe API client with React Query integration (`@orpc/client`, `@orpc/react`)
 - **TanStack Router**: File-based routing with type-safe params
 - **TanStack Query**: Server state management with caching
 - **shadcn/ui**: Accessible UI components (Radix UI + Tailwind CSS)
@@ -157,6 +159,12 @@ wrangler secret put BLUESKY_APP_PASSWORD   # For PDS write operations
 ```bash
 # Run Workers locally (with Miniflare)
 npm run dev
+
+# Access API documentation (Swagger UI)
+# Open http://localhost:8787/api/docs in your browser
+
+# View OpenAPI specification
+# http://localhost:8787/api/openapi.json
 
 # Type checking
 npm run typecheck

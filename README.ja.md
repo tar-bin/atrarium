@@ -96,6 +96,7 @@ Feed Generator API（getFeedSkeleton）
 
 **バックエンド（実装済み）**:
 - **Cloudflare Workers**: Honoフレームワークによるサーバーレスエッジコンピューティング
+- **oRPC**: 自動OpenAPI生成を備えた型安全RPC（`@orpc/server`、`@orpc/openapi`）
 - **Durable Objects**: 永続的Storage APIを持つコミュニティごとのフィードジェネレーター
 - **Cloudflare Queues**: Firehoseイベント処理（5000 msg/sec容量）
 - **AT Protocol**: `@atproto/api`（AtpAgent）、`@atproto/identity`
@@ -104,6 +105,7 @@ Feed Generator API（getFeedSkeleton）
 
 **フロントエンド（実装済み）**:
 - **React 19 + TypeScript**: モダンReactによる管理ダッシュボード
+- **oRPC Client**: React Query統合を備えた型安全APIクライアント（`@orpc/client`、`@orpc/react`）
 - **TanStack Router**: 型安全なパラメータを持つファイルベースルーティング
 - **TanStack Query**: キャッシング付きサーバー状態管理
 - **shadcn/ui**: アクセシブルなUIコンポーネント（Radix UI + Tailwind CSS）
@@ -157,6 +159,12 @@ wrangler secret put BLUESKY_APP_PASSWORD   # PDS書き込み操作用
 ```bash
 # Workersをローカルで実行（Miniflare使用）
 npm run dev
+
+# APIドキュメントにアクセス（Swagger UI）
+# ブラウザで http://localhost:8787/api/docs を開く
+
+# OpenAPI仕様を表示
+# http://localhost:8787/api/openapi.json
 
 # 型チェック
 npm run typecheck
