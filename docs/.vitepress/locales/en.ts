@@ -7,43 +7,43 @@ export const enNavigation: DefaultTheme.Config = {
       text: 'Guide',
       collapsed: false,
       items: [
-        { text: 'Overview', link: '/en/guide/overview' },
-        { text: 'Setup', link: '/en/guide/setup' },
-        { text: 'Quickstart', link: '/en/guide/quickstart' }
+        { text: 'Overview', link: '/guide/overview' },
+        { text: 'Setup', link: '/guide/setup' },
+        { text: 'Quickstart', link: '/guide/quickstart' }
       ]
     },
     {
       text: 'Architecture',
       collapsed: false,
       items: [
-        { text: 'System Design', link: '/en/architecture/system-design' },
-        { text: 'Database Schema', link: '/en/architecture/database' },
-        { text: 'API Design', link: '/en/architecture/api' }
+        { text: 'System Design', link: '/architecture/system-design' },
+        { text: 'Database Schema', link: '/architecture/database' },
+        { text: 'API Design', link: '/architecture/api' }
       ]
     },
     {
       text: 'Reference',
       collapsed: false,
       items: [
-        { text: 'API Reference', link: '/en/reference/api-reference' },
-        { text: 'Implementation Guide', link: '/en/reference/implementation' },
-        { text: 'Development Spec', link: '/en/reference/development-spec' }
+        { text: 'API Reference', link: '/reference/api-reference' },
+        { text: 'Implementation Guide', link: '/reference/implementation' },
+        { text: 'Development Spec', link: '/reference/development-spec' }
       ]
     }
   ],
 
   // Top navigation bar
   nav: [
-    { text: 'Guide', link: '/en/guide/overview', activeMatch: '^/en/guide/' },
-    { text: 'Architecture', link: '/en/architecture/system-design', activeMatch: '^/en/architecture/' },
-    { text: 'Reference', link: '/en/reference/api-reference', activeMatch: '^/en/reference/' },
+    { text: 'Guide', link: '/guide/overview', activeMatch: '^/guide/' },
+    { text: 'Architecture', link: '/architecture/system-design', activeMatch: '^/architecture/' },
+    { text: 'Reference', link: '/reference/api-reference', activeMatch: '^/reference/' },
     { text: 'GitHub', link: 'https://github.com/tar-bin/atrarium' },
     { text: 'Main Site', link: 'https://github.com/tar-bin/atrarium#readme' }
   ],
 
   // Edit link configuration
   editLink: {
-    pattern: 'https://github.com/tar-bin/atrarium/edit/main/docs/en/:path',
+    pattern: 'https://github.com/tar-bin/atrarium/edit/main/docs/:path',
     text: 'Edit this page on GitHub'
   },
 

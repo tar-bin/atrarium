@@ -12,10 +12,9 @@ export default defineConfig({
 
   // i18n configuration
   locales: {
-    en: {
+    root: {
       label: 'English',
       lang: 'en-US',
-      link: '/en/',
       themeConfig: enNavigation
     },
     ja: {
