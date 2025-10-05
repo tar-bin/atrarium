@@ -731,10 +731,9 @@ hate_speech:        0%    (should be near-zero)
 
 ## Related Documents
 
-- [Feature Specification](./spec.md) - Original requirements
-- [Data Model](./data-model.md) - Technical schema definition
-- [Quickstart Guide](./quickstart.md) - End-to-end usage scenario
-- [Research](./research.md) - Why enum-only approach
+- [API Reference](./api-reference.md) - Moderation API endpoints
+- [Database Architecture](../architecture/database.md) - PDS-first data model
+- [Developer Guide](../guide/overview.md) - Atrarium development guides
 
 ---
 
