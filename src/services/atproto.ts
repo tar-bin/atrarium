@@ -1,7 +1,7 @@
 // Atrarium PDS-First Architecture - AT Protocol Service
 // PDS read/write operations and Bluesky integration
 
-import { BskyAgent } from '@atproto/api';
+import { AtpAgent } from '@atproto/api';
 import type { Env } from '../types';
 import type {
   CommunityConfig,
@@ -22,17 +22,17 @@ import {
 
 export class ATProtoService {
   private env: Env;
-  private agent: BskyAgent | null = null;
+  private agent: AtpAgent | null = null;
 
   constructor(env: Env) {
     this.env = env;
   }
 
   /**
-   * Initialize BskyAgent and authenticate
+   * Initialize AtpAgent and authenticate
    * @private
    */
-  private async getAgent(): Promise<BskyAgent> {
+  private async getAgent(): Promise<AtpAgent> {
     if (this.agent) {
       return this.agent;
     }
@@ -44,7 +44,7 @@ export class ATProtoService {
       throw new Error('BLUESKY_HANDLE and BLUESKY_APP_PASSWORD environment variables required');
     }
 
-    const agent = new BskyAgent({ service: 'https://bsky.social' });
+    const agent = new AtpAgent({ service: 'https://bsky.social' });
     await agent.login({ identifier: handle, password });
 
     this.agent = agent;
