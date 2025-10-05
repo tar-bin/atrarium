@@ -731,10 +731,9 @@ hate_speech:        0%    (ゼロに近いべき)
 
 ## 関連ドキュメント
 
-- [機能仕様](../../specs/007-reason-enum-atproto/spec.md) - 元の要件
-- [データモデル](../../specs/007-reason-enum-atproto/data-model.md) - 技術スキーマ定義
-- [クイックスタートガイド](../../specs/007-reason-enum-atproto/quickstart.md) - エンドツーエンド使用シナリオ
-- [リサーチ](../../specs/007-reason-enum-atproto/research.md) - なぜenum限定アプローチか
+- [APIリファレンス](./api-reference.md) - モデレーションAPIエンドポイント
+- [データベースアーキテクチャ](../architecture/database.md) - PDS-firstデータモデル
+- [開発者ガイド](../guide/) - Atrariumの開発ガイド
 
 ---
 
