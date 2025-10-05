@@ -210,7 +210,6 @@ See [Project Status](https://docs.atrarium.net/guide/project-status.html) for de
 ## 💬 Community & Support
 
 - **GitHub**: [tar-bin/atrarium](https://github.com/tar-bin/atrarium)
-- **Bluesky**: [@atrarium.community](https://bsky.app/profile/atrarium.community)
 - **Discussions**: [GitHub Discussions](https://github.com/tar-bin/atrarium/discussions)
 
 ---
