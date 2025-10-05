@@ -1,6 +1,4 @@
-# Concept
-
-## Overview
+# What is Atrarium?
 
 **Atrarium enables small & open communities (10-200 people) to operate sustainably on Bluesky using serverless infrastructure and membership-based feed filtering.**
 

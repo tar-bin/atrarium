@@ -5,10 +5,10 @@ import { join } from 'path';
 describe('Concept Documentation Structure', () => {
   const conceptPath = join(process.cwd(), 'docs/en/guide/concept.md');
 
-  it('VitePress concept.md has all 6 required sections', () => {
+  it('VitePress concept.md has all required sections', () => {
     const content = readFileSync(conceptPath, 'utf-8');
 
-    expect(content).toContain('## Overview');
+    expect(content).toContain('# What is Atrarium?');
     expect(content).toContain('## The Problem');
     expect(content).toContain('## The Solution');
     expect(content).toContain('## How It Works');

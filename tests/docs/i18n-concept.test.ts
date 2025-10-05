@@ -23,7 +23,7 @@ describe('Concept i18n Parity', () => {
     const enSections = extractSections(enContent);
     const jaSections = extractSections(jaContent);
 
-    expect(enSections.length).toBe(6);
+    expect(enSections.length).toBe(5);
     expect(jaSections.length).toBe(enSections.length);
   });
 
