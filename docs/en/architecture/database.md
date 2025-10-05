@@ -1,250 +1,315 @@
 ---
-title: Database Schema
-description: Atrarium D1 database structure and design
+title: Data Storage Architecture
+description: Atrarium PDS-first data storage with Durable Objects
 order: 2
 ---
 
-# Database Schema
+# Data Storage Architecture
 
-Atrarium uses Cloudflare D1 (SQLite) for structured data storage.
+Atrarium implements a **PDS-first architecture** where all authoritative data is stored in user Personal Data Servers (PDSs) using AT Protocol Lexicon schemas. Cloudflare Durable Objects provide a 7-day feed index cache for fast feed generation.
 
-## Schema Overview
+## Architecture Overview
 
-The database consists of 4 main tables:
-
-1. **communities** - Community metadata and settings
-2. **theme_feeds** - Feed configurations for filtering posts
-3. **memberships** - User membership and roles
-4. **post_index** - Indexed post URIs for feed generation
-
-## Table Definitions
-
-### communities
-
-Stores community metadata, lifecycle stage, and health metrics.
-
-```sql
-CREATE TABLE communities (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT NOT NULL,
-  stage TEXT NOT NULL CHECK(stage IN ('theme', 'community', 'graduated')),
-  parent_id INTEGER,
-  feed_mix TEXT NOT NULL DEFAULT '{"own":80,"parent":15,"global":5}',
-  health_metrics TEXT NOT NULL DEFAULT '{}',
-  member_count INTEGER NOT NULL DEFAULT 0,
-  post_count INTEGER NOT NULL DEFAULT 0,
-  created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  FOREIGN KEY (parent_id) REFERENCES communities(id)
-);
-
-CREATE INDEX idx_communities_stage ON communities(stage);
-CREATE INDEX idx_communities_parent ON communities(parent_id);
+```
+┌─────────────────────────────────────────┐
+│  PDS (Source of Truth)                  │
+│  - net.atrarium.community.config        │
+│  - net.atrarium.community.membership    │
+│  - net.atrarium.moderation.action       │
+└──────────────┬──────────────────────────┘
+               │
+               ↓ Firehose (Jetstream WebSocket)
+┌──────────────────────────────────────────┐
+│  FirehoseReceiver (Durable Object)       │
+│  - Lightweight filter: includes('#atr_') │
+└──────────────┬───────────────────────────┘
+               │
+               ↓ Cloudflare Queue (batched)
+┌──────────────────────────────────────────┐
+│  FirehoseProcessor (Queue Consumer)      │
+│  - Heavyweight filter: regex             │
+└──────────────┬───────────────────────────┘
+               │
+               ↓ RPC call
+┌──────────────────────────────────────────┐
+│  CommunityFeedGenerator (Durable Object) │
+│  - Durable Objects Storage (7-day cache) │
+│    • config:<communityId>                │
+│    • member:<did>                        │
+│    • post:<timestamp>:<rkey>             │
+│    • moderation:<uri>                    │
+└──────────────────────────────────────────┘
 ```
 
-**Fields**:
-- `id`: Auto-increment primary key
-- `name`: Community display name
-- `stage`: Lifecycle stage (theme/community/graduated)
-- `parent_id`: Reference to parent community (for nested structure)
-- `feed_mix`: JSON config for feed composition ratios
-- `health_metrics`: JSON metrics (activity_score, growth_rate, engagement)
-- `member_count`: Cached member count
-- `post_count`: Cached post count
+## Storage Layers
 
-**Indexes**:
-- Stage-based queries (find all theme feeds)
-- Parent-child relationships
+### 1. PDS (Permanent Storage)
 
-### theme_feeds
+All community data is stored in user PDSs using AT Protocol Lexicon schemas.
 
-Feed configurations for post filtering.
+#### net.atrarium.community.config
 
-```sql
-CREATE TABLE theme_feeds (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  community_id INTEGER NOT NULL,
-  name TEXT NOT NULL,
-  feed_uri TEXT NOT NULL UNIQUE,
-  filter_config TEXT NOT NULL,
-  health_metrics TEXT NOT NULL DEFAULT '{}',
-  post_count INTEGER NOT NULL DEFAULT 0,
-  last_post_at INTEGER,
-  created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  FOREIGN KEY (community_id) REFERENCES communities(id) ON DELETE CASCADE
-);
+Community metadata stored in the owner's PDS.
 
-CREATE INDEX idx_theme_feeds_community ON theme_feeds(community_id);
-CREATE UNIQUE INDEX idx_theme_feeds_uri ON theme_feeds(feed_uri);
-```
-
-**Fields**:
-- `feed_uri`: AT Protocol feed URI (at://did:plc:xxx/app.bsky.feed.generator/feed-id)
-- `filter_config`: JSON filter rules
-
-**filter_config Structure**:
-```json
+```typescript
 {
-  "hashtags": ["#TypeScript", "#React"],
-  "keywords": ["webdev", "frontend"],
-  "authors": ["did:plc:xxx", "did:plc:yyy"]
+  $type: 'net.atrarium.community.config';
+  name: string;              // Community name (max 100 chars)
+  hashtag: string;           // Unique hashtag: #atr_[0-9a-f]{8}
+  stage: 'theme' | 'community' | 'graduated';
+  parentCommunity?: string;  // AT-URI of parent config
+  feedMix: {
+    own: number;             // 0-1, sum must = 1.0
+    parent: number;
+    global: number;
+  };
+  moderators: string[];      // DIDs (max 50)
+  createdAt: string;         // ISO 8601
+  description?: string;      // Max 500 chars
 }
 ```
 
-### memberships
+**AT-URI Format**: `at://did:plc:owner/net.atrarium.community.config/3jzfcijpj2z2a`
 
-User membership in communities with roles.
+#### net.atrarium.community.membership
 
-```sql
-CREATE TABLE memberships (
-  community_id INTEGER NOT NULL,
-  user_did TEXT NOT NULL,
-  role TEXT NOT NULL CHECK(role IN ('owner', 'moderator', 'member')),
-  joined_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  PRIMARY KEY (community_id, user_did),
-  FOREIGN KEY (community_id) REFERENCES communities(id) ON DELETE CASCADE
+User membership records stored in each member's PDS.
+
+```typescript
+{
+  $type: 'net.atrarium.community.membership';
+  community: string;         // AT-URI of community config
+  role: 'owner' | 'moderator' | 'member';
+  joinedAt: string;          // ISO 8601
+  active: boolean;
+}
+```
+
+**AT-URI Format**: `at://did:plc:member/net.atrarium.community.membership/3k2j4xyz`
+
+#### net.atrarium.moderation.action
+
+Moderation actions stored in moderator's PDS.
+
+```typescript
+{
+  $type: 'net.atrarium.moderation.action';
+  action: 'hide_post' | 'unhide_post' | 'block_user' | 'unblock_user';
+  target: string;            // AT-URI or DID
+  community: string;         // AT-URI of community config
+  reason?: string;           // Optional explanation
+  createdAt: string;         // ISO 8601
+}
+```
+
+**AT-URI Format**: `at://did:plc:moderator/net.atrarium.moderation.action/3m5n6pqr`
+
+::: warning Privacy Warning
+Moderation actions are stored as **public records** in the moderator's PDS. The `reason` field should NOT contain:
+- Personal information (emails, phone numbers, addresses, etc.)
+- Confidential information (internal communications, private user reports, etc.)
+- Defamatory or offensive language
+
+Recommended `reason` examples:
+- ✅ "Spam post"
+- ✅ "Community guidelines violation"
+- ✅ "Duplicate post"
+- ❌ "Removed based on report from user XXX (email: xxx@example.com)"
+- ❌ "This user has history of problematic behavior (see internal records)"
+:::
+
+### 2. Durable Objects Storage (7-Day Cache)
+
+Each community has its own `CommunityFeedGenerator` Durable Object instance with isolated storage.
+
+#### Storage Keys
+
+**Community Config**:
+- Key: `config:<communityId>`
+- Value: `{ name, hashtag, stage, createdAt }`
+
+**Membership Records**:
+- Key: `member:<did>`
+- Value: `{ did, role, joinedAt, active }`
+
+**Post Index**:
+- Key: `post:<timestamp>:<rkey>`
+- Value: `{ uri, authorDid, createdAt, moderationStatus, indexedAt }`
+
+**Moderation Actions**:
+- Key: `moderation:<uri>`
+- Value: `{ action, targetUri, reason, createdAt }`
+
+#### Example Storage Operations
+
+```typescript
+// Write post to storage
+await storage.put(
+  `post:${Date.now()}:${rkey}`,
+  { uri, authorDid, createdAt, moderationStatus: 'approved', indexedAt: new Date().toISOString() }
 );
 
-CREATE INDEX idx_memberships_user ON memberships(user_did);
-CREATE INDEX idx_memberships_role ON memberships(community_id, role);
+// List posts (reverse chronological)
+const posts = await storage.list<PostMetadata>({
+  prefix: 'post:',
+  reverse: true,
+  limit: 50
+});
+
+// Delete old posts (7-day retention)
+const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+await storage.delete(`post:${timestamp}:${rkey}`);
 ```
 
-**Roles**:
-- `owner`: Full control (create feeds, manage members, delete community)
-- `moderator`: Moderation powers (approve posts, manage members)
-- `member`: View-only access
+## Data Flow
 
-### post_index
+### Write Flow (PDS → Firehose → Durable Object)
 
-Indexed post URIs for feed generation.
+1. **User posts to PDS** with community hashtag (e.g., `#atr_a1b2c3d4`)
+2. **Firehose emits event** → FirehoseReceiver DO
+3. **Lightweight filter** (`includes('#atr_')`) → Cloudflare Queue
+4. **FirehoseProcessor Worker** applies heavyweight regex filter (`/#atr_[0-9a-f]{8}/`)
+5. **CommunityFeedGenerator DO** stores post in Durable Objects Storage
 
-```sql
-CREATE TABLE post_index (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  feed_id INTEGER NOT NULL,
-  uri TEXT NOT NULL,
-  author_did TEXT NOT NULL,
-  created_at INTEGER NOT NULL,
-  has_media INTEGER NOT NULL DEFAULT 0,
-  FOREIGN KEY (feed_id) REFERENCES theme_feeds(id) ON DELETE CASCADE
-);
+### Read Flow (Client → Durable Object)
 
-CREATE INDEX idx_post_index_feed ON post_index(feed_id, created_at DESC);
-CREATE INDEX idx_post_index_uri ON post_index(uri);
-CREATE INDEX idx_post_index_author ON post_index(author_did);
+1. **Client requests** `getFeedSkeleton` with feed URI
+2. **Feed Generator API** makes RPC call to CommunityFeedGenerator DO
+3. **Durable Object** queries storage with reverse chronological order
+4. **Returns post URIs** with pagination cursor
+5. **Client fetches** full post content from Bluesky AppView
+
+## Performance Characteristics
+
+### Storage Limits
+
+- **Durable Objects**: 10GB per object (enough for ~1M posts per community)
+- **Expected usage**: 1000 communities × 10k posts × 200 bytes = 2GB total
+- **7-day retention**: Automatic cleanup via scheduled alarms
+
+### Query Performance
+
+- **Feed skeleton**: < 10ms (Durable Objects Storage is fast)
+- **Membership check**: < 5ms (in-memory map in Durable Object)
+- **Post indexing**: < 50ms (write to storage + index update)
+
+### Cost Comparison
+
+| Component | D1 Architecture | PDS-First (Durable Objects) | Savings |
+|-----------|-----------------|---------------------------|---------|
+| **Database** | $5/month (D1 paid) | $0 (no database) | 100% |
+| **Storage** | Included in D1 | $0.18/month (1000 communities × 10MB) | - |
+| **Requests** | Included in D1 | Included in Workers Paid | - |
+| **Total** | $5/month | $0.40/month | **92%** |
+
+## Resilience & Recovery
+
+### Durable Objects Durability
+
+- **Automatic replication**: Cloudflare replicates Durable Objects Storage across data centers
+- **Crash recovery**: State persists across Worker crashes
+- **Migration**: Durable Objects can migrate between locations
+
+### Rebuild from Firehose
+
+If Durable Object storage is lost:
+
+1. **Replay Firehose** from cursor 0 (or oldest available)
+2. **Re-index posts** for affected communities
+3. **7-day retention** limits data loss (older posts already expired)
+
+### PDS as Source of Truth
+
+All community metadata and memberships remain in PDSs:
+- No data loss even if all Durable Objects are cleared
+- Community owners can always recover from their PDS
+- Feed index rebuilds automatically from Firehose
+
+## Common Operations
+
+### Create Community
+
+```typescript
+// 1. Write to PDS
+const result = await agent.com.atproto.repo.createRecord({
+  repo: agent.session.did,
+  collection: 'net.atrarium.community.config',
+  record: {
+    $type: 'net.atrarium.community.config',
+    name: 'TypeScript Enthusiasts',
+    hashtag: '#atr_a1b2c3d4',
+    stage: 'theme',
+    feedMix: { own: 0.8, parent: 0.15, global: 0.05 },
+    moderators: [],
+    createdAt: new Date().toISOString()
+  }
+});
+
+// 2. Create Durable Object instance
+const communityId = result.uri.split('/').pop();
+const stub = env.COMMUNITY_FEED.get(env.COMMUNITY_FEED.idFromName(communityId));
+await stub.initialize(communityConfig);
 ```
 
-**Design Notes**:
-- Only stores URIs (references), not content
-- Content fetched from user's PDS via AT Protocol
-- Indexes optimized for feed skeleton queries
+### Join Community
 
-## Common Queries
+```typescript
+// Write membership record to user's PDS
+await agent.com.atproto.repo.createRecord({
+  repo: agent.session.did,
+  collection: 'net.atrarium.community.membership',
+  record: {
+    $type: 'net.atrarium.community.membership',
+    community: 'at://did:plc:alice/net.atrarium.community.config/xxx',
+    role: 'member',
+    joinedAt: new Date().toISOString(),
+    active: true
+  }
+});
 
-### Get Feed Skeleton
-
-```sql
-SELECT uri
-FROM post_index
-WHERE feed_id = ?
-ORDER BY created_at DESC
-LIMIT 50
-OFFSET ?
+// Firehose will automatically update Durable Object membership cache
 ```
 
-### Community Health Check
+### Hide Post (Moderation)
 
-```sql
-SELECT
-  c.name,
-  c.stage,
-  c.member_count,
-  c.post_count,
-  json_extract(c.health_metrics, '$.activity_score') as activity
-FROM communities c
-WHERE c.stage = 'theme'
-  AND json_extract(c.health_metrics, '$.activity_score') < 0.3
+```typescript
+// Write moderation action to moderator's PDS
+await agent.com.atproto.repo.createRecord({
+  repo: agent.session.did,
+  collection: 'net.atrarium.moderation.action',
+  record: {
+    $type: 'net.atrarium.moderation.action',
+    action: 'hide_post',
+    target: 'at://did:plc:user/app.bsky.feed.post/xxx',
+    community: 'at://did:plc:alice/net.atrarium.community.config/yyy',
+    reason: 'Off-topic',
+    createdAt: new Date().toISOString()
+  }
+});
+
+// Firehose will automatically update Durable Object moderation state
 ```
 
-### User's Communities
+## Migration from D1 Architecture
 
-```sql
-SELECT
-  c.id,
-  c.name,
-  c.stage,
-  m.role
-FROM communities c
-JOIN memberships m ON c.id = m.community_id
-WHERE m.user_did = ?
-ORDER BY m.joined_at DESC
-```
+Previous versions of Atrarium used Cloudflare D1 (SQLite) for data storage. The PDS-first architecture offers:
 
-## Migration Strategy
+**Benefits**:
+- 🔓 **True data ownership**: Users own their community data via DIDs
+- 💰 **92% cost reduction**: $5/month → $0.40/month
+- 📈 **Unlimited scalability**: No database bottlenecks
+- 🔄 **Automatic sync**: Firehose keeps Durable Objects in sync with PDSs
 
-### Version Management
-
-Database migrations tracked in `migrations/` directory:
-
-```
-migrations/
-├── 001_initial_schema.sql
-├── 002_add_health_metrics.sql
-└── 003_add_post_index.sql
-```
-
-### Apply Migration
-
-```bash
-wrangler d1 execute atrarium-db --file=./migrations/001_initial_schema.sql
-```
-
-## Performance Considerations
-
-### Indexing Strategy
-
-- **Feed queries**: Composite index on (feed_id, created_at DESC)
-- **User lookups**: Index on user_did for membership queries
-- **Parent-child**: Index on parent_id for community hierarchy
-
-### Data Retention
-
-- **Post URIs**: Kept indefinitely (lightweight, just URIs)
-- **KV Cache**: 7-day TTL for post content
-- **Inactive feeds**: No automatic deletion (manual archival)
-
-### Limits
-
-- **D1 Free Tier**: 5GB storage, 5M reads/day, 100k writes/day
-- **Expected usage**: ~1000 communities × 50k posts = 50M rows (well under limit)
-
-## Backup & Recovery
-
-### Manual Backup
-
-```bash
-# Export entire database
-wrangler d1 export atrarium-db --output backup.sql
-```
-
-### Restore from Backup
-
-```bash
-# Import from SQL dump
-wrangler d1 execute atrarium-db --file=backup.sql
-```
-
-## Schema Updates
-
-When modifying schema:
-
-1. Create migration file: `migrations/00X_description.sql`
-2. Test locally: `npm run dev`
-3. Apply to production: `wrangler d1 execute atrarium-db --file=migrations/00X_description.sql`
-4. Update `schema.sql` to reflect current state
+**Migration Steps**:
+1. Export community/membership data from D1
+2. Write records to user PDSs using AT Protocol
+3. Firehose will automatically index into Durable Objects
+4. Verify feed generation works correctly
+5. Decommission D1 database
 
 ## Related Documentation
 
 - [System Architecture](/en/architecture/system-design)
-- [API Design](/en/architecture/api)
-- [Implementation Guide](/en/reference/implementation)
+- [AT Protocol Lexicon Schemas](https://github.com/tar-bin/atrarium/tree/main/specs/006-pds-1-db/contracts/lexicon)
+- [Durable Objects Documentation](https://developers.cloudflare.com/durable-objects/)
+- [AT Protocol Specification](https://atproto.com/specs/lexicon)

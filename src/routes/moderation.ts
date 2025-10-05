@@ -23,6 +23,67 @@ app.use('*', async (c, next) => {
 // Helper removed - moderation role check now in Durable Object
 
 // ============================================================================
+// Helper: Validate moderation reason
+// Ensures reason does not contain sensitive information (PII, confidential data)
+// ============================================================================
+
+function validateModerationReason(reason?: string): { valid: boolean; error?: string } {
+  if (!reason || reason.trim() === '') {
+    return { valid: true }; // Empty reason is allowed
+  }
+
+  const trimmedReason = reason.trim();
+
+  // Check length (max 300 characters for safety)
+  if (trimmedReason.length > 300) {
+    return { valid: false, error: 'Reason too long (max 300 characters)' };
+  }
+
+  // Check for potential PII patterns
+  const emailPattern = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+  // Phone pattern: at least 10 digits with optional separators (avoid false positives like "#123")
+  const phonePattern = /(\+?\d{1,4}[-.\s()]?)?\d{3,4}[-.\s()]?\d{3,4}[-.\s]?\d{4,}/;
+  const urlPattern = /https?:\/\/[^\s]+/;
+
+  if (emailPattern.test(trimmedReason)) {
+    return { valid: false, error: 'Reason contains email address (not allowed in public records)' };
+  }
+
+  if (phonePattern.test(trimmedReason)) {
+    return { valid: false, error: 'Reason may contain phone number (not allowed in public records)' };
+  }
+
+  // Warning for URLs (not strict prohibition, but suspicious)
+  if (urlPattern.test(trimmedReason)) {
+    return { valid: false, error: 'Reason contains URL (avoid including external links in public records)' };
+  }
+
+  // Warning keywords that suggest confidential information
+  const sensitiveKeywords = [
+    'report',
+    'complaint',
+    'ticket',
+    'internal',
+    'private',
+    'confidential',
+    'password',
+    'secret',
+  ];
+
+  const lowerReason = trimmedReason.toLowerCase();
+  for (const keyword of sensitiveKeywords) {
+    if (lowerReason.includes(keyword)) {
+      return {
+        valid: false,
+        error: `Reason contains potentially sensitive keyword "${keyword}". Use brief, professional descriptions (e.g., "Spam post", "Community guidelines violation").`,
+      };
+    }
+  }
+
+  return { valid: true };
+}
+
+// ============================================================================
 // POST /api/moderation/hide-post
 // Hide a post (PDS-first architecture)
 // ============================================================================
@@ -35,6 +96,12 @@ app.post('/hide-post', async (c) => {
 
     if (!postUri || !communityId) {
       return c.json({ error: 'InvalidRequest', message: 'postUri and communityId are required' }, 400);
+    }
+
+    // Validate moderation reason (prevent PII/confidential data in public records)
+    const validation = validateModerationReason(reason);
+    if (!validation.valid) {
+      return c.json({ error: 'InvalidReason', message: validation.error }, 400);
     }
 
     // Get Durable Object stub for community
@@ -117,6 +184,19 @@ app.post('/unhide-post', async (c) => {
 
 app.post('/block-user', async (c) => {
   try {
+    const body = await c.req.json();
+    const { userDid, communityId, reason } = body;
+
+    if (!userDid || !communityId) {
+      return c.json({ error: 'InvalidRequest', message: 'userDid and communityId are required' }, 400);
+    }
+
+    // Validate moderation reason (prevent PII/confidential data in public records)
+    const validation = validateModerationReason(reason);
+    if (!validation.valid) {
+      return c.json({ error: 'InvalidReason', message: validation.error }, 400);
+    }
+
     // TODO: Implement PDS-based user blocking
     return c.json({ error: 'NotImplemented', message: 'PDS-based block not yet implemented' }, 501);
   } catch (err) {
