@@ -3,7 +3,6 @@ import type { Feed, Post } from '@/types';
 import type { BskyAgent } from '@atproto/api';
 import { PostList } from '@/components/posts/PostList';
 import { CreatePostForm } from '@/components/posts/CreatePostForm';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -11,8 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Hash, TrendingUp, Users, LogIn, Plus, ChevronRight } from 'lucide-react';
-import { useNavigate, Link } from '@tanstack/react-router';
+import { Hash, TrendingUp, Users, LogIn, Plus } from 'lucide-react';
+import { useNavigate } from '@tanstack/react-router';
 
 interface FeedDetailProps {
   feed: Feed;
@@ -23,7 +22,7 @@ interface FeedDetailProps {
   communityId?: string;
 }
 
-export function FeedDetail({ feed, posts, isAuthenticated, agent, communityName, communityId }: FeedDetailProps) {
+export function FeedDetail({ feed, posts, isAuthenticated, agent }: FeedDetailProps) {
   const navigate = useNavigate();
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
 

@@ -2,6 +2,7 @@
 // Zod schemas for request/response validation
 
 import { z } from 'zod';
+import { MODERATION_REASONS } from '../types';
 
 // ============================================================================
 // Auth Schemas
@@ -66,6 +67,20 @@ export const SubmitPostSchema = z.object({
 
 export const UpdateRoleSchema = z.object({
   role: z.enum(['owner', 'moderator', 'member']),
+});
+
+// ============================================================================
+// Moderation Schemas (007-reason-enum-atproto)
+// ============================================================================
+
+export const moderationReasonSchema = z.enum(MODERATION_REASONS).optional();
+
+export const moderationActionSchema = z.object({
+  action: z.enum(['hide_post', 'unhide_post', 'block_user', 'unblock_user']),
+  target: z.string(), // AT-URI or DID
+  community: z.string().startsWith('at://'), // AT-URI
+  reason: moderationReasonSchema,
+  createdAt: z.string().datetime(),
 });
 
 // ============================================================================

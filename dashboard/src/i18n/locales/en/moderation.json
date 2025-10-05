@@ -1,0 +1,22 @@
+{
+  "selectReason": "Select reason (optional)",
+  "reasons": {
+    "spam": "Spam post",
+    "low_quality": "Low-quality content",
+    "duplicate": "Duplicate post",
+    "off_topic": "Off-topic content",
+    "wrong_community": "Posted in wrong community",
+    "guidelines_violation": "Community guidelines violation",
+    "terms_violation": "Terms of service violation",
+    "copyright": "Copyright infringement",
+    "harassment": "Harassment or bullying",
+    "hate_speech": "Hate speech",
+    "violence": "Violence or threats",
+    "nsfw": "NSFW content",
+    "illegal_content": "Illegal content",
+    "bot_activity": "Automated bot activity",
+    "impersonation": "Impersonation",
+    "ban_evasion": "Ban evasion",
+    "other": "Other reason"
+  }
+}

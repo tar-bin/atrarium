@@ -40,6 +40,9 @@ export interface Community {
   stage: CommunityStage;
   parentId: string | null;
   ownerDid: string;
+  feedMixOwn: number; // 0.0-1.0
+  feedMixParent: number; // 0.0-1.0
+  feedMixGlobal: number; // 0.0-1.0
   memberCount: number;
   postCount: number;
   createdAt: number;
