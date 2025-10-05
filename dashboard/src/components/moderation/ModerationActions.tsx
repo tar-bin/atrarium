@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { ModerationStatus } from '@/types';
+import type { ModerationReason } from '@/lib/moderation';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -10,13 +11,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { EyeOff, Eye, Ban } from 'lucide-react';
+import { ModerationReasonSelect } from './ModerationReasonSelect';
 
 interface ModerationActionsProps {
   targetType: 'post' | 'user';
   currentStatus?: ModerationStatus;
-  onHide?: () => Promise<void>;
-  onUnhide?: () => Promise<void>;
-  onBlockUser?: () => Promise<void>;
+  onHide?: (reason?: ModerationReason) => Promise<void>;
+  onUnhide?: (reason?: ModerationReason) => Promise<void>;
+  onBlockUser?: (reason?: ModerationReason) => Promise<void>;
 }
 
 export function ModerationActions({
@@ -31,6 +33,7 @@ export function ModerationActions({
     'hide' | 'unhide' | 'block' | null
   >(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [reason, setReason] = useState<ModerationReason | undefined>();
 
   const handleActionClick = (action: 'hide' | 'unhide' | 'block') => {
     setPendingAction(action);
@@ -42,15 +45,16 @@ export function ModerationActions({
       setIsProcessing(true);
 
       if (pendingAction === 'hide' && onHide) {
-        await onHide();
+        await onHide(reason);
       } else if (pendingAction === 'unhide' && onUnhide) {
-        await onUnhide();
+        await onUnhide(reason);
       } else if (pendingAction === 'block' && onBlockUser) {
-        await onBlockUser();
+        await onBlockUser(reason);
       }
 
       setShowConfirmDialog(false);
       setPendingAction(null);
+      setReason(undefined); // Reset reason after action
     } catch (error) {
       console.error('Moderation action failed:', error);
     } finally {
@@ -133,6 +137,10 @@ export function ModerationActions({
             <DialogTitle>{dialogContent.title}</DialogTitle>
             <DialogDescription>{dialogContent.description}</DialogDescription>
           </DialogHeader>
+          <div className="py-4">
+            <label className="text-sm font-medium mb-2 block">Reason (optional)</label>
+            <ModerationReasonSelect value={reason} onChange={setReason} />
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>
               Cancel

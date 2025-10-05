@@ -18,7 +18,6 @@ export function CommunityList({
   loading,
   error,
   onCreateClick,
-  currentUserDid,
 }: CommunityListProps) {
   const [activeTab, setActiveTab] = useState<TabType>('joined');
 

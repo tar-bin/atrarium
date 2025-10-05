@@ -1,8 +1,7 @@
-import { createFileRoute, redirect, Navigate } from '@tanstack/react-router';
+import { createFileRoute, Navigate } from '@tanstack/react-router';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PDSLoginForm } from '@/components/pds/PDSLoginForm';
 import { usePDS } from '@/contexts/PDSContext';
-import { useEffect } from 'react';
 
 export const Route = createFileRoute('/')({
   component: HomePage,

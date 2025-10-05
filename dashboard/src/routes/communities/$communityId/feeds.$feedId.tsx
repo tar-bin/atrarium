@@ -42,11 +42,13 @@ function FeedDetailPage() {
         status: 'active',
         hashtag: '#atr_a1b2c3d4',
         posts7d: 42,
+        lastPostAt: null,
         activeUsers7d: 12,
         createdAt: 1704067200,
       },
       posts: [
         {
+          id: 1,
           uri: 'at://did:plc:sakura.bsky.social/app.bsky.feed.post/3lbxh7k2wy42c',
           feedId: 'feed-anime-general',
           authorDid: 'did:plc:sakura.bsky.social',
@@ -58,6 +60,7 @@ function FeedDetailPage() {
           indexedAt: Date.now() / 1000 - 7200,
         },
         {
+          id: 2,
           uri: 'at://did:plc:yuuto.bsky.social/app.bsky.feed.post/3lbxgm9pqr21k',
           feedId: 'feed-anime-general',
           authorDid: 'did:plc:yuuto.bsky.social',
@@ -69,6 +72,7 @@ function FeedDetailPage() {
           indexedAt: Date.now() / 1000 - 14400,
         },
         {
+          id: 3,
           uri: 'at://did:plc:mika.bsky.social/app.bsky.feed.post/3lbwz3n8tx52p',
           feedId: 'feed-anime-general',
           authorDid: 'did:plc:mika.bsky.social',
@@ -80,6 +84,7 @@ function FeedDetailPage() {
           indexedAt: Date.now() / 1000 - 28800,
         },
         {
+          id: 4,
           uri: 'at://did:plc:rei.bsky.social/app.bsky.feed.post/3lbvy8q4nm61s',
           feedId: 'feed-anime-general',
           authorDid: 'did:plc:rei.bsky.social',
@@ -91,6 +96,7 @@ function FeedDetailPage() {
           indexedAt: Date.now() / 1000 - 43200,
         },
         {
+          id: 5,
           uri: 'at://did:plc:kenji.bsky.social/app.bsky.feed.post/3lbux2m7kp93w',
           feedId: 'feed-anime-general',
           authorDid: 'did:plc:kenji.bsky.social',
@@ -112,11 +118,13 @@ function FeedDetailPage() {
         status: 'active',
         hashtag: '#atr_i9j0k1l2',
         posts7d: 95,
+        lastPostAt: null,
         activeUsers7d: 28,
         createdAt: 1704067200,
       },
       posts: [
         {
+          id: 1,
           uri: 'at://did:plc:alex.bsky.social/app.bsky.feed.post/3lby9x4nqp82m',
           feedId: 'feed-tech-ai',
           authorDid: 'did:plc:alex.bsky.social',
@@ -128,6 +136,7 @@ function FeedDetailPage() {
           indexedAt: Date.now() / 1000 - 3600,
         },
         {
+          id: 2,
           uri: 'at://did:plc:sarah.bsky.social/app.bsky.feed.post/3lby8k2mqw71n',
           feedId: 'feed-tech-ai',
           authorDid: 'did:plc:sarah.bsky.social',
@@ -139,6 +148,7 @@ function FeedDetailPage() {
           indexedAt: Date.now() / 1000 - 10800,
         },
         {
+          id: 3,
           uri: 'at://did:plc:marcus.bsky.social/app.bsky.feed.post/3lbx7m9prt63k',
           feedId: 'feed-tech-ai',
           authorDid: 'did:plc:marcus.bsky.social',
@@ -150,6 +160,7 @@ function FeedDetailPage() {
           indexedAt: Date.now() / 1000 - 21600,
         },
         {
+          id: 4,
           uri: 'at://did:plc:priya.bsky.social/app.bsky.feed.post/3lbw3n8kx52p',
           feedId: 'feed-tech-ai',
           authorDid: 'did:plc:priya.bsky.social',
@@ -161,6 +172,7 @@ function FeedDetailPage() {
           indexedAt: Date.now() / 1000 - 43200,
         },
         {
+          id: 5,
           uri: 'at://did:plc:chen.bsky.social/app.bsky.feed.post/3lbuz2m7kp93w',
           feedId: 'feed-tech-ai',
           authorDid: 'did:plc:chen.bsky.social',
@@ -182,11 +194,13 @@ function FeedDetailPage() {
         status: 'active',
         hashtag: '#atr_q7r8s9t0',
         posts7d: 45,
+        lastPostAt: null,
         activeUsers7d: 18,
         createdAt: 1704067200,
       },
       posts: [
         {
+          id: 1,
           uri: 'at://did:plc:jake.bsky.social/app.bsky.feed.post/3lbz2k7pqm91x',
           feedId: 'feed-game-unity',
           authorDid: 'did:plc:jake.bsky.social',
@@ -198,6 +212,7 @@ function FeedDetailPage() {
           indexedAt: Date.now() / 1000 - 5400,
         },
         {
+          id: 2,
           uri: 'at://did:plc:emma.bsky.social/app.bsky.feed.post/3lby1m8nrt42k',
           feedId: 'feed-game-unity',
           authorDid: 'did:plc:emma.bsky.social',
@@ -209,6 +224,7 @@ function FeedDetailPage() {
           indexedAt: Date.now() / 1000 - 18000,
         },
         {
+          id: 3,
           uri: 'at://did:plc:liam.bsky.social/app.bsky.feed.post/3lbx9k3mqw73n',
           feedId: 'feed-game-unity',
           authorDid: 'did:plc:liam.bsky.social',
@@ -220,6 +236,7 @@ function FeedDetailPage() {
           indexedAt: Date.now() / 1000 - 32400,
         },
         {
+          id: 4,
           uri: 'at://did:plc:olivia.bsky.social/app.bsky.feed.post/3lbw7n4prt85k',
           feedId: 'feed-game-unity',
           authorDid: 'did:plc:olivia.bsky.social',
@@ -231,6 +248,7 @@ function FeedDetailPage() {
           indexedAt: Date.now() / 1000 - 54000,
         },
         {
+          id: 5,
           uri: 'at://did:plc:noah.bsky.social/app.bsky.feed.post/3lbv2m7kp93w',
           feedId: 'feed-game-unity',
           authorDid: 'did:plc:noah.bsky.social',
@@ -254,6 +272,7 @@ function FeedDetailPage() {
       status: 'active',
       hashtag: '#atr_unknown',
       posts7d: 0,
+      lastPostAt: null,
       activeUsers7d: 0,
       createdAt: Math.floor(Date.now() / 1000),
     },

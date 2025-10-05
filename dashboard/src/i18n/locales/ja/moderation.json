@@ -1,0 +1,22 @@
+{
+  "selectReason": "理由を選択（任意）",
+  "reasons": {
+    "spam": "スパム投稿",
+    "low_quality": "低品質コンテンツ",
+    "duplicate": "重複投稿",
+    "off_topic": "トピック外のコンテンツ",
+    "wrong_community": "誤ったコミュニティへの投稿",
+    "guidelines_violation": "コミュニティガイドライン違反",
+    "terms_violation": "利用規約違反",
+    "copyright": "著作権侵害",
+    "harassment": "ハラスメントまたはいじめ",
+    "hate_speech": "ヘイトスピーチ",
+    "violence": "暴力または脅迫",
+    "nsfw": "NSFWコンテンツ",
+    "illegal_content": "違法コンテンツ",
+    "bot_activity": "自動ボット活動",
+    "impersonation": "なりすまし",
+    "ban_evasion": "BANの回避",
+    "other": "その他の理由"
+  }
+}

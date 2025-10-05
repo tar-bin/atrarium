@@ -29,10 +29,10 @@ export function CommunityCard({ community, onClick, userRole }: CommunityCardPro
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <CardTitle className="text-lg truncate">{community.name}</CardTitle>
               {userRole === 'owner' && (
-                <Crown className="h-4 w-4 text-yellow-600 flex-shrink-0" title="Owner" />
+                <Crown className="h-4 w-4 text-yellow-600 flex-shrink-0" aria-label="Owner" />
               )}
               {userRole === 'moderator' && (
-                <Shield className="h-4 w-4 text-blue-600 flex-shrink-0" title="Moderator" />
+                <Shield className="h-4 w-4 text-blue-600 flex-shrink-0" aria-label="Moderator" />
               )}
             </div>
             <Badge variant={stageBadgeVariant[community.stage]} className="flex-shrink-0">
