@@ -1,6 +1,6 @@
 # What is Atrarium?
 
-**Atrarium enables small & open communities (10-200 people) to operate sustainably on Bluesky using serverless infrastructure and membership-based feed filtering.**
+**Atrarium enables small & open communities (10-200 people) to operate sustainably on AT Protocol using serverless infrastructure and membership-based feed filtering.**
 
 Small community servers face a sustainability crisis. Operating a Fediverse instance (Mastodon, Misskey) costs $30-150/month and requires 5 hours/week of maintenance. This operational burden leads to 50-70% of small instances closing within 1-2 years, affecting tens of thousands of users who lose their online homes.
 
