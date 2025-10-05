@@ -1,27 +1,39 @@
 ---
-title: API設計
-description: AtrariumのAPIエンドポイントとFeed Generator仕様
+title: API Reference
+description: Atrarium API endpoints and interactive documentation
 order: 3
 ---
 
-# API設計
+# API Reference
 
-Atrariumは2つのAPIを実装しています：
+Atrarium implements two APIs:
 
-1. **Feed Generator API**（AT Protocol標準）
-2. **Dashboard API**（内部管理用）
+1. **Feed Generator API** (AT Protocol standard)
+2. **Dashboard API** (Internal management)
+
+## Interactive API Documentation
+
+**Swagger UI**: [https://atrarium.net/api/docs](https://atrarium.net/api/docs)
+
+For the most up-to-date API documentation, please visit the Swagger UI endpoint, which provides:
+- Interactive API exploration
+- Request/response examples
+- Schema definitions
+- Authentication flows
+
+**OpenAPI Specification**: [https://atrarium.net/api/openapi.json](https://atrarium.net/api/openapi.json)
 
 ## Feed Generator API
 
-AT ProtocolのFeed Generator仕様を実装しています。
+Implements AT Protocol's Feed Generator specification.
 
-### DIDドキュメント
+### DID Document
 
-**エンドポイント**: `GET /.well-known/did.json`
+**Endpoint**: `GET /.well-known/did.json`
 
-このフィードジェネレーターを識別するDIDドキュメントを返します。
+Returns DID document identifying this feed generator.
 
-**レスポンス**:
+**Example Response**:
 ```json
 {
   "@context": ["https://www.w3.org/ns/did/v1"],
@@ -34,18 +46,23 @@ AT ProtocolのFeed Generator仕様を実装しています。
 }
 ```
 
-### フィードスケルトン
+### Feed Skeleton
 
-**エンドポイント**: `GET /xrpc/app.bsky.feed.getFeedSkeleton`
+**Endpoint**: `GET /xrpc/app.bsky.feed.getFeedSkeleton`
 
-フィードスケルトン（投稿URIのみ、コンテンツなし）を返します。
+Returns feed skeleton (post URIs only, no content).
 
-**パラメータ**:
-- `feed`（必須）: フィードURI（at://did:plc:xxx/app.bsky.feed.generator/feed-id）
-- `cursor`（任意）: ページネーションカーソル
-- `limit`（任意）: 投稿数（デフォルト: 50、最大: 100）
+**Parameters**:
+- `feed` (required): Feed URI (at://did:plc:xxx/app.bsky.feed.generator/feed-id)
+- `cursor` (optional): Pagination cursor
+- `limit` (optional): Number of posts (default: 50, max: 100)
 
-**レスポンス**:
+**Example Request**:
+```bash
+curl "https://atrarium.net/xrpc/app.bsky.feed.getFeedSkeleton?feed=at://did:plc:xxx/app.bsky.feed.generator/community-name&limit=20"
+```
+
+**Example Response**:
 ```json
 {
   "feed": [
@@ -56,39 +73,96 @@ AT ProtocolのFeed Generator仕様を実装しています。
 }
 ```
 
+### Feed Metadata
+
+**Endpoint**: `GET /xrpc/app.bsky.feed.describeFeedGenerator`
+
+Returns metadata about available feeds.
+
+**Example Response**:
+```json
+{
+  "did": "did:web:atrarium.net",
+  "feeds": [
+    {
+      "uri": "at://did:plc:xxx/app.bsky.feed.generator/community-name",
+      "displayName": "Community Name",
+      "description": "Community description"
+    }
+  ]
+}
+```
+
 ## Dashboard API
 
-内部管理API（JWT認証必須）。
+Internal API for community management (requires JWT authentication).
 
-### 認証
+### Authentication
 
-全Dashboard APIエンドポイントはAuthorizationヘッダーにJWTトークンが必要です：
+All Dashboard API endpoints require JWT token in `Authorization` header:
 
 ```bash
 curl -H "Authorization: Bearer $JWT_TOKEN" https://atrarium.net/api/communities
 ```
 
-### コミュニティ
+### Endpoints Overview
 
-#### コミュニティ作成
+**Communities**:
+- `POST /api/communities` - Create community (writes to PDS)
+- `GET /api/communities` - List communities
+- `GET /api/communities/:id` - Get community details
+- `PUT /api/communities/:id` - Update community
 
-**エンドポイント**: `POST /api/communities`
+**Memberships**:
+- `POST /api/communities/:id/members` - Add member (writes to PDS)
+- `GET /api/communities/:id/members` - List members
+- `PUT /api/communities/:id/members/:did` - Update role
 
-**リクエスト**:
+**Moderation**:
+- `POST /api/moderation/actions` - Create moderation action (writes to PDS)
+- `GET /api/moderation/actions` - List moderation actions
+
+For detailed request/response schemas, please refer to the [Swagger UI documentation](https://atrarium.net/api/docs).
+
+## Error Responses
+
+All endpoints return errors in standard format:
+
 ```json
 {
-  "name": "TypeScript愛好会",
-  "stage": "theme",
-  "parent_id": null
+  "error": "error_code",
+  "message": "Human-readable error message"
 }
 ```
 
-#### コミュニティ一覧
+**Common HTTP Status Codes**:
+- `400 Bad Request`: Invalid request parameters
+- `401 Unauthorized`: Missing or invalid authentication
+- `403 Forbidden`: Insufficient permissions
+- `404 Not Found`: Resource not found
+- `500 Internal Server Error`: Server error
 
-**エンドポイント**: `GET /api/communities`
+## Rate Limiting
 
-**クエリパラメータ**:
-- `stage`（任意）: ステージでフィルタ（theme/community/graduated）
-- `parent_id`（任意）: 親でフィルタ
+**Current Status**: Not implemented (planned for Phase 1+)
 
-詳細は[英語版](/en/architecture/api)を参照してください。
+**Planned Limits**:
+- Feed Generator API: 100 requests/hour/user
+- Dashboard API: 1000 requests/hour/user
+
+## CORS Configuration
+
+All endpoints support CORS for dashboard access:
+
+```http
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
+Access-Control-Allow-Headers: Content-Type, Authorization
+```
+
+## Related Documentation
+
+- [System Architecture](/ja/architecture/system-design) - Overall system design
+- [Data Storage](/ja/architecture/database) - Storage architecture
+- [Implementation Guide](/ja/reference/implementation) - Development guide
+- [AT Protocol Documentation](https://atproto.com/docs) - AT Protocol specs

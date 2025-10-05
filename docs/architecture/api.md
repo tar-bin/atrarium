@@ -1,15 +1,27 @@
 ---
-title: API Design
-description: Atrarium API endpoints and Feed Generator specification
+title: API Reference
+description: Atrarium API endpoints and interactive documentation
 order: 3
 ---
 
-# API Design
+# API Reference
 
 Atrarium implements two APIs:
 
 1. **Feed Generator API** (AT Protocol standard)
 2. **Dashboard API** (Internal management)
+
+## Interactive API Documentation
+
+**Swagger UI**: [https://atrarium.net/api/docs](https://atrarium.net/api/docs)
+
+For the most up-to-date API documentation, please visit the Swagger UI endpoint, which provides:
+- Interactive API exploration
+- Request/response examples
+- Schema definitions
+- Authentication flows
+
+**OpenAPI Specification**: [https://atrarium.net/api/openapi.json](https://atrarium.net/api/openapi.json)
 
 ## Feed Generator API
 
@@ -21,7 +33,7 @@ Implements AT Protocol's Feed Generator specification.
 
 Returns DID document identifying this feed generator.
 
-**Response**:
+**Example Response**:
 ```json
 {
   "@context": ["https://www.w3.org/ns/did/v1"],
@@ -45,7 +57,12 @@ Returns feed skeleton (post URIs only, no content).
 - `cursor` (optional): Pagination cursor
 - `limit` (optional): Number of posts (default: 50, max: 100)
 
-**Response**:
+**Example Request**:
+```bash
+curl "https://atrarium.net/xrpc/app.bsky.feed.getFeedSkeleton?feed=at://did:plc:xxx/app.bsky.feed.generator/community-name&limit=20"
+```
+
+**Example Response**:
 ```json
 {
   "feed": [
@@ -56,26 +73,21 @@ Returns feed skeleton (post URIs only, no content).
 }
 ```
 
-**Example**:
-```bash
-curl "https://atrarium.net/xrpc/app.bsky.feed.getFeedSkeleton?feed=at://did:plc:xxx/app.bsky.feed.generator/typescript-tips&limit=20"
-```
-
 ### Feed Metadata
 
 **Endpoint**: `GET /xrpc/app.bsky.feed.describeFeedGenerator`
 
 Returns metadata about available feeds.
 
-**Response**:
+**Example Response**:
 ```json
 {
   "did": "did:web:atrarium.net",
   "feeds": [
     {
-      "uri": "at://did:plc:xxx/app.bsky.feed.generator/typescript-tips",
-      "displayName": "TypeScript Tips",
-      "description": "Best TypeScript practices and tips"
+      "uri": "at://did:plc:xxx/app.bsky.feed.generator/community-name",
+      "displayName": "Community Name",
+      "description": "Community description"
     }
   ]
 }
@@ -87,232 +99,30 @@ Internal API for community management (requires JWT authentication).
 
 ### Authentication
 
-All Dashboard API endpoints require JWT token in Authorization header:
+All Dashboard API endpoints require JWT token in `Authorization` header:
 
 ```bash
 curl -H "Authorization: Bearer $JWT_TOKEN" https://atrarium.net/api/communities
 ```
 
-### Communities
+### Endpoints Overview
 
-#### Create Community
+**Communities**:
+- `POST /api/communities` - Create community (writes to PDS)
+- `GET /api/communities` - List communities
+- `GET /api/communities/:id` - Get community details
+- `PUT /api/communities/:id` - Update community
 
-**Endpoint**: `POST /api/communities`
+**Memberships**:
+- `POST /api/communities/:id/members` - Add member (writes to PDS)
+- `GET /api/communities/:id/members` - List members
+- `PUT /api/communities/:id/members/:did` - Update role
 
-**Request**:
-```json
-{
-  "name": "TypeScript Enthusiasts",
-  "stage": "theme",
-  "parent_id": null
-}
-```
+**Moderation**:
+- `POST /api/moderation/actions` - Create moderation action (writes to PDS)
+- `GET /api/moderation/actions` - List moderation actions
 
-**Response**:
-```json
-{
-  "id": 1,
-  "name": "TypeScript Enthusiasts",
-  "stage": "theme",
-  "parent_id": null,
-  "feed_mix": { "own": 80, "parent": 15, "global": 5 },
-  "created_at": 1704067200
-}
-```
-
-#### List Communities
-
-**Endpoint**: `GET /api/communities`
-
-**Query Parameters**:
-- `stage` (optional): Filter by stage (theme/community/graduated)
-- `parent_id` (optional): Filter by parent
-
-**Response**:
-```json
-{
-  "communities": [
-    {
-      "id": 1,
-      "name": "TypeScript Enthusiasts",
-      "stage": "theme",
-      "member_count": 15,
-      "post_count": 342
-    }
-  ]
-}
-```
-
-#### Get Community
-
-**Endpoint**: `GET /api/communities/:id`
-
-**Response**:
-```json
-{
-  "id": 1,
-  "name": "TypeScript Enthusiasts",
-  "stage": "community",
-  "parent_id": null,
-  "feed_mix": { "own": 80, "parent": 15, "global": 5 },
-  "health_metrics": {
-    "activity_score": 0.75,
-    "growth_rate": 0.12,
-    "engagement_rate": 0.68
-  },
-  "member_count": 48,
-  "post_count": 1250,
-  "created_at": 1704067200
-}
-```
-
-#### Update Community
-
-**Endpoint**: `PUT /api/communities/:id`
-
-**Request**:
-```json
-{
-  "name": "Advanced TypeScript",
-  "stage": "community",
-  "feed_mix": { "own": 90, "parent": 10, "global": 0 }
-}
-```
-
-### Theme Feeds
-
-#### Create Feed
-
-**Endpoint**: `POST /api/feeds`
-
-**Request**:
-```json
-{
-  "community_id": 1,
-  "name": "TypeScript Tips",
-  "filter_config": {
-    "hashtags": ["#TypeScript", "#TS"],
-    "keywords": ["typescript", "type safety"],
-    "authors": ["did:plc:example"]
-  }
-}
-```
-
-**Response**:
-```json
-{
-  "id": 1,
-  "community_id": 1,
-  "name": "TypeScript Tips",
-  "feed_uri": "at://did:web:atrarium.net/app.bsky.feed.generator/typescript-tips",
-  "filter_config": { /* ... */ },
-  "post_count": 0,
-  "created_at": 1704067200
-}
-```
-
-#### List Feeds
-
-**Endpoint**: `GET /api/feeds?community_id=:id`
-
-**Response**:
-```json
-{
-  "feeds": [
-    {
-      "id": 1,
-      "name": "TypeScript Tips",
-      "feed_uri": "at://...",
-      "post_count": 425,
-      "last_post_at": 1704153600
-    }
-  ]
-}
-```
-
-### Memberships
-
-#### Add Member
-
-**Endpoint**: `POST /api/communities/:id/members`
-
-**Request**:
-```json
-{
-  "user_did": "did:plc:xxx",
-  "role": "member"
-}
-```
-
-**Response**:
-```json
-{
-  "community_id": 1,
-  "user_did": "did:plc:xxx",
-  "role": "member",
-  "joined_at": 1704067200
-}
-```
-
-#### List Members
-
-**Endpoint**: `GET /api/communities/:id/members`
-
-**Response**:
-```json
-{
-  "members": [
-    {
-      "user_did": "did:plc:xxx",
-      "role": "owner",
-      "joined_at": 1704067200
-    },
-    {
-      "user_did": "did:plc:yyy",
-      "role": "member",
-      "joined_at": 1704153600
-    }
-  ]
-}
-```
-
-#### Update Role
-
-**Endpoint**: `PUT /api/communities/:id/members/:did`
-
-**Request**:
-```json
-{
-  "role": "moderator"
-}
-```
-
-### Statistics
-
-#### Community Stats
-
-**Endpoint**: `GET /api/communities/:id/stats`
-
-**Response**:
-```json
-{
-  "community_id": 1,
-  "stats": {
-    "total_members": 48,
-    "total_posts": 1250,
-    "active_feeds": 3,
-    "health_metrics": {
-      "activity_score": 0.75,
-      "growth_rate": 0.12,
-      "engagement_rate": 0.68
-    }
-  },
-  "timeline": {
-    "daily": [/* 30 days of stats */],
-    "weekly": [/* 12 weeks of stats */]
-  }
-}
-```
+For detailed request/response schemas, please refer to the [Swagger UI documentation](https://atrarium.net/api/docs).
 
 ## Error Responses
 
@@ -320,12 +130,12 @@ All endpoints return errors in standard format:
 
 ```json
 {
-  "error": "unauthorized",
-  "message": "Invalid or expired JWT token"
+  "error": "error_code",
+  "message": "Human-readable error message"
 }
 ```
 
-**Common Error Codes**:
+**Common HTTP Status Codes**:
 - `400 Bad Request`: Invalid request parameters
 - `401 Unauthorized`: Missing or invalid authentication
 - `403 Forbidden`: Insufficient permissions
@@ -334,7 +144,7 @@ All endpoints return errors in standard format:
 
 ## Rate Limiting
 
-**Current Status**: Not implemented (Phase 1 feature)
+**Current Status**: Not implemented (planned for Phase 1+)
 
 **Planned Limits**:
 - Feed Generator API: 100 requests/hour/user
@@ -346,12 +156,13 @@ All endpoints support CORS for dashboard access:
 
 ```http
 Access-Control-Allow-Origin: *
-Access-Control-Allow-Methods: GET, POST, PUT, DELETE
+Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
 Access-Control-Allow-Headers: Content-Type, Authorization
 ```
 
 ## Related Documentation
 
-- [System Architecture](/en/architecture/system-design)
-- [Database Schema](/en/architecture/database)
-- [Implementation Guide](/en/reference/implementation)
+- [System Architecture](/architecture/system-design) - Overall system design
+- [Data Storage](/architecture/database) - Storage architecture
+- [Implementation Guide](/reference/implementation) - Development guide
+- [AT Protocol Documentation](https://atproto.com/docs) - AT Protocol specs

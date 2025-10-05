@@ -731,9 +731,9 @@ hate_speech:        0%    (should be near-zero)
 
 ## Related Documents
 
-- [API Reference](./api-reference.md) - Moderation API endpoints
-- [Database Architecture](../architecture/database.md) - PDS-first data model
-- [Developer Guide](../guide/overview.md) - Atrarium development guides
+- [API Reference](/reference/api-reference) - Moderation API endpoints
+- [Database Architecture](/architecture/database) - PDS-first data model
+- [What is Atrarium?](/guide/concept) - Project concept and design philosophy
 
 ---
 

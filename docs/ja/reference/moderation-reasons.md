@@ -731,9 +731,9 @@ hate_speech:        0%    (ゼロに近いべき)
 
 ## 関連ドキュメント
 
-- [APIリファレンス](./api-reference.md) - モデレーションAPIエンドポイント
-- [データベースアーキテクチャ](../architecture/database.md) - PDS-firstデータモデル
-- [開発者ガイド](../guide/overview.md) - Atrariumの開発ガイド
+- [APIリファレンス](/ja/reference/api-reference) - モデレーションAPIエンドポイント
+- [データベースアーキテクチャ](/ja/architecture/database) - PDS-firstデータモデル
+- [Atrariumとは？](/ja/guide/concept) - プロジェクトコンセプトと設計思想
 
 ---
 

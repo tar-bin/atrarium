@@ -7,7 +7,7 @@ export const enNavigation: DefaultTheme.Config = {
       text: 'Guide',
       collapsed: false,
       items: [
-        { text: 'Overview', link: '/guide/overview' },
+        { text: 'What is Atrarium?', link: '/guide/concept' },
         { text: 'Setup', link: '/guide/setup' },
         { text: 'Quickstart', link: '/guide/quickstart' }
       ]
@@ -34,7 +34,7 @@ export const enNavigation: DefaultTheme.Config = {
 
   // Top navigation bar
   nav: [
-    { text: 'Guide', link: '/guide/overview', activeMatch: '^/guide/' },
+    { text: 'Guide', link: '/guide/concept', activeMatch: '^/guide/' },
     { text: 'Architecture', link: '/architecture/system-design', activeMatch: '^/architecture/' },
     { text: 'Reference', link: '/reference/api-reference', activeMatch: '^/reference/' },
     { text: 'GitHub', link: 'https://github.com/tar-bin/atrarium' },

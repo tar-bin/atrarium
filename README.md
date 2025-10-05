@@ -16,38 +16,42 @@ Atrarium is a community management system built on the AT Protocol, designed to 
 
 ## 🎯 What is Atrarium?
 
-Atrarium liberates small community managers from the heavy operational costs and technical complexity of running Mastodon/Misskey servers, while preserving community independence.
+**Atrarium enables small & open communities (10-200 people) to operate sustainably on Bluesky using serverless infrastructure and membership-based feed filtering.**
+
+Small community servers face a sustainability crisis. Operating a Fediverse instance (Mastodon, Misskey) costs $30-150/month and requires 5 hours/week of maintenance, leading to 50-70% of small instances closing within 1-2 years.
+
+Atrarium solves this by leveraging **AT Protocol's decentralized identity (DID)** and **Cloudflare's serverless infrastructure**. Communities reduce costs by **95%** ($0.40-5/month) and time by **80%** (1 hour/week) through zero server management and automated scaling.
+
+📖 **[Full Concept Documentation](https://docs.atrarium.net/en/guide/concept.html)** | [日本語版](https://docs.atrarium.net/ja/guide/concept.html)
+
+### Unique Positioning
+
+Atrarium occupies a unique space in the community platform landscape:
+
+| Platform | Openness | Ops Burden | Membership Filtering |
+|----------|----------|------------|----------------------|
+| **Fediverse** | ✅ Open | ❌ High (VPS, 5 hrs/week) | ✅ Instance-level |
+| **Discord** | ❌ Closed | ✅ Low (managed) | ✅ Server-level |
+| **Standard Bluesky** | ✅ Open | ✅ Low (managed) | ❌ No filtering |
+| **Atrarium** | ✅ Open | ✅ Low (serverless) | ✅ Feed-level |
+
+**Key Differentiators**:
+- **vs Fediverse**: Open communities without operational burden (no VPS, no database)
+- **vs Discord**: Low ops burden with open/public communities (no platform lock-in)
+- **vs Standard Bluesky**: Membership-based feed filtering (not available in standard feeds)
 
 ### Key Features
 
-- 🌱 **Zero Server Management**: Built on Cloudflare's serverless infrastructure
-- 💰 **95% Cost Reduction**: From $30-150/month to just $5/month
-- ⏱️ **80% Time Savings**: From 5 hours/week to 1 hour/week
-- 🔓 **True Data Ownership**: Users own their data via DIDs
-- 🌐 **Natural Discovery**: Connect with Bluesky's 30M+ users
-- 🤖 **Automated Growth**: Smart community lifecycle management
+- 🌱 **Zero Server Management**: Built on Cloudflare Workers + Durable Objects
+- 💰 **95% Cost Reduction**: $30-150/month → $0.40-5/month
+- ⏱️ **80% Time Savings**: 5 hours/week → 1 hour/week
+- 🔓 **Decentralized Identity**: Users own data via DIDs (portable across services)
+- 🎯 **Membership Filtering**: Community-specific feeds with role-based access
+- 📱 **Bluesky Compatible**: Viewable on official Bluesky apps (iOS, Android, web)
 
 ---
 
-## 🚨 The Problem We Solve
-
-### Fediverse Small Server Crisis
-
-Small Mastodon/Misskey servers (10-200 people) face critical challenges:
-
-| Challenge | Impact |
-|-----------|--------|
-| **High operational costs** | $30-150/month + 5 hours/week |
-| **Isolation and decline** | 50-70% close within 1-2 years |
-| **Federation risks** | Can be cut off by large servers anytime |
-| **Technical complexity** | DB corruption, SSL, updates, etc. |
-| **Legal liability** | Individual operators bear all responsibility |
-
-**Market Size**: 450-800 small instances in Japanese-speaking Fediverse, with 75,000-200,000 users
-
----
-
-## 💡 How Atrarium Solves This
+## 💡 How It Works
 
 ### Built on AT Protocol
 

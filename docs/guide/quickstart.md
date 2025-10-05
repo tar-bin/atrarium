@@ -199,7 +199,7 @@ const results = await stmt.all()
 
 ## Useful Links
 
-- [System Architecture](/en/architecture/system-design)
-- [Database Schema](/en/architecture/database)
-- [API Reference](/en/reference/api-reference)
-- [Implementation Guide](/en/reference/implementation)
+- [System Architecture](/architecture/system-design)
+- [Database Schema](/architecture/database)
+- [API Reference](/reference/api-reference)
+- [Implementation Guide](/reference/implementation)

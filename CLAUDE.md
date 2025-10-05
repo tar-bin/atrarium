@@ -4,12 +4,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Atrarium is a community management system built on AT Protocol (Bluesky), designed for small communities (10-200 people). It replaces expensive Mastodon/Misskey servers with a serverless architecture on Cloudflare Workers, reducing costs by 95% ($30-150/month → $5/month) and operational time by 80%.
+Atrarium is a community management system built on AT Protocol (Bluesky), designed for small & open communities (10-200 people). It replaces expensive Mastodon/Misskey servers with a serverless architecture on Cloudflare Workers, reducing costs by 95% ($30-150/month → $0.40-5/month) and operational time by 80% (5 hours/week → 1 hour/week).
+
+**Positioning**: Atrarium is positioned as an alternative to:
+- **Fediverse (Mastodon/Misskey)**: Open communities like Fediverse, but without the high operational burden (no VPS management, no database bottlenecks, DID portable identity)
+- **Discord**: Low operational burden like Discord, but with open/public communities instead of closed servers (no platform lock-in, decentralized identity)
+- **Standard Bluesky**: Built on Bluesky, but adds membership-based feed filtering not available in standard feeds (community-specific logic while remaining compatible with official apps)
 
 **Current Phase**: Phase 1 (PDS-First Architecture)
 **Status**: PDS-first architecture complete, ready for production deployment
 
+**Future Vision (Phase 2+)**: "Maintain optimal community size" (ちょうどいい大きさを保つ) - automated community splitting/graduation when growth exceeds healthy scale (200+ members), ensuring communities remain intimate and engaged.
+
 ## Architecture
+
+For detailed data flow visualization, see [VitePress Concept Documentation](https://docs.atrarium.net/en/guide/concept.html#how-it-works).
 
 ### Tech Stack
 - **Backend**: Cloudflare Workers + Durable Objects (TypeScript 5.7, Node.js via nodejs_compat)

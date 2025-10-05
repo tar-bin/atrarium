@@ -9,7 +9,7 @@ order: 1
 Complete reference for all Atrarium API endpoints.
 
 ::: tip
-This page provides a quick reference. For detailed design and examples, see [API Design](/en/architecture/api).
+This page provides a quick reference. For detailed design and examples, see [API Design](/architecture/api).
 :::
 
 ## Feed Generator API
@@ -324,6 +324,6 @@ X-RateLimit-Reset: 1704067200
 
 ## Related Documentation
 
-- [API Design](/en/architecture/api) - Detailed design and examples
-- [System Architecture](/en/architecture/system-design) - Overall architecture
-- [Implementation Guide](/en/reference/implementation) - Development details
+- [API Design](/architecture/api) - Detailed design and examples
+- [System Architecture](/architecture/system-design) - Overall architecture
+- [Implementation Guide](/reference/implementation) - Development details

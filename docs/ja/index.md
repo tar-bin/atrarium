@@ -10,7 +10,7 @@ hero:
   actions:
     - theme: brand
       text: はじめに
-      link: /ja/guide/overview
+      link: /ja/guide/concept
     - theme: alt
       text: GitHubで見る
       link: https://github.com/tar-bin/atrarium
@@ -43,7 +43,7 @@ features:
 
 ## クイックリンク
 
-- **[プロジェクト概要](/ja/guide/overview)**: ビジョンと設計思想
+- **[Atrariumとは？](/ja/guide/concept)**: ビジョンと設計思想
 - **[セットアップガイド](/ja/guide/setup)**: インストールとデプロイ
 - **[システムアーキテクチャ](/ja/architecture/system-design)**: 技術設計
 - **[APIリファレンス](/ja/reference/api-reference)**: エンドポイントと使用方法

@@ -63,4 +63,4 @@ const { results } = await env.DB.prepare(`
 `).bind(feedId, limit).all()
 ```
 
-詳細は[英語版](/en/reference/implementation)を参照してください。
+詳細は英語版のドキュメントを参照してください。
