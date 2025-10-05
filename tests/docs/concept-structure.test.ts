@@ -3,7 +3,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 
 describe('Concept Documentation Structure', () => {
-  const conceptPath = join(process.cwd(), 'docs/en/guide/concept.md');
+  const conceptPath = join(process.cwd(), 'docs/guide/concept.md');
 
   it('VitePress concept.md has all required sections', () => {
     const content = readFileSync(conceptPath, 'utf-8');

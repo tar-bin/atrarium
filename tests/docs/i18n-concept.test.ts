@@ -3,7 +3,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 
 describe('Concept i18n Parity', () => {
-  const enPath = join(process.cwd(), 'docs/en/guide/concept.md');
+  const enPath = join(process.cwd(), 'docs/guide/concept.md');
   const jaPath = join(process.cwd(), 'docs/ja/guide/concept.md');
 
   const extractSections = (content: string): string[] => {

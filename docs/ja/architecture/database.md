@@ -1,39 +1,39 @@
 ---
-title: データストレージアーキテクチャ
-description: Atrarium PDS-firstデータストレージとDurable Objects
+title: Data Storage Architecture
+description: Atrarium PDS-first data storage with Durable Objects
 order: 2
 ---
 
-# データストレージアーキテクチャ
+# Data Storage Architecture
 
-Atrariumは**PDS-firstアーキテクチャ**を実装しており、すべての正式なデータはAT Protocol Lexiconスキーマを使用してユーザーのPersonal Data Server（PDS）に保存されます。Cloudflare Durable Objectsは、高速なフィード生成のための7日間のフィードインデックスキャッシュを提供します。
+Atrarium implements a **PDS-first architecture** where all authoritative data is stored in user Personal Data Servers (PDSs) using AT Protocol Lexicon schemas. Cloudflare Durable Objects provide a 7-day feed index cache for fast feed generation.
 
-## アーキテクチャ概要
+## Architecture Overview
 
 ```
 ┌─────────────────────────────────────────┐
-│  PDS（信頼できる情報源）                │
+│  PDS (Source of Truth)                  │
 │  - net.atrarium.community.config        │
 │  - net.atrarium.community.membership    │
 │  - net.atrarium.moderation.action       │
 └──────────────┬──────────────────────────┘
                │
-               ↓ Firehose（Jetstream WebSocket）
+               ↓ Firehose (Jetstream WebSocket)
 ┌──────────────────────────────────────────┐
-│  FirehoseReceiver（Durable Object）      │
-│  - 軽量フィルター: includes('#atr_')      │
+│  FirehoseReceiver (Durable Object)       │
+│  - Lightweight filter: includes('#atr_') │
 └──────────────┬───────────────────────────┘
                │
-               ↓ Cloudflare Queue（バッチ処理）
+               ↓ Cloudflare Queue (batched)
 ┌──────────────────────────────────────────┐
-│  FirehoseProcessor（Queue Consumer）     │
-│  - 重量フィルター: regex                  │
+│  FirehoseProcessor (Queue Consumer)      │
+│  - Heavyweight filter: regex             │
 └──────────────┬───────────────────────────┘
                │
-               ↓ RPC呼び出し
+               ↓ RPC call
 ┌──────────────────────────────────────────┐
-│  CommunityFeedGenerator（Durable Object）│
-│  - Durable Objects Storage（7日間キャッシュ）│
+│  CommunityFeedGenerator (Durable Object) │
+│  - Durable Objects Storage (7-day cache) │
 │    • config:<communityId>                │
 │    • member:<did>                        │
 │    • post:<timestamp>:<rkey>             │
@@ -41,202 +41,202 @@ Atrariumは**PDS-firstアーキテクチャ**を実装しており、すべて�
 └──────────────────────────────────────────┘
 ```
 
-## ストレージレイヤー
+## Storage Layers
 
-### 1. PDS（永続ストレージ）
+### 1. PDS (Permanent Storage)
 
-すべてのコミュニティデータは、AT Protocol Lexiconスキーマを使用してユーザーのPDSに保存されます。
+All community data is stored in user PDSs using AT Protocol Lexicon schemas.
 
 #### net.atrarium.community.config
 
-オーナーのPDSに保存されるコミュニティメタデータ。
+Community metadata stored in the owner's PDS.
 
 ```typescript
 {
   $type: 'net.atrarium.community.config';
-  name: string;              // コミュニティ名（最大100文字）
-  hashtag: string;           // 一意なハッシュタグ: #atr_[0-9a-f]{8}
+  name: string;              // Community name (max 100 chars)
+  hashtag: string;           // Unique hashtag: #atr_[0-9a-f]{8}
   stage: 'theme' | 'community' | 'graduated';
-  parentCommunity?: string;  // 親configのAT-URI
+  parentCommunity?: string;  // AT-URI of parent config
   feedMix: {
-    own: number;             // 0-1、合計 = 1.0
+    own: number;             // 0-1, sum must = 1.0
     parent: number;
     global: number;
   };
-  moderators: string[];      // DID（最大50）
+  moderators: string[];      // DIDs (max 50)
   createdAt: string;         // ISO 8601
-  description?: string;      // 最大500文字
+  description?: string;      // Max 500 chars
 }
 ```
 
-**AT-URI形式**: `at://did:plc:owner/net.atrarium.community.config/3jzfcijpj2z2a`
+**AT-URI Format**: `at://did:plc:owner/net.atrarium.community.config/3jzfcijpj2z2a`
 
 #### net.atrarium.community.membership
 
-各メンバーのPDSに保存されるユーザーメンバーシップレコード。
+User membership records stored in each member's PDS.
 
 ```typescript
 {
   $type: 'net.atrarium.community.membership';
-  community: string;         // コミュニティconfigのAT-URI
+  community: string;         // AT-URI of community config
   role: 'owner' | 'moderator' | 'member';
   joinedAt: string;          // ISO 8601
   active: boolean;
 }
 ```
 
-**AT-URI形式**: `at://did:plc:member/net.atrarium.community.membership/3k2j4xyz`
+**AT-URI Format**: `at://did:plc:member/net.atrarium.community.membership/3k2j4xyz`
 
 #### net.atrarium.moderation.action
 
-モデレーターのPDSに保存されるモデレーションアクション。
+Moderation actions stored in moderator's PDS.
 
 ```typescript
 {
   $type: 'net.atrarium.moderation.action';
   action: 'hide_post' | 'unhide_post' | 'block_user' | 'unblock_user';
-  target: string;            // AT-URIまたはDID
-  community: string;         // コミュニティconfigのAT-URI
-  reason?: string;           // オプションの説明
+  target: string;            // AT-URI or DID
+  community: string;         // AT-URI of community config
+  reason?: string;           // Optional explanation
   createdAt: string;         // ISO 8601
 }
 ```
 
-**AT-URI形式**: `at://did:plc:moderator/net.atrarium.moderation.action/3m5n6pqr`
+**AT-URI Format**: `at://did:plc:moderator/net.atrarium.moderation.action/3m5n6pqr`
 
-::: warning プライバシー警告
-モデレーションアクションは**公開レコード**としてモデレーターのPDSに保存されます。`reason`フィールドには以下を含めないでください：
-- 個人情報（メールアドレス、電話番号、住所など）
-- 機密情報（内部通信、非公開のユーザー報告など）
-- 誹謗中傷や攻撃的な表現
+::: warning Privacy Warning
+Moderation actions are stored as **public records** in the moderator's PDS. The `reason` field should NOT contain:
+- Personal information (emails, phone numbers, addresses, etc.)
+- Confidential information (internal communications, private user reports, etc.)
+- Defamatory or offensive language
 
-推奨される`reason`の例：
-- ✅ "スパム投稿"
-- ✅ "コミュニティガイドライン違反"
-- ✅ "重複投稿"
-- ❌ "ユーザーXXXからの通報により削除（メール: xxx@example.com）"
-- ❌ "この投稿者は以前にも問題行動があった（内部記録参照）"
+Recommended `reason` examples:
+- ✅ "Spam post"
+- ✅ "Community guidelines violation"
+- ✅ "Duplicate post"
+- ❌ "Removed based on report from user XXX (email: xxx@example.com)"
+- ❌ "This user has history of problematic behavior (see internal records)"
 :::
 
-### 2. Durable Objects Storage（7日間キャッシュ）
+### 2. Durable Objects Storage (7-Day Cache)
 
-各コミュニティは、独立したストレージを持つ独自の`CommunityFeedGenerator` Durable Objectインスタンスを持ちます。
+Each community has its own `CommunityFeedGenerator` Durable Object instance with isolated storage.
 
-#### ストレージキー
+#### Storage Keys
 
-**コミュニティ設定**:
-- キー: `config:<communityId>`
-- 値: `{ name, hashtag, stage, createdAt }`
+**Community Config**:
+- Key: `config:<communityId>`
+- Value: `{ name, hashtag, stage, createdAt }`
 
-**メンバーシップレコード**:
-- キー: `member:<did>`
-- 値: `{ did, role, joinedAt, active }`
+**Membership Records**:
+- Key: `member:<did>`
+- Value: `{ did, role, joinedAt, active }`
 
-**ポストインデックス**:
-- キー: `post:<timestamp>:<rkey>`
-- 値: `{ uri, authorDid, createdAt, moderationStatus, indexedAt }`
+**Post Index**:
+- Key: `post:<timestamp>:<rkey>`
+- Value: `{ uri, authorDid, createdAt, moderationStatus, indexedAt }`
 
-**モデレーションアクション**:
-- キー: `moderation:<uri>`
-- 値: `{ action, targetUri, reason, createdAt }`
+**Moderation Actions**:
+- Key: `moderation:<uri>`
+- Value: `{ action, targetUri, reason, createdAt }`
 
-#### ストレージ操作の例
+#### Example Storage Operations
 
 ```typescript
-// ストレージにポストを書き込み
+// Write post to storage
 await storage.put(
   `post:${Date.now()}:${rkey}`,
   { uri, authorDid, createdAt, moderationStatus: 'approved', indexedAt: new Date().toISOString() }
 );
 
-// ポストを一覧表示（新しい順）
+// List posts (reverse chronological)
 const posts = await storage.list<PostMetadata>({
   prefix: 'post:',
   reverse: true,
   limit: 50
 });
 
-// 古いポストを削除（7日間保持）
+// Delete old posts (7-day retention)
 const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
 await storage.delete(`post:${timestamp}:${rkey}`);
 ```
 
-## データフロー
+## Data Flow
 
-### 書き込みフロー（PDS → Firehose → Durable Object）
+### Write Flow (PDS → Firehose → Durable Object)
 
-1. **ユーザーがPDSに投稿** コミュニティハッシュタグ付き（例: `#atr_a1b2c3d4`）
-2. **Firehoseがイベントを発行** → FirehoseReceiver DO
-3. **軽量フィルター**（`includes('#atr_')`）→ Cloudflare Queue
-4. **FirehoseProcessor Worker** が重量正規表現フィルターを適用（`/#atr_[0-9a-f]{8}/`）
-5. **CommunityFeedGenerator DO** がDurable Objects Storageにポストを保存
+1. **User posts to PDS** with community hashtag (e.g., `#atr_a1b2c3d4`)
+2. **Firehose emits event** → FirehoseReceiver DO
+3. **Lightweight filter** (`includes('#atr_')`) → Cloudflare Queue
+4. **FirehoseProcessor Worker** applies heavyweight regex filter (`/#atr_[0-9a-f]{8}/`)
+5. **CommunityFeedGenerator DO** stores post in Durable Objects Storage
 
-### 読み取りフロー（クライアント → Durable Object）
+### Read Flow (Client → Durable Object)
 
-1. **クライアントがリクエスト** フィードURIで`getFeedSkeleton`
-2. **Feed Generator API** がCommunityFeedGenerator DOへRPC呼び出し
-3. **Durable Object** が新しい順でストレージをクエリ
-4. **ポストURIを返す** ページネーションカーソル付き
-5. **クライアントが取得** Bluesky AppViewから完全なポスト内容を取得
+1. **Client requests** `getFeedSkeleton` with feed URI
+2. **Feed Generator API** makes RPC call to CommunityFeedGenerator DO
+3. **Durable Object** queries storage with reverse chronological order
+4. **Returns post URIs** with pagination cursor
+5. **Client fetches** full post content from Bluesky AppView
 
-## パフォーマンス特性
+## Performance Characteristics
 
-### ストレージ制限
+### Storage Limits
 
-- **Durable Objects**: オブジェクトごと10GB（コミュニティごと約100万ポストで十分）
-- **予想使用量**: 1000コミュニティ × 1万ポスト × 200バイト = 合計2GB
-- **7日間保持**: スケジュールアラームによる自動クリーンアップ
+- **Durable Objects**: 10GB per object (enough for ~1M posts per community)
+- **Expected usage**: 1000 communities × 10k posts × 200 bytes = 2GB total
+- **7-day retention**: Automatic cleanup via scheduled alarms
 
-### クエリパフォーマンス
+### Query Performance
 
-- **フィードスケルトン**: < 10ms（Durable Objects Storageは高速）
-- **メンバーシップチェック**: < 5ms（Durable Object内のインメモリマップ）
-- **ポストインデックス**: < 50ms（ストレージへの書き込み + インデックス更新）
+- **Feed skeleton**: < 10ms (Durable Objects Storage is fast)
+- **Membership check**: < 5ms (in-memory map in Durable Object)
+- **Post indexing**: < 50ms (write to storage + index update)
 
-### コスト比較
+### Cost Comparison
 
-| コンポーネント | D1アーキテクチャ | PDS-First（Durable Objects） | 削減率 |
+| Component | D1 Architecture | PDS-First (Durable Objects) | Savings |
 |-----------|-----------------|---------------------------|---------|
-| **データベース** | $5/月（D1有料） | $0（データベースなし） | 100% |
-| **ストレージ** | D1に含まれる | $0.18/月（1000コミュニティ × 10MB） | - |
-| **リクエスト** | D1に含まれる | Workers Paidに含まれる | - |
-| **合計** | $5/月 | $0.40/月 | **92%** |
+| **Database** | $5/month (D1 paid) | $0 (no database) | 100% |
+| **Storage** | Included in D1 | $0.18/month (1000 communities × 10MB) | - |
+| **Requests** | Included in D1 | Included in Workers Paid | - |
+| **Total** | $5/month | $0.40/month | **92%** |
 
-## 回復力と復旧
+## Resilience & Recovery
 
-### Durable Objectsの耐久性
+### Durable Objects Durability
 
-- **自動レプリケーション**: CloudflareがDurable Objects Storageをデータセンター間でレプリケート
-- **クラッシュ復旧**: Workerクラッシュ後も状態が永続化
-- **マイグレーション**: Durable Objectsはロケーション間で移行可能
+- **Automatic replication**: Cloudflare replicates Durable Objects Storage across data centers
+- **Crash recovery**: State persists across Worker crashes
+- **Migration**: Durable Objects can migrate between locations
 
-### Firehoseからの再構築
+### Rebuild from Firehose
 
-Durable Objectストレージが失われた場合:
+If Durable Object storage is lost:
 
-1. **Firehoseをリプレイ** カーソル0（または最古の利用可能なもの）から
-2. **ポストを再インデックス** 影響を受けたコミュニティのみ
-3. **7日間保持** データ損失を制限（古いポストはすでに期限切れ）
+1. **Replay Firehose** from cursor 0 (or oldest available)
+2. **Re-index posts** for affected communities
+3. **7-day retention** limits data loss (older posts already expired)
 
-### PDSが信頼できる情報源
+### PDS as Source of Truth
 
-すべてのコミュニティメタデータとメンバーシップはPDSに残ります:
-- すべてのDurable Objectsがクリアされてもデータ損失なし
-- コミュニティオーナーは常に自分のPDSから復旧可能
-- フィードインデックスはFirehoseから自動的に再構築
+All community metadata and memberships remain in PDSs:
+- No data loss even if all Durable Objects are cleared
+- Community owners can always recover from their PDS
+- Feed index rebuilds automatically from Firehose
 
-## 一般的な操作
+## Common Operations
 
-### コミュニティ作成
+### Create Community
 
 ```typescript
-// 1. PDSに書き込み
+// 1. Write to PDS
 const result = await agent.com.atproto.repo.createRecord({
   repo: agent.session.did,
   collection: 'net.atrarium.community.config',
   record: {
     $type: 'net.atrarium.community.config',
-    name: 'TypeScript愛好者',
+    name: 'TypeScript Enthusiasts',
     hashtag: '#atr_a1b2c3d4',
     stage: 'theme',
     feedMix: { own: 0.8, parent: 0.15, global: 0.05 },
@@ -245,16 +245,16 @@ const result = await agent.com.atproto.repo.createRecord({
   }
 });
 
-// 2. Durable Objectインスタンスを作成
+// 2. Create Durable Object instance
 const communityId = result.uri.split('/').pop();
 const stub = env.COMMUNITY_FEED.get(env.COMMUNITY_FEED.idFromName(communityId));
 await stub.initialize(communityConfig);
 ```
 
-### コミュニティに参加
+### Join Community
 
 ```typescript
-// ユーザーのPDSにメンバーシップレコードを書き込み
+// Write membership record to user's PDS
 await agent.com.atproto.repo.createRecord({
   repo: agent.session.did,
   collection: 'net.atrarium.community.membership',
@@ -267,13 +267,13 @@ await agent.com.atproto.repo.createRecord({
   }
 });
 
-// FirehoseがDurable Objectのメンバーシップキャッシュを自動更新
+// Firehose will automatically update Durable Object membership cache
 ```
 
-### ポストを非表示（モデレーション）
+### Hide Post (Moderation)
 
 ```typescript
-// モデレーターのPDSにモデレーションアクションを書き込み
+// Write moderation action to moderator's PDS
 await agent.com.atproto.repo.createRecord({
   repo: agent.session.did,
   collection: 'net.atrarium.moderation.action',
@@ -282,34 +282,34 @@ await agent.com.atproto.repo.createRecord({
     action: 'hide_post',
     target: 'at://did:plc:user/app.bsky.feed.post/xxx',
     community: 'at://did:plc:alice/net.atrarium.community.config/yyy',
-    reason: 'オフトピック',
+    reason: 'Off-topic',
     createdAt: new Date().toISOString()
   }
 });
 
-// FirehoseがDurable Objectのモデレーション状態を自動更新
+// Firehose will automatically update Durable Object moderation state
 ```
 
-## D1アーキテクチャからの移行
+## Migration from D1 Architecture
 
-以前のバージョンのAtrariumはデータストレージにCloudflare D1（SQLite）を使用していました。PDS-firstアーキテクチャは以下を提供します:
+Previous versions of Atrarium used Cloudflare D1 (SQLite) for data storage. The PDS-first architecture offers:
 
-**メリット**:
-- 🔓 **真のデータ所有権**: ユーザーがDID経由でコミュニティデータを所有
-- 💰 **92%のコスト削減**: $5/月 → $0.40/月
-- 📈 **無制限のスケーラビリティ**: データベースボトルネックなし
-- 🔄 **自動同期**: FirehoseがDurable ObjectsをPDSと同期
+**Benefits**:
+- 🔓 **True data ownership**: Users own their community data via DIDs
+- 💰 **92% cost reduction**: $5/month → $0.40/month
+- 📈 **Unlimited scalability**: No database bottlenecks
+- 🔄 **Automatic sync**: Firehose keeps Durable Objects in sync with PDSs
 
-**移行手順**:
-1. D1からコミュニティ/メンバーシップデータをエクスポート
-2. AT Protocolを使用してユーザーPDSにレコードを書き込み
-3. FirehoseがDurable Objectsに自動的にインデックス
-4. フィード生成が正しく動作することを確認
-5. D1データベースを廃止
+**Migration Steps**:
+1. Export community/membership data from D1
+2. Write records to user PDSs using AT Protocol
+3. Firehose will automatically index into Durable Objects
+4. Verify feed generation works correctly
+5. Decommission D1 database
 
-## 関連ドキュメント
+## Related Documentation
 
-- [システムアーキテクチャ](/ja/architecture/system-design)
-- [AT Protocol Lexiconスキーマ](https://github.com/tar-bin/atrarium/tree/main/specs/006-pds-1-db/contracts/lexicon)
-- [Durable Objectsドキュメント](https://developers.cloudflare.com/durable-objects/)
-- [AT Protocol仕様](https://atproto.com/specs/lexicon)
+- [System Architecture](/ja/architecture/system-design)
+- [AT Protocol Lexicon Schemas](https://github.com/tar-bin/atrarium/tree/main/specs/006-pds-1-db/contracts/lexicon)
+- [Durable Objects Documentation](https://developers.cloudflare.com/durable-objects/)
+- [AT Protocol Specification](https://atproto.com/specs/lexicon)

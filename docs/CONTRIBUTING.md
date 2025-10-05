@@ -7,8 +7,8 @@ Thank you for contributing to Atrarium documentation!
 ### 1. Create English Page
 
 ```bash
-# Create markdown file
-touch docs-site/en/guide/new-page.md
+# Create markdown file in root docs/
+touch docs/guide/new-page.md
 ```
 
 Add frontmatter:
@@ -28,8 +28,8 @@ Content here...
 ### 2. Create Japanese Translation
 
 ```bash
-# Mirror file structure
-touch docs-site/ja/guide/new-page.md
+# Mirror file structure under docs/ja/
+touch docs/ja/guide/new-page.md
 ```
 
 Translate content, preserve frontmatter structure:
@@ -48,31 +48,31 @@ order: 5
 
 ### 3. Add to Navigation
 
-Edit `.vitepress/locales/en.ts`:
+Edit `docs/.vitepress/locales/en.ts`:
 
 ```typescript
 {
   text: 'New Page',
-  link: '/en/guide/new-page'
+  link: '/guide/new-page'  // English is root locale
 }
 ```
 
-Edit `.vitepress/locales/ja.ts`:
+Edit `docs/.vitepress/locales/ja.ts`:
 
 ```typescript
 {
   text: '新しいページ',
-  link: '/ja/guide/new-page'
+  link: '/ja/guide/new-page'  // Japanese has /ja/ prefix
 }
 ```
 
 ## Translation Guidelines
 
 - **Preserve structure**: Frontmatter keys must match
-- **Update links**: Use locale prefix (`/en/` or `/ja/`)
+- **Update links**: English uses root paths (`/guide/page`), Japanese uses `/ja/` prefix (`/ja/guide/page`)
 - **Technical terms**: Keep technical terms in English (API, DID, etc.)
 - **Code samples**: Keep code in English
-- **File paths**: Must mirror exactly (`en/guide/page.md` ↔ `ja/guide/page.md`)
+- **File paths**: Must mirror exactly (`docs/guide/page.md` ↔ `docs/ja/guide/page.md`)
 
 ## Style Guide
 
@@ -95,9 +95,9 @@ Warning message
 
 ### Links
 
-- **Internal links**: Use absolute paths (`/en/guide/overview`)
+- **Internal links**: Use absolute paths (`/guide/concept` for English, `/ja/guide/concept` for Japanese)
 - **External links**: Use full URLs (`https://example.com`)
-- **No cross-locale links**: English pages link to `/en/*`, Japanese to `/ja/*`
+- **No cross-locale links**: English pages link to root paths, Japanese to `/ja/*` paths
 
 ## Testing Your Changes
 
@@ -144,7 +144,7 @@ outdatedSince: 2025-10-03
 ---
 
 :::warning
-このページは英語版に対して古い可能性があります。[最新の英語版を確認](/guide/overview)
+このページは英語版に対して古い可能性があります。[最新の英語版を確認](/guide/concept)
 :::
 ```
 
