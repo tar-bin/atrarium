@@ -29,7 +29,7 @@ interface JetstreamEvent {
 
 describe.skip('Queue to Feed Flow Integration (requires deployed environment)', () => {
   const testCommunityId = 'design-community';
-  const testHashtag = '#atr_12345678';
+  const testHashtag = '#atrarium_12345678';
   const aliceDid = 'did:plc:alice123';
   const bobDid = 'did:plc:bob456';
   const charlieDid = 'did:plc:charlie789';
@@ -128,7 +128,7 @@ describe.skip('Queue to Feed Flow Integration (requires deployed environment)', 
     expect(foundPost).toBeDefined();
   });
 
-  it('should filter posts without #atr_ hashtag (lightweight filter)', async () => {
+  it('should filter posts without #atrarium_ hashtag (lightweight filter)', async () => {
     const mockEvent: JetstreamEvent = {
       did: bobDid,
       time_us: Date.now() * 1000,

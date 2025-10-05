@@ -30,7 +30,7 @@ describe.skip('Contract: Queue Consumer (FirehoseProcessor)', () => {
         rkey: '3xyz789',
         record: {
           $type: 'app.bsky.feed.post',
-          text: 'Hello world! #atr_a1b2c3d4',
+          text: 'Hello world! #atrarium_a1b2c3d4',
           createdAt: new Date().toISOString(),
         },
         cid: 'bafyreib2rxk3rw6putwqx7q',
@@ -58,7 +58,7 @@ describe.skip('Contract: Queue Consumer (FirehoseProcessor)', () => {
         rkey: `post${i}`,
         record: {
           $type: 'app.bsky.feed.post',
-          text: `Post ${i} #atr_a1b2c3d4`,
+          text: `Post ${i} #atrarium_a1b2c3d4`,
           createdAt: new Date().toISOString(),
         },
         cid: `cid${i}`,
@@ -80,7 +80,7 @@ describe.skip('Contract: Queue Consumer (FirehoseProcessor)', () => {
         commit: {
           collection: 'app.bsky.feed.post',
           record: {
-            text: 'Community post #atr_a1b2c3d4',
+            text: 'Community post #atrarium_a1b2c3d4',
           },
         },
       },
@@ -95,31 +95,31 @@ describe.skip('Contract: Queue Consumer (FirehoseProcessor)', () => {
       },
     ];
 
-    // Act: Process events through lightweight filter (includes('#atr_'))
+    // Act: Process events through lightweight filter (includes('#atrarium_'))
     // Note: This logic will be in FirehoseReceiver DO (T025)
     const filteredEvents = eventsWithHashtag.filter(event =>
-      event.commit.record.text?.includes('#atr_')
+      event.commit.record.text?.includes('#atrarium_')
     );
 
-    // Assert: Only events with #atr_ hashtag pass filter
+    // Assert: Only events with #atrarium_ hashtag pass filter
     expect(filteredEvents).toHaveLength(1);
-    expect(filteredEvents[0].commit.record.text).toContain('#atr_a1b2c3d4');
+    expect(filteredEvents[0].commit.record.text).toContain('#atrarium_a1b2c3d4');
   });
 
   it('should validate hashtag format with regex', async () => {
     // Arrange: Events with different hashtag formats
     const testCases = [
-      { text: 'Valid #atr_a1b2c3d4', shouldMatch: true },
-      { text: 'Valid #atr_12345678', shouldMatch: true },
-      { text: 'Invalid #atr_xyz', shouldMatch: false }, // Non-hex characters
-      { text: 'Invalid #atr_1234567', shouldMatch: false }, // Too short
-      { text: 'Invalid #atr_123456789', shouldMatch: false }, // Too long
-      { text: 'Invalid #atrarium_a1b2c3d4', shouldMatch: false }, // Wrong prefix
+      { text: 'Valid #atrarium_a1b2c3d4', shouldMatch: true },
+      { text: 'Valid #atrarium_12345678', shouldMatch: true },
+      { text: 'Invalid #atrarium_xyz', shouldMatch: false }, // Non-hex characters
+      { text: 'Invalid #atrarium_1234567', shouldMatch: false }, // Too short
+      { text: 'Invalid #atrarium_123456789', shouldMatch: false }, // Too long
+      { text: 'Invalid #atr_a1b2c3d4', shouldMatch: false }, // Wrong prefix (old format)
     ];
 
-    // Act: Apply heavyweight filter (regex /#atr_[0-9a-f]{8}/)
+    // Act: Apply heavyweight filter (regex /#atrarium_[0-9a-f]{8}/)
     // Note: This logic will be in FirehoseProcessor Worker (T026)
-    const hashtagRegex = /#atr_[0-9a-f]{8}/;
+    const hashtagRegex = /#atrarium_[0-9a-f]{8}/;
     const results = testCases.map(testCase => ({
       text: testCase.text,
       matches: hashtagRegex.test(testCase.text),
@@ -146,7 +146,7 @@ describe.skip('Contract: Queue Consumer (FirehoseProcessor)', () => {
         record: {
           $type: 'net.atrarium.community.config',
           name: 'Design Community',
-          hashtag: '#atr_a1b2c3d4',
+          hashtag: '#atrarium_a1b2c3d4',
           stage: 'theme',
           createdAt: new Date().toISOString(),
         },

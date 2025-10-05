@@ -24,7 +24,7 @@ Atrarium implements a **PDS-first architecture** where all authoritative data is
                ↓ Firehose (Jetstream WebSocket)
 ┌──────────────────────────────────────────┐
 │  FirehoseReceiver (Durable Object)       │
-│  - Lightweight filter: includes('#atr_') │
+│  - Lightweight filter: includes('#atrarium_') │
 └──────────────┬───────────────────────────┘
                │
                ↓ Cloudflare Queue (batched)
@@ -119,7 +119,7 @@ All community data is stored in user PDSs using AT Protocol Lexicon schemas:
 {
   $type: 'net.atrarium.community.config';
   name: string;              // Community name (max 100 chars)
-  hashtag: string;           // Unique hashtag: #atr_[0-9a-f]{8}
+  hashtag: string;           // Unique hashtag: #atrarium_[0-9a-f]{8}
   stage: 'theme' | 'community' | 'graduated';
   parentCommunity?: string;  // AT-URI of parent config
   feedMix: { own: number; parent: number; global: number; };
@@ -165,10 +165,10 @@ Each community has its own `CommunityFeedGenerator` Durable Object instance with
 
 ### Write Flow (PDS → Firehose → Durable Object)
 
-1. **User posts to PDS** with community hashtag (e.g., `#atr_a1b2c3d4`)
+1. **User posts to PDS** with community hashtag (e.g., `#atrarium_a1b2c3d4`)
 2. **Jetstream Firehose** emits event → FirehoseReceiver DO
-3. **Lightweight filter** (`includes('#atr_')`) → Cloudflare Queue
-4. **FirehoseProcessor Worker** applies heavyweight regex (`/#atr_[0-9a-f]{8}/`)
+3. **Lightweight filter** (`includes('#atrarium_')`) → Cloudflare Queue
+4. **FirehoseProcessor Worker** applies heavyweight regex (`/#atrarium_[0-9a-f]{8}/`)
 5. **CommunityFeedGenerator DO** stores post in Durable Objects Storage
 
 ```typescript
@@ -179,7 +179,7 @@ const result = await agent.com.atproto.repo.createRecord({
   record: {
     $type: 'net.atrarium.community.config',
     name: 'TypeScript Enthusiasts',
-    hashtag: '#atr_a1b2c3d4',
+    hashtag: '#atrarium_a1b2c3d4',
     stage: 'theme',
     feedMix: { own: 0.8, parent: 0.15, global: 0.05 },
     moderators: [],
@@ -230,12 +230,12 @@ For detailed API reference, see [API Design](/ja/architecture/api) or the auto-g
 
 Each community has a unique system-generated hashtag:
 
-**Format**: `#atr_[0-9a-f]{8}` (8-character hexadecimal)
-**Example**: `#atr_a1b2c3d4`
+**Format**: `#atrarium_[0-9a-f]{8}` (8-character hexadecimal)
+**Example**: `#atrarium_a1b2c3d4`
 
 **Two-Stage Filtering**:
-1. **Lightweight filter** (FirehoseReceiver): `includes('#atr_')` → Queue
-2. **Heavyweight filter** (FirehoseProcessor): `regex /#atr_[0-9a-f]{8}/` → Durable Object
+1. **Lightweight filter** (FirehoseReceiver): `includes('#atrarium_')` → Queue
+2. **Heavyweight filter** (FirehoseProcessor): `regex /#atrarium_[0-9a-f]{8}/` → Durable Object
 
 **Membership Validation**: Posts must be from community members (verified in Durable Object)
 

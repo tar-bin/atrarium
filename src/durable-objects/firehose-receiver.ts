@@ -138,12 +138,12 @@ export class FirehoseReceiver extends DurableObject {
         await this.ctx.storage.put("cursor", event.time_us);
       }
 
-      // Lightweight filter: Check if post text contains '#atr_'
+      // Lightweight filter: Check if post text contains '#atrarium_'
       if (
         event.kind === "commit" &&
         event.commit?.operation === "create" &&
         event.commit?.collection === "app.bsky.feed.post" &&
-        event.commit?.record?.text?.includes("#atr_")
+        event.commit?.record?.text?.includes("#atrarium_")
       ) {
         // Add to batch
         this.batch.push(event);

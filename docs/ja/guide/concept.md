@@ -99,9 +99,9 @@ graph LR
 
 1. **PDS（Personal Data Server）**: 各ユーザーのデータストレージ（投稿、プロフィール、メンバーシップレコード）。ユーザーは自分のデータを所有し、DID（分散型識別子）を使用してサービス間を移行できます。
 
-2. **Jetstream Firehose**: AT Protocolのリアルタイムイベントストリーム。Atrariumは、WebSocket経由で投稿作成イベントをサブスクライブし、コミュニティハッシュタグ（例：`#atr_a1b2c3d4`）でフィルタリングします。
+2. **Jetstream Firehose**: AT Protocolのリアルタイムイベントストリーム。Atrariumは、WebSocket経由で投稿作成イベントをサブスクライブし、コミュニティハッシュタグ（例：`#atrarium_a1b2c3d4`）でフィルタリングします。
 
-3. **Cloudflare Queue**: バッチ処理イベント（100メッセージ/バッチ）。軽量フィルタリング（`includes('#atr_')`）はQueue前に行われ、重量フィルタリング（正規表現`/#atr_[0-9a-f]{8}/`）はQueueコンシューマーで行われます。
+3. **Cloudflare Queue**: バッチ処理イベント（100メッセージ/バッチ）。軽量フィルタリング（`includes('#atrarium_')`）はQueue前に行われ、重量フィルタリング（正規表現`/#atrarium_[0-9a-f]{8}/`）はQueueコンシューマーで行われます。
 
 4. **Durable Objects（CommunityFeedGenerator）**: 分離されたDurable Object Storageに保存されたコミュニティごとのフィードインデックス。各コミュニティは、7日間の投稿保持期間を持つ独自のインスタンスを取得します。メンバーシップ検証により、コミュニティメンバーの投稿のみがインデックス化されます。
 
@@ -165,7 +165,7 @@ Atrariumフィードは**Blueskyエコシステムと完全に互換性があり
 ✅ **本番環境対応実装**：
 
 1. **Feed Generator API**: AT Protocol `getFeedSkeleton`エンドポイントとDIDドキュメント（`/.well-known/did.json`）
-2. **ハッシュタグシステム**: 投稿関連付け用のシステム生成コミュニティハッシュタグ（`#atr_[0-9a-f]{8}`）
+2. **ハッシュタグシステム**: 投稿関連付け用のシステム生成コミュニティハッシュタグ（`#atrarium_[0-9a-f]{8}`）
 3. **モデレーション**: ロールベースアクセス（owner/moderator/member）による投稿非表示、ユーザーブロック
 4. **Reactダッシュボード**: PDSログインを備えたコミュニティ管理UI（@atproto/apiによる認証）
 5. **Bluesky AppView互換性**: 公式Blueskyアプリ（iOS、Android、Web）で閲覧可能なフィード

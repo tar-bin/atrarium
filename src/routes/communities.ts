@@ -59,13 +59,43 @@ app.post('/', async (c) => {
       return c.json({ error: 'InvalidRequest', message: validation.error }, 400);
     }
 
-    // Generate unique hashtag for the community
-    const hashtag = `#atr_${Math.random().toString(16).substring(2, 10)}`;
-    const now = new Date().toISOString();
-
-    // Create CommunityConfig record in PDS (T033)
+    // Generate unique hashtag for the community with collision check
     const { ATProtoService } = await import('../services/atproto');
+    const { generateFeedHashtag } = await import('../utils/hashtag');
     const atproto = new ATProtoService(c.env);
+
+    let hashtag: string | null = null;
+    const MAX_RETRIES = 3;
+
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      const candidateHashtag = generateFeedHashtag();
+
+      // Check if hashtag already exists in PDS
+      try {
+        const existingCommunity = await atproto.queryCommunityByHashtag(candidateHashtag);
+        if (!existingCommunity) {
+          // Hashtag is unique
+          hashtag = candidateHashtag;
+          break;
+        }
+        // Collision detected, retry
+        console.log(`[POST /api/communities] Hashtag collision detected: ${candidateHashtag}, retrying...`);
+      } catch (error) {
+        // Error querying PDS, assume unique and proceed
+        console.warn(`[POST /api/communities] PDS query error, assuming unique: ${error}`);
+        hashtag = candidateHashtag;
+        break;
+      }
+    }
+
+    if (!hashtag) {
+      return c.json({
+        error: 'HashtagCollisionError',
+        message: 'Failed to generate unique hashtag after 3 attempts'
+      }, 500);
+    }
+
+    const now = new Date().toISOString();
 
     const pdsResult = await atproto.createCommunityConfig({
       $type: 'net.atrarium.community.config',
