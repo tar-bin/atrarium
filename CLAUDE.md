@@ -490,8 +490,8 @@ JWT-based authentication with DID verification ([src/services/auth.ts](src/servi
 
 ### Testing Strategy
 Tests use `@cloudflare/vitest-pool-workers` to simulate Cloudflare Workers environment:
-- **Setup**: [tests/helpers/setup.ts](tests/helpers/setup.ts) loads schema + migrations before all tests
-- **Environment**: D1 and KV bindings configured in [vitest.config.ts](vitest.config.ts)
+- **Setup**: Durable Objects are auto-provisioned on first use (no schema migrations needed)
+- **Environment**: Durable Objects and Queue bindings configured in [wrangler.toml](wrangler.toml)
 - **Contract Tests**: API endpoint validation ([tests/contract/](tests/contract/))
 - **Integration Tests**: End-to-end workflows ([tests/integration/](tests/integration/))
 - **Unit Tests**: Isolated logic validation ([tests/unit/](tests/unit/)) - **003-id**

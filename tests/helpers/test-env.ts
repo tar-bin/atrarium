@@ -8,8 +8,9 @@ import type { Env } from '../../src/types';
  */
 export function createMockEnv(): Env {
   return {
-    DB: env.DB,
-    POST_CACHE: env.POST_CACHE,
+    COMMUNITY_FEED: env.COMMUNITY_FEED,
+    FIREHOSE_RECEIVER: env.FIREHOSE_RECEIVER,
+    FIREHOSE_EVENTS: env.FIREHOSE_EVENTS,
     JWT_SECRET: 'test-secret-key-for-testing-only-not-for-production',
     ENVIRONMENT: 'test',
   };
@@ -37,24 +38,3 @@ export async function createMockJWT(userDid: string, handle: string): Promise<st
     .sign(secret);
 }
 
-/**
- * Setup test database with schema
- */
-export async function setupTestDatabase(db: D1Database): Promise<void> {
-  // Read schema from file
-  const fs = await import('fs/promises');
-  const path = await import('path');
-
-  const schemaPath = path.join(process.cwd(), 'schema.sql');
-  const schema = await fs.readFile(schemaPath, 'utf-8');
-
-  // Execute schema (split by semicolon and execute each statement)
-  const statements = schema
-    .split(';')
-    .map(s => s.trim())
-    .filter(s => s.length > 0 && !s.startsWith('--'));
-
-  for (const statement of statements) {
-    await db.prepare(statement).run();
-  }
-}
