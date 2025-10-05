@@ -10,7 +10,7 @@ hero:
   actions:
     - theme: brand
       text: Get Started
-      link: /en/guide/overview
+      link: /en/guide/concept
     - theme: alt
       text: View on GitHub
       link: https://github.com/tar-bin/atrarium
@@ -43,7 +43,7 @@ features:
 
 ## Quick Links
 
-- **[Project Overview](/en/guide/overview)**: Vision and design philosophy
+- **[What is Atrarium?](/en/guide/concept)**: Vision and design philosophy
 - **[Setup Guide](/en/guide/setup)**: Installation and deployment
 - **[System Architecture](/en/architecture/system-design)**: Technical design
 - **[API Reference](/en/reference/api-reference)**: Endpoints and usage

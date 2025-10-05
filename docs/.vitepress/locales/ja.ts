@@ -7,7 +7,7 @@ export const jaNavigation: DefaultTheme.Config = {
       text: 'ガイド',
       collapsed: false,
       items: [
-        { text: '概要', link: '/ja/guide/overview' },
+        { text: 'Atrariumとは？', link: '/ja/guide/concept' },
         { text: 'セットアップ', link: '/ja/guide/setup' },
         { text: 'クイックスタート', link: '/ja/guide/quickstart' }
       ]
@@ -34,7 +34,7 @@ export const jaNavigation: DefaultTheme.Config = {
 
   // Top navigation bar
   nav: [
-    { text: 'ガイド', link: '/ja/guide/overview', activeMatch: '^/ja/guide/' },
+    { text: 'ガイド', link: '/ja/guide/concept', activeMatch: '^/ja/guide/' },
     { text: 'アーキテクチャ', link: '/ja/architecture/system-design', activeMatch: '^/ja/architecture/' },
     { text: 'リファレンス', link: '/ja/reference/api-reference', activeMatch: '^/ja/reference/' },
     { text: 'GitHub', link: 'https://github.com/tar-bin/atrarium' },
