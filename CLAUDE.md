@@ -6,8 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Atrarium is a community management system built on AT Protocol (Bluesky), designed for small communities (10-200 people). It replaces expensive Mastodon/Misskey servers with a serverless architecture on Cloudflare Workers, reducing costs by 95% ($30-150/month → $5/month) and operational time by 80%.
 
-**Current Phase**: Phase 1 → Phase 2 Transition
-**Status**: PDS-first architecture implemented, Durable Objects storage, Queue-based Firehose processing
+**Current Phase**: Phase 1 (PDS-First Architecture)
+**Status**: PDS-first architecture complete, ready for production deployment
 **Active Branch**: `006-pds-1-db` (PDS-First Data Architecture)
 
 ## Architecture
@@ -25,7 +25,7 @@ Atrarium is a community management system built on AT Protocol (Bluesky), design
   - react-hook-form + Zod (form validation)
   - i18next (EN/JA translations)
   - Cloudflare Pages (hosting)
-- **External**: AT Protocol (@atproto/api ^0.13.35, @atproto/identity ^0.4.3), Bluesky Firehose (Jetstream WebSocket), Local PDS (testing)
+- **External**: AT Protocol (@atproto/api ^0.13.35 with AtpAgent, @atproto/identity ^0.4.3), Bluesky Firehose (Jetstream WebSocket), Local PDS (testing)
 - **Frameworks**: Hono ^4.6.14 (routing), Zod ^3.23.8 (validation)
 
 ### Core Components (PDS-First Architecture)
@@ -318,16 +318,16 @@ npm run build
 wrangler pages deploy dist --project-name=atrarium-dashboard
 ```
 
-### Database Management
+### Durable Objects Management (006-pds-1-db)
 ```bash
-# Insert test data
-wrangler d1 execute atrarium-db --file=seeds/test-data.sql
+# View Durable Objects logs
+wrangler tail --format pretty
 
-# Run queries directly
-wrangler d1 execute atrarium-db --command "SELECT * FROM communities"
+# Durable Objects are automatically created on first request
+# Each community gets its own CommunityFeedGenerator instance
+# Storage is persistent and isolated per community
 
-# View database info
-wrangler d1 info atrarium-db
+# Note: D1 database deprecated in favor of Durable Objects Storage
 ```
 
 ## Key AT Protocol Concepts
@@ -353,60 +353,51 @@ wrangler d1 info atrarium-db
 
 The client fetches actual post content from Bluesky's AppView using these URIs.
 
-### Data Flow
+### Data Flow (PDS-First Architecture - 006-pds-1-db)
 
 **Post Ingestion**:
-1. Firehose WebSocket → Durable Object receives post
-2. Apply filters (hashtags/keywords/authors from theme_feeds.filter_config)
-3. Write matching post URIs to D1 post_index
-4. Cache post content in KV (7 days TTL)
-5. Update statistics (post_count, health_metrics)
+1. User posts to PDS with community hashtag (e.g., `#atr_a1b2c3d4`)
+2. Jetstream Firehose → FirehoseReceiver DO (lightweight filter: `includes('#atr_')`)
+3. Cloudflare Queue → FirehoseProcessor Worker (heavyweight filter: `regex /#atr_[0-9a-f]{8}/`)
+4. FirehoseProcessor → CommunityFeedGenerator DO (RPC call)
+5. CommunityFeedGenerator stores post in Durable Object Storage (7-day TTL)
 
 **Feed Retrieval**:
 1. Client requests `getFeedSkeleton` with feed URI
-2. Query D1: `SELECT uri FROM post_index WHERE feed_id = ? ORDER BY created_at DESC`
-3. Return URIs with cursor for pagination
-4. Client fetches full post data from Bluesky AppView
+2. Feed Generator API → CommunityFeedGenerator DO (RPC call)
+3. CommunityFeedGenerator queries Durable Object Storage (reverse chronological)
+4. Return post URIs with cursor for pagination
+5. Client fetches full post data from Bluesky AppView using returned URIs
 
 ## Implementation Status
 
-### ✅ Completed (Phase 0 MVP)
-- [x] D1 database schema (8 tables with indexes)
-- [x] Feed Generator API (DID document, getFeedSkeleton, describeFeedGenerator)
-- [x] Community management (create, list, get)
-- [x] Theme feed management (create, list, health metrics)
-- [x] Post indexing (submit, retrieve by feed)
-- [x] Membership management (join, leave, role-based access)
-- [x] Authentication (JWT with DID verification)
-- [x] Scheduled jobs (post deletion sync, feed health check)
-- [x] Test suite (contract tests + integration tests + unit tests + docs tests)
-- [x] **VitePress documentation site** (20 pages, EN/JA, deployed to Cloudflare Pages)
-- [x] **Hashtag-based feed posting** (003-id: system-generated unique hashtags per feed)
-- [x] **Moderation system** (003-id: hide posts, block users, moderation logs)
-- [x] **Local PDS integration** (003-id: DevContainer with Bluesky PDS for testing)
-- [x] **React dashboard** (005-pds-web-atrarim: full web UI with PDS integration)
-  - [x] Component library (15 components: communities, feeds, posts, moderation, PDS login)
-  - [x] TanStack Router (file-based routing with type-safe params)
-  - [x] TanStack Query (server state management)
-  - [x] shadcn/ui components (Radix UI + Tailwind CSS)
-  - [x] PDS session management (localStorage persistence)
-  - [x] i18n support (EN/JA translations)
-  - [x] Component tests (Vitest + Testing Library)
-  - [x] Production build (427KB gzip, <500KB target)
-- [x] **PDS-first architecture** (006-pds-1-db: PDS as source of truth, Durable Objects storage)
-  - [x] AT Protocol Lexicon schemas (CommunityConfig, MembershipRecord, ModerationAction)
-  - [x] PDS read/write methods (@atproto/api integration)
-  - [x] Cloudflare Queues (firehose-events, 5000 msg/sec capacity)
-  - [x] FirehoseReceiver Durable Object (WebSocket → Queue, lightweight filter)
-  - [x] FirehoseProcessor Worker (Queue consumer, heavyweight filter)
-  - [x] CommunityFeedGenerator Durable Object (per-community feed index, Storage API)
-  - [x] API route updates (write to PDS, proxy to Durable Objects)
-  - [x] Integration tests (queue-to-feed-flow, pds-to-feed-flow)
+### ✅ Completed
+- [x] **Feed Generator API** (DID document, getFeedSkeleton, describeFeedGenerator)
+- [x] **AT Protocol Lexicon schemas** (`net.atrarium.*` - migrated from `com.atrarium.*`)
+  - [x] `net.atrarium.community.config` (community metadata)
+  - [x] `net.atrarium.community.membership` (user memberships)
+  - [x] `net.atrarium.moderation.action` (moderation actions)
+- [x] **PDS read/write service** (@atproto/api with AtpAgent - BskyAgent deprecated)
+- [x] **Durable Objects architecture**
+  - [x] CommunityFeedGenerator (per-community feed index with Storage API)
+  - [x] FirehoseReceiver (Jetstream WebSocket → Queue, lightweight filter)
+- [x] **Cloudflare Queues** (firehose-events, firehose-dlq, 5000 msg/sec)
+- [x] **FirehoseProcessor Worker** (Queue consumer, heavyweight regex filter)
+- [x] **API routes** (communities, memberships, moderation - write to PDS, proxy to DOs)
+- [x] **Hashtag system** (system-generated `#atr_[0-9a-f]{8}`, unique per community)
+- [x] **Moderation system** (hide posts, block users, role-based access)
+- [x] **Authentication** (JWT with DID verification)
+- [x] **Test suite** (contract + integration + unit + docs tests)
+- [x] **VitePress documentation** (20 pages, EN/JA, deployed to Cloudflare Pages)
+- [x] **React dashboard** (Phase 0-1: full web UI with PDS integration)
+- [x] **Local PDS integration** (DevContainer with Bluesky PDS for testing)
+- [x] **Domain migration** (atrarium.net acquired, all references updated)
 
 ### 🚧 In Progress / Pending
-- [ ] Dashboard API integration (update client to use new PDS-first endpoints)
-- [ ] Production deployment configuration for Workers (Durable Objects + Queues)
-- [ ] Dashboard deployment to Cloudflare Pages
+- [ ] Production deployment (Cloudflare Workers + Durable Objects + Queues)
+- [ ] Dashboard API integration (update to use PDS-first endpoints)
+- [ ] Firehose connection monitoring and auto-reconnect
+- [ ] Feed Generator registration in Bluesky AppView
 
 ### 📅 Future Phases
 - Achievement system (Phase 1)
@@ -516,15 +507,18 @@ npm run test:docs
 npm run test:watch
 ```
 
-### Local Development
+### Local Development (006-pds-1-db)
 ```bash
 # Run Workers locally (with Miniflare)
 npm run dev
 
 # The dev server includes:
-# - D1 database (in-memory SQLite)
-# - KV namespace (in-memory)
+# - Durable Objects (in-memory simulation)
+# - Cloudflare Queues (in-memory simulation)
 # - CORS enabled for local dashboard development
+
+# Note: Firehose WebSocket connection requires production deployment
+# Use PDS integration tests for local development
 ```
 
 ### Production Monitoring
@@ -535,12 +529,20 @@ wrangler tail
 # View logs with formatting
 wrangler tail --format pretty
 
-# Run queries on production D1
-wrangler d1 execute atrarium-db --command "SELECT * FROM communities LIMIT 5"
+# Monitor Durable Objects performance
+wrangler tail --format json | grep "CommunityFeedGenerator"
+
+# Monitor Queue processing
+wrangler tail --format json | grep "FirehoseProcessor"
 ```
 
-### Cloudflare Limits to Keep in Mind
-- **Workers Paid**: $5/month, includes 10M requests/month
-- **D1 Free Tier**: 5GB storage, 5M reads/day, 100k writes/day
-- **KV**: First 100k reads/day free, then $0.50 per million reads
-- **Durable Objects**: 400,000 requests/month included in Workers Paid
+### Cloudflare Costs (006-pds-1-db)
+**Expected monthly cost for 1000 communities**: ~$0.40
+
+Breakdown:
+- **Workers Paid**: $5/month (includes 10M requests/month)
+- **Durable Objects**: Included in Workers Paid (400k requests/month free, then $0.15/million)
+- **Queues**: ~$0.22/month (2000 events/sec × 2.6M events/month at $0.40/million writes)
+- **Storage**: ~$0.18/month (1000 communities × 10MB avg × $0.20/GB/month)
+
+**Note**: D1 and KV no longer used, saving $5/month vs previous architecture
