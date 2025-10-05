@@ -243,13 +243,7 @@ npx vitest run tests/integration/pds-to-feed-flow.test.ts
 
 ## 📖 ドキュメント
 
-- **[ドキュメントサイト](https://docs.atrarium.net)** - 完全なドキュメント（EN/JA）
-- [CLAUDE.md](./CLAUDE.md) - Claude Code用開発ガイド
-- [specs/006-pds-1-db/](./specs/006-pds-1-db/) - PDS-firstアーキテクチャ仕様
-  - [spec.md](./specs/006-pds-1-db/spec.md) - 機能要件
-  - [data-model.md](./specs/006-pds-1-db/data-model.md) - AT Protocol Lexiconスキーマ
-  - [plan.md](./specs/006-pds-1-db/plan.md) - 実装計画
-  - [quickstart.md](./specs/006-pds-1-db/quickstart.md) - Alice-Bobシナリオウォークスルー
+**[ドキュメントサイト](https://docs.atrarium.net)** - 完全なドキュメント（EN/JA）
 
 ### APIエンドポイント
 
