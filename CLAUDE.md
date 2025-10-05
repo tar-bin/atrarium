@@ -8,7 +8,6 @@ Atrarium is a community management system built on AT Protocol (Bluesky), design
 
 **Current Phase**: Phase 1 (PDS-First Architecture)
 **Status**: PDS-first architecture complete, ready for production deployment
-**Active Branch**: `006-pds-1-db` (PDS-First Data Architecture)
 
 ## Architecture
 
