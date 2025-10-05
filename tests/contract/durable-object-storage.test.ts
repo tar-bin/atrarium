@@ -28,7 +28,7 @@ describe.skip('Contract: Durable Objects Storage', () => {
     const configData = {
       $type: 'net.atrarium.community.config',
       name: 'Test Community',
-      hashtag: '#atr_a1b2c3d4',
+      hashtag: '#atrarium_a1b2c3d4',
       stage: 'theme',
       pdsSyncedAt: Date.now(),
       rkey: '3jzfcijpj2z2a',
@@ -67,14 +67,14 @@ describe.skip('Contract: Durable Objects Storage', () => {
         uri: 'at://did:plc:bob/app.bsky.feed.post/xyz1',
         authorDid: 'did:plc:bob',
         createdAt: 1704067200000,
-        hashtags: ['#atr_a1b2c3d4'],
+        hashtags: ['#atrarium_a1b2c3d4'],
         moderationStatus: 'approved',
       },
       {
         uri: 'at://did:plc:alice/app.bsky.feed.post/xyz2',
         authorDid: 'did:plc:alice',
         createdAt: 1704067300000,
-        hashtags: ['#atr_a1b2c3d4'],
+        hashtags: ['#atrarium_a1b2c3d4'],
         moderationStatus: 'approved',
       },
     ];

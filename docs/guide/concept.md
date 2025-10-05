@@ -99,9 +99,9 @@ graph LR
 
 1. **PDS (Personal Data Server)**: Each user's data storage (posts, profiles, membership records). Users own their data and can migrate between services using their DID (Decentralized Identifier).
 
-2. **Jetstream Firehose**: AT Protocol's real-time event stream. Atrarium subscribes to post creation events via WebSocket, filtering for community hashtags (e.g., `#atr_a1b2c3d4`).
+2. **Jetstream Firehose**: AT Protocol's real-time event stream. Atrarium subscribes to post creation events via WebSocket, filtering for community hashtags (e.g., `#atrarium_a1b2c3d4`).
 
-3. **Cloudflare Queue**: Batched event processing (100 messages/batch). Lightweight filtering (`includes('#atr_')`) happens before Queue, heavyweight filtering (regex `/#atr_[0-9a-f]{8}/`) happens in Queue consumer.
+3. **Cloudflare Queue**: Batched event processing (100 messages/batch). Lightweight filtering (`includes('#atrarium_')`) happens before Queue, heavyweight filtering (regex `/#atrarium_[0-9a-f]{8}/`) happens in Queue consumer.
 
 4. **Durable Objects (CommunityFeedGenerator)**: Per-community feed index stored in isolated Durable Object Storage. Each community gets its own instance with 7-day post retention. Membership validation ensures only community members' posts are indexed.
 
@@ -165,7 +165,7 @@ The key innovation is **membership-based filtering** at the Feed Generator level
 ✅ **Production-Ready Implementation**:
 
 1. **Feed Generator API**: AT Protocol `getFeedSkeleton` endpoint with DID document (`/.well-known/did.json`)
-2. **Hashtag System**: System-generated community hashtags (`#atr_[0-9a-f]{8}`) for post association
+2. **Hashtag System**: System-generated community hashtags (`#atrarium_[0-9a-f]{8}`) for post association
 3. **Moderation**: Hide posts, block users with role-based access (owner/moderator/member)
 4. **React Dashboard**: Community management UI with PDS login (authentication via @atproto/api)
 5. **Bluesky AppView Compatibility**: Feeds viewable on official Bluesky apps (iOS, Android, web)

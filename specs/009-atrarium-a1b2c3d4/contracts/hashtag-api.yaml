@@ -1,0 +1,247 @@
+openapi: 3.0.0
+info:
+  title: Atrarium Hashtag API Contract
+  version: 009-atrarium-a1b2c3d4
+  description: Updated hashtag format contracts for community creation and validation
+
+paths:
+  /api/communities:
+    post:
+      summary: Create community with new hashtag format
+      operationId: createCommunity
+      tags:
+        - Communities
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                  example: "My Community"
+                description:
+                  type: string
+                  maxLength: 500
+                  example: "A community for enthusiasts"
+      responses:
+        '201':
+          description: Community created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommunityResponse'
+              examples:
+                success:
+                  value:
+                    id: "abc123def456"
+                    name: "My Community"
+                    description: "A community for enthusiasts"
+                    hashtag: "#atrarium_a1b2c3d4"
+                    stage: "theme"
+                    parentId: null
+                    memberCount: 1
+                    postCount: 0
+                    createdAt: 1696867200
+        '400':
+          description: Invalid request (validation failed)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized (missing/invalid JWT)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to generate unique hashtag (after 3 retries)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                collisionError:
+                  value:
+                    error: "HashtagCollisionError"
+                    message: "Failed to generate unique hashtag after 3 attempts"
+
+  /xrpc/app.bsky.feed.getFeedSkeleton:
+    get:
+      summary: Get feed skeleton (hashtag-based filtering)
+      operationId: getFeedSkeleton
+      tags:
+        - FeedGenerator
+      parameters:
+        - name: feed
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uri
+            example: "at://did:plc:xxx/app.bsky.feed.generator/community-name"
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        '200':
+          description: Feed skeleton retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - feed
+                properties:
+                  feed:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - post
+                      properties:
+                        post:
+                          type: string
+                          format: uri
+                          example: "at://did:plc:xxx/app.bsky.feed.post/yyy"
+                  cursor:
+                    type: string
+              examples:
+                withPosts:
+                  value:
+                    feed:
+                      - post: "at://did:plc:abc/app.bsky.feed.post/123"
+                      - post: "at://did:plc:def/app.bsky.feed.post/456"
+                    cursor: "1696867200000::abc123"
+                empty:
+                  value:
+                    feed: []
+        '400':
+          description: Invalid feed URI
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    CommunityResponse:
+      type: object
+      required:
+        - id
+        - name
+        - hashtag
+        - stage
+        - memberCount
+        - postCount
+        - createdAt
+      properties:
+        id:
+          type: string
+          description: Community ID (PDS record rkey)
+          example: "abc123def456"
+        name:
+          type: string
+          example: "My Community"
+        description:
+          type: string
+          nullable: true
+          example: "A community for enthusiasts"
+        hashtag:
+          type: string
+          pattern: '^#atrarium_[0-9a-f]{8}$'
+          description: "Unique community hashtag (NEW FORMAT)"
+          example: "#atrarium_a1b2c3d4"
+        stage:
+          type: string
+          enum: [theme, community, graduated]
+          example: "theme"
+        parentId:
+          type: string
+          nullable: true
+          example: null
+        memberCount:
+          type: integer
+          minimum: 0
+          example: 1
+        postCount:
+          type: integer
+          minimum: 0
+          example: 0
+        createdAt:
+          type: integer
+          description: Unix timestamp (seconds)
+          example: 1696867200
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          example: "InvalidRequest"
+        message:
+          type: string
+          example: "Human-readable error message"
+
+    HashtagValidation:
+      type: object
+      description: Hashtag validation schema
+      properties:
+        pattern:
+          type: string
+          const: '^#atrarium_[0-9a-f]{8}$'
+          description: "Exact match pattern for single hashtag"
+        extractionPattern:
+          type: string
+          const: '#atrarium_[0-9a-f]{8}'
+          description: "Global extraction pattern (for finding hashtags in text)"
+        lightweightFilter:
+          type: string
+          const: '#atrarium_'
+          description: "Substring filter for Firehose (performance optimization)"
+        examples:
+          type: object
+          properties:
+            valid:
+              type: array
+              items:
+                type: string
+              example: ["#atrarium_a1b2c3d4", "#atrarium_12345678", "#atrarium_deadbeef"]
+            invalid:
+              type: array
+              items:
+                type: string
+              example: ["#atr_a1b2c3d4", "#atrarium_xyz", "#atrarium_a1b2c3d"]
+
+tags:
+  - name: Communities
+    description: Community management endpoints
+  - name: FeedGenerator
+    description: AT Protocol Feed Generator API

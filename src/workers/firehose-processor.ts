@@ -30,8 +30,8 @@ interface PostEvent {
   hashtags: string[];
 }
 
-// Heavyweight filter: Extract all #atr_[8-hex] hashtags
-const HASHTAG_REGEX = /#atr_[0-9a-f]{8}/g;
+// Heavyweight filter: Extract all #atrarium_[8-hex] hashtags
+const HASHTAG_REGEX = /#atrarium_[0-9a-f]{8}/g;
 
 function extractHashtags(text: string): string[] {
   const matches = text.match(HASHTAG_REGEX);

@@ -258,6 +258,41 @@ export class ATProtoService {
     };
   }
 
+  /**
+   * Query community config by hashtag
+   * @param hashtag Community hashtag (e.g., #atrarium_a1b2c3d4)
+   * @returns Community config if found, null otherwise
+   */
+  async queryCommunityByHashtag(hashtag: string): Promise<(CommunityConfig & { uri: string }) | null> {
+    const agent = await this.getAgent();
+
+    try {
+      // List all community.config records
+      const response = await agent.com.atproto.repo.listRecords({
+        repo: agent.session?.did || '',
+        collection: 'net.atrarium.community.config',
+        limit: 100,
+      });
+
+      // Find matching hashtag
+      for (const record of response.data.records) {
+        const validated = validateCommunityConfig(record.value);
+        if (validated.hashtag === hashtag) {
+          return {
+            ...validated,
+            uri: record.uri,
+          };
+        }
+      }
+
+      // No match found
+      return null;
+    } catch (error) {
+      console.error(`[ATProtoService] Error querying community by hashtag: ${error}`);
+      throw error;
+    }
+  }
+
   // ============================================================================
   // Legacy Methods (Phase 0 - kept for backward compatibility)
   // ============================================================================

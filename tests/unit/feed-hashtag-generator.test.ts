@@ -1,22 +1,14 @@
 import { describe, it, expect } from 'vitest';
+import { generateFeedHashtag, validateHashtagFormat, extractFeedHashtags } from '../../src/utils/hashtag';
 
 /**
  * Unit tests for feed hashtag generator
- * Tests the utility function that generates unique #atr_xxxxx hashtags
+ * Tests the utility function that generates unique #atrarium_xxxxx hashtags
  */
 describe('Unit: Feed hashtag generator', () => {
-  // This function will be implemented in src/utils/hashtag.ts
-  function generateFeedHashtag(): string {
-    // Uses crypto.randomUUID() to generate collision-resistant ID
-    const uuid = crypto.randomUUID();
-    // Extract first 8 characters (hex format)
-    const shortId = uuid.replace(/-/g, '').substring(0, 8);
-    return `#atr_${shortId}`;
-  }
-
-  it('should generate hashtag in #atr_xxxxx format', () => {
+  it('should generate hashtag in #atrarium_xxxxx format', () => {
     const hashtag = generateFeedHashtag();
-    expect(hashtag).toMatch(/^#atr_[a-f0-9]{8}$/);
+    expect(hashtag).toMatch(/^#atrarium_[a-f0-9]{8}$/);
   });
 
   it('should generate unique hashtags on each call', () => {
@@ -31,7 +23,7 @@ describe('Unit: Feed hashtag generator', () => {
 
   it('should use lowercase hex characters only', () => {
     const hashtag = generateFeedHashtag();
-    const hexPart = hashtag.replace('#atr_', '');
+    const hexPart = hashtag.replace('#atrarium_', '');
 
     // Should only contain lowercase hex chars
     expect(hexPart).toMatch(/^[a-f0-9]+$/);
@@ -41,7 +33,7 @@ describe('Unit: Feed hashtag generator', () => {
 
   it('should generate exactly 8 hex characters after prefix', () => {
     const hashtag = generateFeedHashtag();
-    const hexPart = hashtag.replace('#atr_', '');
+    const hexPart = hashtag.replace('#atrarium_', '');
 
     expect(hexPart.length).toBe(8);
   });
@@ -51,14 +43,14 @@ describe('Unit: Feed hashtag generator', () => {
     expect(hashtag.startsWith('#')).toBe(true);
   });
 
-  it('should include atr_ prefix after # symbol', () => {
+  it('should include atrarium_ prefix after # symbol', () => {
     const hashtag = generateFeedHashtag();
-    expect(hashtag.startsWith('#atr_')).toBe(true);
+    expect(hashtag.startsWith('#atrarium_')).toBe(true);
   });
 
-  it('should have total length of 13 characters (#atr_ + 8 hex)', () => {
+  it('should have total length of 18 characters (#atrarium_ + 8 hex)', () => {
     const hashtag = generateFeedHashtag();
-    expect(hashtag.length).toBe(13); // # + atr_ + 8 hex chars
+    expect(hashtag.length).toBe(18); // # + atrarium_ + 8 hex chars
   });
 
   it('should be collision-resistant (test with 1000 generations)', () => {
@@ -91,6 +83,36 @@ describe('Unit: Feed hashtag generator', () => {
     crypto.randomUUID = originalRandomUUID;
 
     expect(uuidCalled).toBe(true);
-    expect(hashtag).toBe('#atr_550e8400'); // First 8 chars from mocked UUID
+    expect(hashtag).toBe('#atrarium_550e8400'); // First 8 chars from mocked UUID
+  });
+
+  it('should validate new format correctly', () => {
+    expect(validateHashtagFormat('#atrarium_a1b2c3d4')).toBe(true);
+    expect(validateHashtagFormat('#atrarium_12345678')).toBe(true);
+    expect(validateHashtagFormat('#atrarium_deadbeef')).toBe(true);
+  });
+
+  it('should reject old format', () => {
+    expect(validateHashtagFormat('#atr_a1b2c3d4')).toBe(false);
+    expect(validateHashtagFormat('#atr_12345678')).toBe(false);
+  });
+
+  it('should reject invalid formats', () => {
+    expect(validateHashtagFormat('#atrarium_xyz')).toBe(false);  // non-hex
+    expect(validateHashtagFormat('#atrarium_a1b2c3d')).toBe(false);  // 7 chars
+    expect(validateHashtagFormat('#atrarium_a1b2c3d4e')).toBe(false);  // 9 chars
+    expect(validateHashtagFormat('atrarium_a1b2c3d4')).toBe(false);  // no #
+  });
+
+  it('should extract new format hashtags from text', () => {
+    const text = 'Check out #atrarium_12345678 and #atrarium_deadbeef';
+    const extracted = extractFeedHashtags(text);
+    expect(extracted).toEqual(['#atrarium_12345678', '#atrarium_deadbeef']);
+  });
+
+  it('should not extract old format hashtags', () => {
+    const text = 'Old format #atr_a1b2c3d4 should not match';
+    const extracted = extractFeedHashtags(text);
+    expect(extracted).toEqual([]);
   });
 });

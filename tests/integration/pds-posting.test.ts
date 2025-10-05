@@ -97,7 +97,7 @@ describe.skip('PDS Integration: Direct Posting', { timeout: TEST_TIMEOUT }, () =
   });
 
   describe('Atrarium Feed Hashtag Integration', () => {
-    const testHashtag = '#atr_testfeed';
+    const testHashtag = '#atrarium_testfeed';
 
     it('should create post with Atrarium feed hashtag', async () => {
       const text = `Testing direct feed posting! ${testHashtag}`;
@@ -120,8 +120,8 @@ describe.skip('PDS Integration: Direct Posting', { timeout: TEST_TIMEOUT }, () =
     });
 
     it('should handle multiple feed hashtags in one post', async () => {
-      const hashtag1 = '#atr_feed001';
-      const hashtag2 = '#atr_feed002';
+      const hashtag1 = '#atrarium_feed001';
+      const hashtag2 = '#atrarium_feed002';
       const text = `Multi-feed post! ${hashtag1} ${hashtag2}`;
 
       const response = await aliceAgent.post({
@@ -190,7 +190,7 @@ describe.skip('PDS Integration: Direct Posting', { timeout: TEST_TIMEOUT }, () =
 
   describe('Edge Cases', () => {
     it('should handle posts with special characters', async () => {
-      const text = 'Test with émojis 🎉 and symbols: @mention #hashtag #atr_test';
+      const text = 'Test with émojis 🎉 and symbols: @mention #hashtag #atrarium_test';
 
       const response = await aliceAgent.post({
         text,
@@ -202,7 +202,7 @@ describe.skip('PDS Integration: Direct Posting', { timeout: TEST_TIMEOUT }, () =
 
     it('should handle long posts (near character limit)', async () => {
       // AT Protocol allows 300 characters
-      const longText = 'A'.repeat(270) + ' #atr_longpost';
+      const longText = 'A'.repeat(270) + ' #atrarium_longpost';
 
       const response = await aliceAgent.post({
         text: longText,

@@ -42,11 +42,11 @@ For detailed data flow visualization, see [VitePress Concept Documentation](http
 PDS (Source of Truth)
   ↓ (Firehose: Jetstream WebSocket)
 FirehoseReceiver (Durable Object)
-  ↓ (Lightweight filter: includes('#atr_'))
+  ↓ (Lightweight filter: includes('#atrarium_'))
 Cloudflare Queue (FIREHOSE_EVENTS)
   ↓ (Batched processing: 100 msg/batch)
 FirehoseProcessor (Queue Consumer Worker)
-  ↓ (Heavyweight filter: regex /#atr_[0-9a-f]{8}/)
+  ↓ (Heavyweight filter: regex /#atrarium_[0-9a-f]{8}/)
 CommunityFeedGenerator (Durable Object per community)
   ↓ (Storage: config:, member:, post:, moderation:)
 Feed Generator API (getFeedSkeleton)
@@ -219,10 +219,10 @@ vitest.pds.config.ts  # Vitest configuration for PDS integration tests
 - All timestamps are ISO 8601 strings
 
 **Hashtag System (003-id)**:
-- Each community has a unique system-generated hashtag (`#atr_[0-9a-f]{8}` format)
+- Each community has a unique system-generated hashtag (`#atrarium_[0-9a-f]{8}` format)
 - Posts include community hashtags to associate with specific feeds
 - Membership verification ensures only community members can post
-- Two-stage filtering: lightweight (`includes('#atr_')`) → heavyweight (`regex /#atr_[0-9a-f]{8}/`)
+- Two-stage filtering: lightweight (`includes('#atrarium_')`) → heavyweight (`regex /#atrarium_[0-9a-f]{8}/`)
 
 ## Development Commands
 
@@ -372,9 +372,9 @@ The client fetches actual post content from Bluesky's AppView using these URIs.
 ### Data Flow (PDS-First Architecture - 006-pds-1-db)
 
 **Post Ingestion**:
-1. User posts to PDS with community hashtag (e.g., `#atr_a1b2c3d4`)
-2. Jetstream Firehose → FirehoseReceiver DO (lightweight filter: `includes('#atr_')`)
-3. Cloudflare Queue → FirehoseProcessor Worker (heavyweight filter: `regex /#atr_[0-9a-f]{8}/`)
+1. User posts to PDS with community hashtag (e.g., `#atrarium_a1b2c3d4`)
+2. Jetstream Firehose → FirehoseReceiver DO (lightweight filter: `includes('#atrarium_')`)
+3. Cloudflare Queue → FirehoseProcessor Worker (heavyweight filter: `regex /#atrarium_[0-9a-f]{8}/`)
 4. FirehoseProcessor → CommunityFeedGenerator DO (RPC call)
 5. CommunityFeedGenerator stores post in Durable Object Storage (7-day TTL)
 
@@ -400,7 +400,7 @@ The client fetches actual post content from Bluesky's AppView using these URIs.
 - [x] **Cloudflare Queues** (firehose-events, firehose-dlq, 5000 msg/sec)
 - [x] **FirehoseProcessor Worker** (Queue consumer, heavyweight regex filter)
 - [x] **API routes** (communities, memberships, moderation - write to PDS, proxy to DOs)
-- [x] **Hashtag system** (system-generated `#atr_[0-9a-f]{8}`, unique per community)
+- [x] **Hashtag system** (system-generated `#atrarium_[0-9a-f]{8}`, unique per community)
 - [x] **Moderation system** (hide posts, block users, role-based access)
 - [x] **Authentication** (JWT with DID verification)
 - [x] **Test suite** (contract + integration + unit + docs tests)
@@ -481,8 +481,8 @@ JWT-based authentication with DID verification ([src/services/auth.ts](src/servi
 - **Post URIs**: Format is `at://did:plc:xxx/app.bsky.feed.post/yyy`
 - **Feed URIs**: Format is `at://did:plc:xxx/app.bsky.feed.generator/feed-id`
 - **Durable Object Storage**: 7-day retention for posts (auto-cleanup via scheduled alarm)
-- **Feed Hashtags**: Format is `#atr_[0-9a-f]{8}` (8-character hex, system-generated, unique per community) - **003-id**
-- **Two-Stage Filtering**: Lightweight filter (`includes('#atr_')`) → Queue → Heavyweight filter (`regex /#atr_[0-9a-f]{8}/`) - **006-pds-1-db**
+- **Feed Hashtags**: Format is `#atrarium_[0-9a-f]{8}` (8-character hex, system-generated, unique per community) - **003-id**
+- **Two-Stage Filtering**: Lightweight filter (`includes('#atrarium_')`) → Queue → Heavyweight filter (`regex /#atrarium_[0-9a-f]{8}/`) - **006-pds-1-db**
 - **Moderation**: Only moderators/owners can hide posts or block users - **003-id**
 - **Membership Validation**: Posts must be from community members (verified in Durable Object Storage) - **006-pds-1-db**
 - **PDS as Source of Truth**: All writes go to PDS first, then indexed via Firehose - **006-pds-1-db**

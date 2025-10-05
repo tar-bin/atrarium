@@ -19,7 +19,7 @@ describe.skip('PDS to Feed Flow (Quickstart Scenario - requires deployed environ
   const aliceDid = 'did:plc:alice123';
   const bobDid = 'did:plc:bob456';
   const communityId = 'design-community';
-  const communityHashtag = '#atr_test1234';
+  const communityHashtag = '#atrarium_test1234';
 
   let communityStub: DurableObjectStub;
 
