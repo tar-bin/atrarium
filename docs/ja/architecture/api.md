@@ -25,11 +25,11 @@ AT ProtocolのFeed Generator仕様を実装しています。
 ```json
 {
   "@context": ["https://www.w3.org/ns/did/v1"],
-  "id": "did:web:atrarium.example.com",
+  "id": "did:web:atrarium.net",
   "service": [{
     "id": "#bsky_fg",
     "type": "BskyFeedGenerator",
-    "serviceEndpoint": "https://atrarium.example.com"
+    "serviceEndpoint": "https://atrarium.net"
   }]
 }
 ```
@@ -65,7 +65,7 @@ AT ProtocolのFeed Generator仕様を実装しています。
 全Dashboard APIエンドポイントはAuthorizationヘッダーにJWTトークンが必要です：
 
 ```bash
-curl -H "Authorization: Bearer $JWT_TOKEN" https://atrarium.example.com/api/communities
+curl -H "Authorization: Bearer $JWT_TOKEN" https://atrarium.net/api/communities
 ```
 
 ### コミュニティ

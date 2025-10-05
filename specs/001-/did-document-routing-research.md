@@ -39,7 +39,7 @@ A DID document for AT Protocol feed generators must include:
 
 **Required Fields**:
 - `@context`: Array containing `"https://www.w3.org/ns/did/v1"`
-- `id`: The DID identifier (e.g., `did:web:atrarium.example.com`)
+- `id`: The DID identifier (e.g., `did:web:atrarium.net`)
 - `service`: Array of service endpoint objects
 
 **Service Endpoint Structure**:
@@ -47,7 +47,7 @@ A DID document for AT Protocol feed generators must include:
 {
   "id": "#bsky_fg",
   "type": "BskyFeedGenerator",
-  "serviceEndpoint": "https://atrarium.example.com"
+  "serviceEndpoint": "https://atrarium.net"
 }
 ```
 
@@ -76,12 +76,12 @@ According to [AT Protocol DID specification](https://atproto.com/specs/did):
 ```json
 {
   "@context": ["https://www.w3.org/ns/did/v1"],
-  "id": "did:web:atrarium.example.com",
+  "id": "did:web:atrarium.net",
   "service": [
     {
       "id": "#bsky_fg",
       "type": "BskyFeedGenerator",
-      "serviceEndpoint": "https://atrarium.example.com"
+      "serviceEndpoint": "https://atrarium.net"
     }
   ]
 }
@@ -191,11 +191,11 @@ const router = AutoRouter()
 router.get('/.well-known/did.json', () => {
   return {
     '@context': ['https://www.w3.org/ns/did/v1'],
-    id: 'did:web:atrarium.example.com',
+    id: 'did:web:atrarium.net',
     service: [{
       id: '#bsky_fg',
       type: 'BskyFeedGenerator',
-      serviceEndpoint: 'https://atrarium.example.com'
+      serviceEndpoint: 'https://atrarium.net'
     }]
   }
 })
@@ -313,8 +313,8 @@ main = "src/index.ts"
 compatibility_date = "2024-10-01"
 
 [vars]
-SERVICE_HOSTNAME = "atrarium.example.com"
-SERVICE_DID = "did:web:atrarium.example.com"
+SERVICE_HOSTNAME = "atrarium.net"
+SERVICE_DID = "did:web:atrarium.net"
 
 # For production, use secrets:
 # wrangler secret put JWT_SECRET
@@ -340,17 +340,17 @@ SERVICE_DID = "did:web:atrarium.example.com"
 **Automated Validation**:
 ```bash
 # Test DID document endpoint
-curl https://atrarium.example.com/.well-known/did.json | jq
+curl https://atrarium.net/.well-known/did.json | jq
 
 # Expected output:
 {
   "@context": ["https://www.w3.org/ns/did/v1"],
-  "id": "did:web:atrarium.example.com",
+  "id": "did:web:atrarium.net",
   "service": [
     {
       "id": "#bsky_fg",
       "type": "BskyFeedGenerator",
-      "serviceEndpoint": "https://atrarium.example.com"
+      "serviceEndpoint": "https://atrarium.net"
     }
   ]
 }
@@ -365,7 +365,7 @@ import { IdResolver } from '@atproto/identity'
 const resolver = new IdResolver()
 
 // Test DID resolution
-const didDoc = await resolver.did.resolve('did:web:atrarium.example.com')
+const didDoc = await resolver.did.resolve('did:web:atrarium.net')
 console.log(didDoc)
 
 // Verify service endpoint
@@ -391,7 +391,7 @@ await agent.api.com.atproto.repo.putRecord({
   collection: 'app.bsky.feed.generator',
   rkey: 'atrarium-feed',
   record: {
-    did: 'did:web:atrarium.example.com',
+    did: 'did:web:atrarium.net',
     displayName: 'Atrarium Community Feed',
     description: 'Custom community feed for small communities',
     createdAt: new Date().toISOString()
@@ -493,17 +493,17 @@ interface ServiceEndpoint {
 User Requests Feed
     ↓
 Bluesky AppView receives feed URI:
-  at://did:web:atrarium.example.com/app.bsky.feed.generator/feed-id
+  at://did:web:atrarium.net/app.bsky.feed.generator/feed-id
     ↓
 AppView resolves DID:
-  GET https://atrarium.example.com/.well-known/did.json
+  GET https://atrarium.net/.well-known/did.json
     ↓
 AppView extracts service endpoint:
-  https://atrarium.example.com
+  https://atrarium.net
     ↓
 AppView requests feed skeleton:
-  GET https://atrarium.example.com/xrpc/app.bsky.feed.getFeedSkeleton
-  ?feed=at://did:web:atrarium.example.com/app.bsky.feed.generator/feed-id
+  GET https://atrarium.net/xrpc/app.bsky.feed.getFeedSkeleton
+  ?feed=at://did:web:atrarium.net/app.bsky.feed.generator/feed-id
     ↓
 Feed Generator returns post URIs
 ```
@@ -579,7 +579,7 @@ curl http://localhost:8787/.well-known/did.json | jq
 npx wrangler deploy
 
 # Verify production
-curl https://atrarium.example.com/.well-known/did.json | jq
+curl https://atrarium.net/.well-known/did.json | jq
 
 # Set production secrets
 npx wrangler secret put JWT_SECRET
@@ -722,8 +722,8 @@ main = "src/index.ts"
 compatibility_date = "2024-10-01"
 
 [vars]
-SERVICE_HOSTNAME = "atrarium.example.com"
-SERVICE_DID = "did:web:atrarium.example.com"
+SERVICE_HOSTNAME = "atrarium.net"
+SERVICE_DID = "did:web:atrarium.net"
 
 [[d1_databases]]
 binding = "DB"

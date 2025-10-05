@@ -25,11 +25,11 @@ Returns DID document identifying this feed generator.
 ```json
 {
   "@context": ["https://www.w3.org/ns/did/v1"],
-  "id": "did:web:atrarium.example.com",
+  "id": "did:web:atrarium.net",
   "service": [{
     "id": "#bsky_fg",
     "type": "BskyFeedGenerator",
-    "serviceEndpoint": "https://atrarium.example.com"
+    "serviceEndpoint": "https://atrarium.net"
   }]
 }
 ```
@@ -58,7 +58,7 @@ Returns feed skeleton (post URIs only, no content).
 
 **Example**:
 ```bash
-curl "https://atrarium.example.com/xrpc/app.bsky.feed.getFeedSkeleton?feed=at://did:plc:xxx/app.bsky.feed.generator/typescript-tips&limit=20"
+curl "https://atrarium.net/xrpc/app.bsky.feed.getFeedSkeleton?feed=at://did:plc:xxx/app.bsky.feed.generator/typescript-tips&limit=20"
 ```
 
 ### Feed Metadata
@@ -70,7 +70,7 @@ Returns metadata about available feeds.
 **Response**:
 ```json
 {
-  "did": "did:web:atrarium.example.com",
+  "did": "did:web:atrarium.net",
   "feeds": [
     {
       "uri": "at://did:plc:xxx/app.bsky.feed.generator/typescript-tips",
@@ -90,7 +90,7 @@ Internal API for community management (requires JWT authentication).
 All Dashboard API endpoints require JWT token in Authorization header:
 
 ```bash
-curl -H "Authorization: Bearer $JWT_TOKEN" https://atrarium.example.com/api/communities
+curl -H "Authorization: Bearer $JWT_TOKEN" https://atrarium.net/api/communities
 ```
 
 ### Communities
@@ -204,7 +204,7 @@ curl -H "Authorization: Bearer $JWT_TOKEN" https://atrarium.example.com/api/comm
   "id": 1,
   "community_id": 1,
   "name": "TypeScript Tips",
-  "feed_uri": "at://did:web:atrarium.example.com/app.bsky.feed.generator/typescript-tips",
+  "feed_uri": "at://did:web:atrarium.net/app.bsky.feed.generator/typescript-tips",
   "filter_config": { /* ... */ },
   "post_count": 0,
   "created_at": 1704067200

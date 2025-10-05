@@ -214,11 +214,11 @@ async function executeWithRetry(operation, maxAttempts = 5) {
 ```json
 {
   "@context": ["https://www.w3.org/ns/did/v1"],
-  "id": "did:web:atrarium.example.com",
+  "id": "did:web:atrarium.net",
   "service": [{
     "id": "#bsky_fg",
     "type": "BskyFeedGenerator",
-    "serviceEndpoint": "https://atrarium.example.com"
+    "serviceEndpoint": "https://atrarium.net"
   }]
 }
 ```
@@ -229,7 +229,7 @@ User requests feed
     ↓
 Bluesky AppView receives feed URI
     ↓
-DID resolution: GET https://atrarium.example.com/.well-known/did.json
+DID resolution: GET https://atrarium.net/.well-known/did.json
     ↓
 Extract service endpoint
     ↓
@@ -289,9 +289,9 @@ Two-tier authentication architecture:
 #### Dashboard Authentication JWT
 ```json
 {
-  "iss": "did:web:atrarium.example.com",
+  "iss": "did:web:atrarium.net",
   "sub": "did:plc:xxx",
-  "aud": "did:web:atrarium.example.com",
+  "aud": "did:web:atrarium.net",
   "handle": "user.bsky.social",
   "iat": 1696291200,
   "exp": 1696292100,
@@ -303,7 +303,7 @@ Two-tier authentication architecture:
 ```json
 {
   "iss": "did:plc:xxx",
-  "aud": "did:web:atrarium.example.com",
+  "aud": "did:web:atrarium.net",
   "exp": 1696291260,
   "iat": 1696291200,
   "jti": "random-nonce",

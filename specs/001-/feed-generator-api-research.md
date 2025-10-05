@@ -47,11 +47,11 @@ Implement AT Protocol Feed Generator API with three required endpoints:
 ```json
 {
   "@context": ["https://www.w3.org/ns/did/v1"],
-  "id": "did:web:atrarium.example.com",
+  "id": "did:web:atrarium.net",
   "service": [{
     "id": "#bsky_fg",
     "type": "BskyFeedGenerator",
-    "serviceEndpoint": "https://atrarium.example.com"
+    "serviceEndpoint": "https://atrarium.net"
   }]
 }
 ```
@@ -93,13 +93,13 @@ router.get('/.well-known/did.json', (_req, res) => {
 **Response Format**:
 ```json
 {
-  "did": "did:web:atrarium.example.com",
+  "did": "did:web:atrarium.net",
   "feeds": [
     {
-      "uri": "at://did:web:atrarium.example.com/app.bsky.feed.generator/react-devs"
+      "uri": "at://did:web:atrarium.net/app.bsky.feed.generator/react-devs"
     },
     {
-      "uri": "at://did:web:atrarium.example.com/app.bsky.feed.generator/typescript-tips"
+      "uri": "at://did:web:atrarium.net/app.bsky.feed.generator/typescript-tips"
     }
   ]
 }
@@ -312,7 +312,7 @@ Feed generators only need queries (GET requests).
 ```json
 {
   "iss": "did:plc:abc123",  // User's DID
-  "aud": "did:web:atrarium.example.com",  // Service DID
+  "aud": "did:web:atrarium.net",  // Service DID
   "exp": 1683654750  // Expiration (typically <60 seconds)
 }
 ```
@@ -338,7 +338,7 @@ if (authHeader?.startsWith('Bearer ')) {
   try {
     const payload = await verifyServiceJwt(
       jwt,
-      'did:web:atrarium.example.com',
+      'did:web:atrarium.net',
       getSigningKey
     )
     // payload.iss contains user's DID
@@ -370,7 +370,7 @@ if (authHeader?.startsWith('Bearer ')) {
 **Record Structure**:
 ```typescript
 {
-  did: "did:web:atrarium.example.com",  // Feed generator service DID
+  did: "did:web:atrarium.net",  // Feed generator service DID
   displayName: "React Developers",
   description: "Latest posts about React.js",
   avatar: BlobRef,  // Optional avatar image
@@ -395,7 +395,7 @@ await agent.com.atproto.repo.putRecord({
   collection: 'app.bsky.feed.generator',
   rkey: 'react-devs',  // Feed ID (becomes part of URI)
   record: {
-    did: 'did:web:atrarium.example.com',
+    did: 'did:web:atrarium.net',
     displayName: 'React Developers',
     description: 'Latest posts about React.js',
     createdAt: new Date().toISOString()
@@ -518,7 +518,7 @@ const getPosts = async (feedId: string, limit: number, cursor?: string) => {
 **Format**: `at://{service-did}/app.bsky.feed.generator/{feed-id}`
 
 **Examples**:
-- `at://did:web:atrarium.example.com/app.bsky.feed.generator/react-devs`
+- `at://did:web:atrarium.net/app.bsky.feed.generator/react-devs`
 - `at://did:web:norsky.snorre.io/app.bsky.feed.generator/bokmaal`
 
 **Note**: Feed generator record is in **creator's repo**, not service's repo:
@@ -884,13 +884,13 @@ WHERE community_id IN (
 **Manual Testing with curl**:
 ```bash
 # Test DID document
-curl https://atrarium.example.com/.well-known/did.json
+curl https://atrarium.net/.well-known/did.json
 
 # Test describeFeedGenerator
-curl https://atrarium.example.com/xrpc/app.bsky.feed.describeFeedGenerator
+curl https://atrarium.net/xrpc/app.bsky.feed.describeFeedGenerator
 
 # Test getFeedSkeleton
-curl "https://atrarium.example.com/xrpc/app.bsky.feed.getFeedSkeleton?feed=at://did:web:atrarium.example.com/app.bsky.feed.generator/react-devs&limit=10"
+curl "https://atrarium.net/xrpc/app.bsky.feed.getFeedSkeleton?feed=at://did:web:atrarium.net/app.bsky.feed.generator/react-devs&limit=10"
 ```
 
 **Expected Responses**:
@@ -916,7 +916,7 @@ await agent.com.atproto.repo.putRecord({
   collection: 'app.bsky.feed.generator',
   rkey: 'react-devs',
   record: {
-    did: 'did:web:atrarium.example.com',
+    did: 'did:web:atrarium.net',
     displayName: 'React Developers',
     description: 'Latest posts about React.js from the community',
     createdAt: new Date().toISOString()
@@ -946,7 +946,7 @@ export let options = {
 }
 
 export default function() {
-  let res = http.get('https://atrarium.example.com/xrpc/app.bsky.feed.getFeedSkeleton?feed=at://did:web:atrarium.example.com/app.bsky.feed.generator/react-devs&limit=50')
+  let res = http.get('https://atrarium.net/xrpc/app.bsky.feed.getFeedSkeleton?feed=at://did:web:atrarium.net/app.bsky.feed.generator/react-devs&limit=50')
 
   check(res, {
     'status is 200': (r) => r.status === 200,

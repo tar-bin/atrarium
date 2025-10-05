@@ -177,7 +177,7 @@ export class AuthService {
     // In production: Extract from request
     // For Phase 0: Use environment variable or default
     return this.env.ENVIRONMENT === 'production'
-      ? 'atrarium.example.com'
+      ? 'atrarium.net'
       : '127.0.0.1:8787';
   }
 }

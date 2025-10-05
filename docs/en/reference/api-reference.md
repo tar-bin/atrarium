@@ -25,11 +25,11 @@ Returns DID document identifying this feed generator.
 ```json
 {
   "@context": ["https://www.w3.org/ns/did/v1"],
-  "id": "did:web:atrarium.example.com",
+  "id": "did:web:atrarium.net",
   "service": [{
     "id": "#bsky_fg",
     "type": "BskyFeedGenerator",
-    "serviceEndpoint": "https://atrarium.example.com"
+    "serviceEndpoint": "https://atrarium.net"
   }]
 }
 ```
@@ -64,7 +64,7 @@ Returns metadata about available feeds.
 
 ```json
 {
-  "did": "did:web:atrarium.example.com",
+  "did": "did:web:atrarium.net",
   "feeds": [
     {
       "uri": "at://did:plc:xxx/app.bsky.feed.generator/feed-id",
@@ -302,7 +302,7 @@ All endpoints return errors in standard format:
 ### Token Usage
 
 ```bash
-curl -H "Authorization: Bearer eyJhbGc..." https://atrarium.example.com/api/communities
+curl -H "Authorization: Bearer eyJhbGc..." https://atrarium.net/api/communities
 ```
 
 ## Rate Limits

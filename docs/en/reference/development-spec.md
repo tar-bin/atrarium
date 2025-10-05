@@ -155,12 +155,12 @@ Get DID document
 ```json
 {
   "@context": ["https://www.w3.org/ns/did/v1"],
-  "id": "did:web:atrarium.example.com",
+  "id": "did:web:atrarium.net",
   "service": [
     {
       "id": "#bsky_fg",
       "type": "BskyFeedGenerator",
-      "serviceEndpoint": "https://atrarium.example.com"
+      "serviceEndpoint": "https://atrarium.net"
     }
   ]
 }
