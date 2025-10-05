@@ -28,7 +28,7 @@ describe('Contract: PDS Write (CommunityConfig)', () => {
   it('should write CommunityConfig record to PDS', async () => {
     // Arrange: Community configuration data matching Lexicon schema
     const communityConfig = {
-      $type: 'com.atrarium.community.config',
+      $type: 'net.atrarium.community.config',
       name: 'Design Community',
       description: 'A community for designers to share work and feedback',
       hashtag: '#atr_a1b2c3d4',
@@ -56,7 +56,7 @@ describe('Contract: PDS Write (CommunityConfig)', () => {
   it('should validate required fields before writing', async () => {
     // Arrange: Invalid config (missing required 'name' field)
     const invalidConfig = {
-      $type: 'com.atrarium.community.config',
+      $type: 'net.atrarium.community.config',
       hashtag: '#atr_a1b2c3d4',
       stage: 'theme' as const,
       createdAt: new Date().toISOString(),
@@ -72,7 +72,7 @@ describe('Contract: PDS Write (CommunityConfig)', () => {
   it('should validate hashtag format', async () => {
     // Arrange: Invalid hashtag format
     const configWithBadHashtag = {
-      $type: 'com.atrarium.community.config',
+      $type: 'net.atrarium.community.config',
       name: 'Test Community',
       hashtag: 'invalid_format', // Does not match #atr_[8-hex] pattern
       stage: 'theme' as const,
@@ -88,7 +88,7 @@ describe('Contract: PDS Write (CommunityConfig)', () => {
   it('should validate feedMix ratios sum to 1.0', async () => {
     // Arrange: Invalid feedMix (does not sum to 1.0)
     const configWithBadFeedMix = {
-      $type: 'com.atrarium.community.config',
+      $type: 'net.atrarium.community.config',
       name: 'Test Community',
       hashtag: '#atr_a1b2c3d4',
       stage: 'theme' as const,
@@ -110,7 +110,7 @@ describe('Contract: PDS Write (CommunityConfig)', () => {
     // Arrange: Too many moderators
     const tooManyModerators = Array.from({ length: 51 }, (_, i) => `did:plc:user${i}`);
     const configWithTooManyMods = {
-      $type: 'com.atrarium.community.config',
+      $type: 'net.atrarium.community.config',
       name: 'Test Community',
       hashtag: '#atr_a1b2c3d4',
       stage: 'theme' as const,

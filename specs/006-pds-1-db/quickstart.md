@@ -50,7 +50,7 @@ When Alice submits the "Create Community" form with:
   | description | A community for designers            |
   | stage       | theme                                |
 Then a CommunityConfig record is created in Alice's PDS
-  And the record has $type "com.atrarium.community.config"
+  And the record has $type "net.atrarium.community.config"
   And the record has a system-generated hashtag "#atr_a1b2c3d4"
   And Alice's DID is in the moderators array
   And a Firehose commit event is emitted
@@ -73,7 +73,7 @@ Content-Type: application/json
 **PDS Record Created** (in Alice's PDS):
 ```json
 {
-  "$type": "com.atrarium.community.config",
+  "$type": "net.atrarium.community.config",
   "name": "Design Community",
   "description": "A community for designers",
   "hashtag": "#atr_a1b2c3d4",
@@ -107,7 +107,7 @@ INSERT INTO communities (
 **Verification**:
 ```bash
 # Check PDS record exists
-curl -X GET "https://bsky.social/xrpc/com.atproto.repo.getRecord?repo=did:plc:alice123&collection=com.atrarium.community.config&rkey=3jzfcijpj2z2a"
+curl -X GET "https://bsky.social/xrpc/com.atproto.repo.getRecord?repo=did:plc:alice123&collection=net.atrarium.community.config&rkey=3jzfcijpj2z2a"
 
 # Check D1 cache
 wrangler d1 execute atrarium-db --command "SELECT * FROM communities WHERE owner_did = 'did:plc:alice123'"
@@ -142,8 +142,8 @@ Authorization: Bearer <bob-jwt>
 **PDS Record Created** (in Bob's PDS):
 ```json
 {
-  "$type": "com.atrarium.community.membership",
-  "community": "at://did:plc:alice123/com.atrarium.community.config/3jzfcijpj2z2a",
+  "$type": "net.atrarium.community.membership",
+  "community": "at://did:plc:alice123/net.atrarium.community.config/3jzfcijpj2z2a",
   "role": "member",
   "joinedAt": "2025-10-04T12:30:00.000Z",
   "active": true,
@@ -167,7 +167,7 @@ INSERT INTO memberships (
 **Verification**:
 ```bash
 # Check membership record in Bob's PDS
-curl -X GET "https://bsky.social/xrpc/com.atproto.repo.listRecords?repo=did:plc:bob456&collection=com.atrarium.community.membership"
+curl -X GET "https://bsky.social/xrpc/com.atproto.repo.listRecords?repo=did:plc:bob456&collection=net.atrarium.community.membership"
 
 # Check D1 cache
 wrangler d1 execute atrarium-db --command "SELECT * FROM memberships WHERE community_id = '3jzfcijpj2z2a' AND user_did = 'did:plc:bob456'"
@@ -272,13 +272,13 @@ Content-Type: application/json
 **PDS Record Created** (in Alice's PDS):
 ```json
 {
-  "$type": "com.atrarium.moderation.action",
+  "$type": "net.atrarium.moderation.action",
   "action": "hide_post",
   "target": {
     "uri": "at://did:plc:bob456/app.bsky.feed.post/3xyz789",
     "cid": "bafyreib2rxk3rw6..."
   },
-  "community": "at://did:plc:alice123/com.atrarium.community.config/3jzfcijpj2z2a",
+  "community": "at://did:plc:alice123/net.atrarium.community.config/3jzfcijpj2z2a",
   "reason": "Off-topic content",
   "createdAt": "2025-10-04T13:15:00.000Z"
 }
@@ -308,7 +308,7 @@ INSERT INTO moderation_logs (
 **Verification**:
 ```bash
 # Check moderation action in Alice's PDS
-curl -X GET "https://bsky.social/xrpc/com.atproto.repo.listRecords?repo=did:plc:alice123&collection=com.atrarium.moderation.action"
+curl -X GET "https://bsky.social/xrpc/com.atproto.repo.listRecords?repo=did:plc:alice123&collection=net.atrarium.moderation.action"
 
 # Check D1 moderation status
 wrangler d1 execute atrarium-db --command "SELECT moderation_status FROM post_index WHERE uri = 'at://did:plc:bob456/app.bsky.feed.post/3xyz789'"
@@ -402,7 +402,7 @@ async function rebuildCacheFromPDS() {
 
   firehose.on('commit', async (evt) => {
     for (const op of evt.ops) {
-      if (op.path.startsWith('com.atrarium.')) {
+      if (op.path.startsWith('net.atrarium.')) {
         await processFirehoseEvent(evt, op);
       }
     }
@@ -470,9 +470,9 @@ describe('PDS-First Integration Test', () => {
   it('Alice creates community', async () => {
     const response = await aliceAgent.com.atproto.repo.createRecord({
       repo: aliceAgent.session.did,
-      collection: 'com.atrarium.community.config',
+      collection: 'net.atrarium.community.config',
       record: {
-        $type: 'com.atrarium.community.config',
+        $type: 'net.atrarium.community.config',
         name: 'Design Community',
         description: 'A community for designers',
         hashtag: '#atr_test1234',
@@ -499,9 +499,9 @@ describe('PDS-First Integration Test', () => {
   it('Bob joins community', async () => {
     const response = await bobAgent.com.atproto.repo.createRecord({
       repo: bobAgent.session.did,
-      collection: 'com.atrarium.community.membership',
+      collection: 'net.atrarium.community.membership',
       record: {
-        $type: 'com.atrarium.community.membership',
+        $type: 'net.atrarium.community.membership',
         community: communityUri,
         role: 'member',
         joinedAt: new Date().toISOString(),
@@ -543,9 +543,9 @@ describe('PDS-First Integration Test', () => {
   it('Alice hides Bob\'s post', async () => {
     const response = await aliceAgent.com.atproto.repo.createRecord({
       repo: aliceAgent.session.did,
-      collection: 'com.atrarium.moderation.action',
+      collection: 'net.atrarium.moderation.action',
       record: {
-        $type: 'com.atrarium.moderation.action',
+        $type: 'net.atrarium.moderation.action',
         action: 'hide_post',
         target: { uri: postUri, cid: 'bafyreib...' },
         community: communityUri,

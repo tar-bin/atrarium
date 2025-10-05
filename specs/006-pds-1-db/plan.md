@@ -104,9 +104,9 @@ specs/006-pds-1-db/
 ├── quickstart.md        # Phase 1 output (/plan command) - Integration test scenario
 ├── contracts/           # Phase 1 output (/plan command)
 │   ├── lexicon/            # AT Protocol Lexicon schemas (JSON)
-│   │   ├── com.atrarium.community.config.json
-│   │   ├── com.atrarium.community.membership.json
-│   │   └── com.atrarium.moderation.action.json
+│   │   ├── net.atrarium.community.config.json
+│   │   ├── net.atrarium.community.membership.json
+│   │   └── net.atrarium.moderation.action.json
 │   └── tests/              # Contract tests (TypeScript)
 │       ├── pds-write-community.test.ts
 │       ├── pds-read-membership.test.ts
@@ -230,7 +230,7 @@ Update data model to reflect PDS-first architecture:
 **PDS Records (Source of Truth)**:
 ```
 CommunityConfig (stored in owner's PDS)
-  - $type: com.atrarium.community.config
+  - $type: net.atrarium.community.config
   - name: string
   - description?: string
   - hashtag: string (#atr_xxxxx)
@@ -243,14 +243,14 @@ CommunityConfig (stored in owner's PDS)
   - updatedAt: ISO 8601 datetime
 
 MembershipRecord (stored in member's PDS)
-  - $type: com.atrarium.community.membership
+  - $type: net.atrarium.community.membership
   - community: string (owner DID reference)
   - role: 'owner' | 'moderator' | 'member'
   - joinedAt: ISO 8601 datetime
   - active: boolean
 
 ModerationAction (stored in moderator's PDS)
-  - $type: com.atrarium.moderation.action
+  - $type: net.atrarium.moderation.action
   - community: string (owner DID reference)
   - action: 'hide' | 'unhide' | 'block' | 'unblock'
   - target: string (post URI or user DID)
@@ -283,9 +283,9 @@ Example:
 ### Step 2: API Contracts (contracts/)
 
 **Lexicon Schemas** (JSON, following AT Protocol spec):
-1. `contracts/lexicon/com.atrarium.community.config.json`
-2. `contracts/lexicon/com.atrarium.community.membership.json`
-3. `contracts/lexicon/com.atrarium.moderation.action.json`
+1. `contracts/lexicon/net.atrarium.community.config.json`
+2. `contracts/lexicon/net.atrarium.community.membership.json`
+3. `contracts/lexicon/net.atrarium.moderation.action.json`
 
 **PDS Integration Contracts** (TypeScript tests):
 1. `contracts/tests/pds-write-community.test.ts`
@@ -318,7 +318,7 @@ Example:
 Given Alice has a Bluesky account (alice.bsky.social)
 When Alice creates a community "Tech Enthusiasts" via dashboard
 Then a CommunityConfig record is written to Alice's PDS
-  And the record has $type "com.atrarium.community.config"
+  And the record has $type "net.atrarium.community.config"
   And a Durable Object instance is created for this community
   And a Firehose event is emitted
   And the Durable Object caches the config in its Storage
@@ -353,7 +353,7 @@ Run update script:
 ```
 
 Add to CLAUDE.md:
-- New Lexicon schemas (com.atrarium.*)
+- New Lexicon schemas (net.atrarium.*)
 - PDS-first data flow diagram
 - Durable Objects Storage architecture (replaced D1/KV)
 - Per-community Durable Object instances
@@ -378,9 +378,9 @@ Add to CLAUDE.md:
    - T009: Firehose performance optimization (NEW)
 
 2. **Lexicon Schema Definition** (T011-T013)
-   - T011: Define com.atrarium.community.config.json [P]
-   - T012: Define com.atrarium.community.membership.json [P]
-   - T013: Define com.atrarium.moderation.action.json [P]
+   - T011: Define net.atrarium.community.config.json [P]
+   - T012: Define net.atrarium.community.membership.json [P]
+   - T013: Define net.atrarium.moderation.action.json [P]
 
 3. **Contract Tests (Failing)** (T014-T017)
    - T014: Write pds-write-community.test.ts (FAILS) [P]

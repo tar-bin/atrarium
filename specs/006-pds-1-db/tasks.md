@@ -57,9 +57,9 @@
 
 ## Phase 1: Lexicon Schema Definition (T011-T013)
 
-- [x] **T011** [P] Define `com.atrarium.community.config` Lexicon schema in `/workspaces/atrarium/specs/006-pds-1-db/contracts/lexicon/com.atrarium.community.config.json`
-- [x] **T012** [P] Define `com.atrarium.community.membership` Lexicon schema in `/workspaces/atrarium/specs/006-pds-1-db/contracts/lexicon/com.atrarium.community.membership.json`
-- [x] **T013** [P] Define `com.atrarium.moderation.action` Lexicon schema in `/workspaces/atrarium/specs/006-pds-1-db/contracts/lexicon/com.atrarium.moderation.action.json`
+- [x] **T011** [P] Define `net.atrarium.community.config` Lexicon schema in `/workspaces/atrarium/specs/006-pds-1-db/contracts/lexicon/net.atrarium.community.config.json`
+- [x] **T012** [P] Define `net.atrarium.community.membership` Lexicon schema in `/workspaces/atrarium/specs/006-pds-1-db/contracts/lexicon/net.atrarium.community.membership.json`
+- [x] **T013** [P] Define `net.atrarium.moderation.action` Lexicon schema in `/workspaces/atrarium/specs/006-pds-1-db/contracts/lexicon/net.atrarium.moderation.action.json`
 
 **Status**: Lexicon schemas complete ✅
 
@@ -207,9 +207,9 @@ Task: "Research multiple Feed Generator support"
 ### Phase 1 Lexicon Schemas (All Parallel)
 ```bash
 # Launch all 3 Lexicon definition tasks together:
-Task: "Define com.atrarium.community.config Lexicon schema"
-Task: "Define com.atrarium.community.membership Lexicon schema"
-Task: "Define com.atrarium.moderation.action Lexicon schema"
+Task: "Define net.atrarium.community.config Lexicon schema"
+Task: "Define net.atrarium.community.membership Lexicon schema"
+Task: "Define net.atrarium.moderation.action Lexicon schema"
 ```
 
 ### Phase 2 Contract Tests (All Parallel - TDD)

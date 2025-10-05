@@ -68,7 +68,7 @@ app.post('/', async (c) => {
     const atproto = new ATProtoService(c.env);
 
     const pdsResult = await atproto.createCommunityConfig({
-      $type: 'com.atrarium.community.config',
+      $type: 'net.atrarium.community.config',
       name: validation.data.name,
       description: validation.data.description || '',
       hashtag,

@@ -114,7 +114,7 @@ curl -X POST https://atrarium.workers.dev/api/communities \
 **Validation**:
 1. Check PDS record exists:
    ```bash
-   curl -X GET "https://bsky.social/xrpc/com.atproto.repo.getRecord?repo=did:plc:alice123&collection=com.atrarium.community.config&rkey=3jzfcijpj2z2a"
+   curl -X GET "https://bsky.social/xrpc/com.atproto.repo.getRecord?repo=did:plc:alice123&collection=net.atrarium.community.config&rkey=3jzfcijpj2z2a"
    ```
 
 2. Verify CommunityFeedGenerator Durable Object created:
@@ -149,7 +149,7 @@ curl -X POST https://atrarium.workers.dev/api/communities/3jzfcijpj2z2a/join \
 **Validation**:
 1. Check PDS membership record:
    ```bash
-   curl -X GET "https://bsky.social/xrpc/com.atproto.repo.listRecords?repo=did:plc:bob456&collection=com.atrarium.community.membership"
+   curl -X GET "https://bsky.social/xrpc/com.atproto.repo.listRecords?repo=did:plc:bob456&collection=net.atrarium.community.membership"
    ```
 
 2. Verify membership synced to Durable Object:
@@ -227,7 +227,7 @@ curl -X POST https://atrarium.workers.dev/api/moderation/hide \
 {
   "success": true,
   "action": {
-    "uri": "at://did:plc:alice123/com.atrarium.moderation.action/4abc123",
+    "uri": "at://did:plc:alice123/net.atrarium.moderation.action/4abc123",
     "action": "hide_post",
     "targetUri": "at://did:plc:bob456/app.bsky.feed.post/3xyz789"
   }
@@ -237,7 +237,7 @@ curl -X POST https://atrarium.workers.dev/api/moderation/hide \
 **Validation**:
 1. Check PDS moderation record:
    ```bash
-   curl -X GET "https://bsky.social/xrpc/com.atproto.repo.listRecords?repo=did:plc:alice123&collection=com.atrarium.moderation.action"
+   curl -X GET "https://bsky.social/xrpc/com.atproto.repo.listRecords?repo=did:plc:alice123&collection=net.atrarium.moderation.action"
    ```
 
 2. Verify moderation synced to Durable Object:

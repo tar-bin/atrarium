@@ -54,8 +54,8 @@ app.post('/:communityId/members', async (c) => {
     const atproto = new ATProtoService(c.env);
 
     await atproto.createMembershipRecord({
-      $type: 'com.atrarium.community.membership',
-      community: `at://did:plc:system/com.atrarium.community.config/${communityId}`,
+      $type: 'net.atrarium.community.membership',
+      community: `at://did:plc:system/net.atrarium.community.config/${communityId}`,
       role: 'member',
       joinedAt: now,
       active: true,

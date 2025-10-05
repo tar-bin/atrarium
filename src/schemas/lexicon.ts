@@ -9,10 +9,10 @@ import { z } from 'zod';
 
 /**
  * Community configuration record (stored in owner's PDS)
- * Lexicon: com.atrarium.community.config
+ * Lexicon: net.atrarium.community.config
  */
 export interface CommunityConfig {
-  $type: 'com.atrarium.community.config';
+  $type: 'net.atrarium.community.config';
   name: string;
   description?: string;
   hashtag: string; // Format: #atr_[8-hex]
@@ -31,10 +31,10 @@ export interface CommunityConfig {
 
 /**
  * Membership record (stored in member's PDS)
- * Lexicon: com.atrarium.community.membership
+ * Lexicon: net.atrarium.community.membership
  */
 export interface MembershipRecord {
-  $type: 'com.atrarium.community.membership';
+  $type: 'net.atrarium.community.membership';
   community: string; // AT-URI of CommunityConfig
   role: 'owner' | 'moderator' | 'member';
   joinedAt: string; // ISO 8601 datetime
@@ -45,10 +45,10 @@ export interface MembershipRecord {
 
 /**
  * Moderation action record (stored in moderator's PDS)
- * Lexicon: com.atrarium.moderation.action
+ * Lexicon: net.atrarium.moderation.action
  */
 export interface ModerationAction {
-  $type: 'com.atrarium.moderation.action';
+  $type: 'net.atrarium.moderation.action';
   action: 'hide_post' | 'unhide_post' | 'block_user' | 'unblock_user';
   target: PostTarget | UserTarget;
   community: string; // AT-URI of CommunityConfig
@@ -121,7 +121,7 @@ const feedMixSchema = z.object({
  * CommunityConfig validation schema
  */
 export const communityConfigSchema = z.object({
-  $type: z.literal('com.atrarium.community.config'),
+  $type: z.literal('net.atrarium.community.config'),
   name: z.string().min(1).max(100, 'name must not exceed 100 graphemes'),
   description: z.string().max(1000, 'description must not exceed 1000 graphemes').optional(),
   hashtag: hashtagSchema,
@@ -138,7 +138,7 @@ export const communityConfigSchema = z.object({
  * MembershipRecord validation schema
  */
 export const membershipRecordSchema = z.object({
-  $type: z.literal('com.atrarium.community.membership'),
+  $type: z.literal('net.atrarium.community.membership'),
   community: atUriSchema,
   role: z.enum(['owner', 'moderator', 'member']),
   joinedAt: iso8601Schema,
@@ -166,7 +166,7 @@ const userTargetSchema = z.object({
  * ModerationAction validation schema
  */
 export const moderationActionSchema = z.object({
-  $type: z.literal('com.atrarium.moderation.action'),
+  $type: z.literal('net.atrarium.moderation.action'),
   action: z.enum(['hide_post', 'unhide_post', 'block_user', 'unblock_user']),
   target: z.union([postTargetSchema, userTargetSchema]),
   community: atUriSchema,

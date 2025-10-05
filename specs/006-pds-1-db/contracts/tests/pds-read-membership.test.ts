@@ -38,7 +38,7 @@ describe('Contract: PDS Read (MembershipRecord)', () => {
     // If user has memberships, validate structure
     if (memberships.length > 0) {
       const membership = memberships[0];
-      expect(membership).toHaveProperty('$type', 'com.atrarium.community.membership');
+      expect(membership).toHaveProperty('$type', 'net.atrarium.community.membership');
       expect(membership).toHaveProperty('community');
       expect(membership.community).toMatch(/^at:\/\//); // AT-URI format
       expect(membership).toHaveProperty('role');
@@ -50,14 +50,14 @@ describe('Contract: PDS Read (MembershipRecord)', () => {
 
   it('should read single membership record by URI', async () => {
     // Arrange: Membership record URI
-    const membershipUri = 'at://did:plc:bob456/com.atrarium.community.membership/3k2j4xyz';
+    const membershipUri = 'at://did:plc:bob456/net.atrarium.community.membership/3k2j4xyz';
 
     // Act: Read specific membership (method does not exist yet - will fail)
     const membership = await atprotoService.getMembershipRecord(membershipUri);
 
     // Assert: Returns membership record
     expect(membership).toBeDefined();
-    expect(membership.$type).toBe('com.atrarium.community.membership');
+    expect(membership.$type).toBe('net.atrarium.community.membership');
     expect(membership.uri).toBe(membershipUri);
     expect(membership.community).toMatch(/^at:\/\//);
     expect(['owner', 'moderator', 'member']).toContain(membership.role);
@@ -94,7 +94,7 @@ describe('Contract: PDS Read (MembershipRecord)', () => {
       // Should be able to fetch the community config
       const communityConfig = await atprotoService.getCommunityConfig(membership.community);
       expect(communityConfig).toBeDefined();
-      expect(communityConfig.$type).toBe('com.atrarium.community.config');
+      expect(communityConfig.$type).toBe('net.atrarium.community.config');
     }
   });
 
@@ -122,7 +122,7 @@ describe('Contract: PDS Read (MembershipRecord)', () => {
 
   it('should throw error for non-existent membership URI', async () => {
     // Arrange: Non-existent membership URI
-    const nonExistentUri = 'at://did:plc:nobody999/com.atrarium.community.membership/nonexistent';
+    const nonExistentUri = 'at://did:plc:nobody999/net.atrarium.community.membership/nonexistent';
 
     // Act & Assert: Should throw not found error
     await expect(

@@ -1,6 +1,6 @@
 {
   "lexicon": 1,
-  "id": "com.atrarium.community.config",
+  "id": "net.atrarium.community.config",
   "defs": {
     "main": {
       "type": "record",

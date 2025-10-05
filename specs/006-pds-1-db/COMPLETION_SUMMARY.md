@@ -32,14 +32,14 @@ This feature implements a complete architectural shift from D1/KV-based storage 
 
 **Status**: Complete
 **Files Created**:
-- `/workspaces/atrarium/specs/006-pds-1-db/contracts/lexicon/com.atrarium.community.config.json`
-- `/workspaces/atrarium/specs/006-pds-1-db/contracts/lexicon/com.atrarium.community.membership.json`
-- `/workspaces/atrarium/specs/006-pds-1-db/contracts/lexicon/com.atrarium.moderation.action.json`
+- `/workspaces/atrarium/specs/006-pds-1-db/contracts/lexicon/net.atrarium.community.config.json`
+- `/workspaces/atrarium/specs/006-pds-1-db/contracts/lexicon/net.atrarium.community.membership.json`
+- `/workspaces/atrarium/specs/006-pds-1-db/contracts/lexicon/net.atrarium.moderation.action.json`
 
 **Schema Definitions**:
-1. **com.atrarium.community.config**: Community metadata (name, hashtag, stage, moderators, feedMix)
-2. **com.atrarium.community.membership**: User membership (community, role, joinedAt, active)
-3. **com.atrarium.moderation.action**: Moderation actions (action, target, community, reason)
+1. **net.atrarium.community.config**: Community metadata (name, hashtag, stage, moderators, feedMix)
+2. **net.atrarium.community.membership**: User membership (community, role, joinedAt, active)
+3. **net.atrarium.moderation.action**: Moderation actions (action, target, community, reason)
 
 ---
 

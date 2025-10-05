@@ -26,7 +26,7 @@ describe.skip('Contract: Durable Objects Storage', () => {
   it('should store and retrieve community config', async () => {
     // Arrange: Community config data
     const configData = {
-      $type: 'com.atrarium.community.config',
+      $type: 'net.atrarium.community.config',
       name: 'Test Community',
       hashtag: '#atr_a1b2c3d4',
       stage: 'theme',
@@ -107,8 +107,8 @@ describe.skip('Contract: Durable Objects Storage', () => {
   it('should store membership records with DID-based keys', async () => {
     // Arrange: Membership data
     const membership = {
-      $type: 'com.atrarium.community.membership',
-      community: 'at://did:plc:alice/com.atrarium.community.config/3jzfcijpj2z2a',
+      $type: 'net.atrarium.community.membership',
+      community: 'at://did:plc:alice/net.atrarium.community.config/3jzfcijpj2z2a',
       role: 'member',
       joinedAt: new Date().toISOString(),
       active: true,

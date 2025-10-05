@@ -141,10 +141,10 @@ describe.skip('Contract: Queue Consumer (FirehoseProcessor)', () => {
       commit: {
         rev: '3jzfcijpj2z2a',
         operation: 'create',
-        collection: 'com.atrarium.community.config',
+        collection: 'net.atrarium.community.config',
         rkey: '3jzfcijpj2z2a',
         record: {
-          $type: 'com.atrarium.community.config',
+          $type: 'net.atrarium.community.config',
           name: 'Design Community',
           hashtag: '#atr_a1b2c3d4',
           stage: 'theme',
@@ -170,11 +170,11 @@ describe.skip('Contract: Queue Consumer (FirehoseProcessor)', () => {
       commit: {
         rev: '3k2j4xyz',
         operation: 'create',
-        collection: 'com.atrarium.community.membership',
+        collection: 'net.atrarium.community.membership',
         rkey: '3k2j4xyz',
         record: {
-          $type: 'com.atrarium.community.membership',
-          community: 'at://did:plc:alice123/com.atrarium.community.config/3jzfcijpj2z2a',
+          $type: 'net.atrarium.community.membership',
+          community: 'at://did:plc:alice123/net.atrarium.community.config/3jzfcijpj2z2a',
           role: 'member',
           joinedAt: new Date().toISOString(),
           active: true,
@@ -199,16 +199,16 @@ describe.skip('Contract: Queue Consumer (FirehoseProcessor)', () => {
       commit: {
         rev: '3m5n6pqr',
         operation: 'create',
-        collection: 'com.atrarium.moderation.action',
+        collection: 'net.atrarium.moderation.action',
         rkey: '3m5n6pqr',
         record: {
-          $type: 'com.atrarium.moderation.action',
+          $type: 'net.atrarium.moderation.action',
           action: 'hide_post',
           target: {
             uri: 'at://did:plc:bob456/app.bsky.feed.post/3xyz789',
             cid: 'bafyreib2rxk3rw6putwqx7q',
           },
-          community: 'at://did:plc:alice123/com.atrarium.community.config/3jzfcijpj2z2a',
+          community: 'at://did:plc:alice123/net.atrarium.community.config/3jzfcijpj2z2a',
           reason: 'Violates community guidelines',
           createdAt: new Date().toISOString(),
         },

@@ -185,9 +185,9 @@ vitest.docs.config.ts # Vitest configuration for documentation tests
 **Storage Layers**:
 
 1. **PDS (Source of Truth)** - Permanent storage in user Personal Data Servers
-   - `com.atrarium.community.config`: Community metadata (name, hashtag, stage, moderators, feedMix)
-   - `com.atrarium.community.membership`: User membership records (community, role, joinedAt, active)
-   - `com.atrarium.moderation.action`: Moderation actions (action, target, community, reason)
+   - `net.atrarium.community.config`: Community metadata (name, hashtag, stage, moderators, feedMix)
+   - `net.atrarium.community.membership`: User membership records (community, role, joinedAt, active)
+   - `net.atrarium.moderation.action`: Moderation actions (action, target, community, reason)
 
 2. **Durable Objects Storage (Per-Community Cache)** - 7-day feed index
    - `config:<communityId>`: CommunityConfig (name, hashtag, stage, createdAt)
@@ -479,7 +479,7 @@ JWT-based authentication with DID verification ([src/services/auth.ts](src/servi
 - **Moderation**: Only moderators/owners can hide posts or block users - **003-id**
 - **Membership Validation**: Posts must be from community members (verified in Durable Object Storage) - **006-pds-1-db**
 - **PDS as Source of Truth**: All writes go to PDS first, then indexed via Firehose - **006-pds-1-db**
-- **Lexicon Collections**: `com.atrarium.community.config`, `com.atrarium.community.membership`, `com.atrarium.moderation.action` - **006-pds-1-db**
+- **Lexicon Collections**: `net.atrarium.community.config`, `net.atrarium.community.membership`, `net.atrarium.moderation.action` - **006-pds-1-db**
 
 ### Testing Strategy
 Tests use `@cloudflare/vitest-pool-workers` to simulate Cloudflare Workers environment:

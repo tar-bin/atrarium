@@ -25,12 +25,12 @@ This document describes the PDS-first data model for Atrarium. Data is stored pr
 ### 1. CommunityConfig
 
 **Location**: Owner's PDS
-**Collection**: `com.atrarium.community.config`
+**Collection**: `net.atrarium.community.config`
 **Record Key**: `tid` (timestamp identifier, auto-generated)
 
 ```typescript
 interface CommunityConfig {
-  $type: 'com.atrarium.community.config';
+  $type: 'net.atrarium.community.config';
   name: string;                    // Display name (max 100 graphemes)
   description?: string;             // Purpose statement (max 1000 graphemes)
   hashtag: string;                  // Unique hashtag: #atr_[8-hex]
@@ -48,12 +48,12 @@ interface CommunityConfig {
 }
 ```
 
-**AT-URI Format**: `at://did:plc:owner/com.atrarium.community.config/3jzfcijpj2z2a`
+**AT-URI Format**: `at://did:plc:owner/net.atrarium.community.config/3jzfcijpj2z2a`
 
 **Example**:
 ```json
 {
-  "$type": "com.atrarium.community.config",
+  "$type": "net.atrarium.community.config",
   "name": "Design Community",
   "description": "A community for designers to share work and feedback",
   "hashtag": "#atr_a1b2c3d4",
@@ -71,12 +71,12 @@ interface CommunityConfig {
 ### 2. MembershipRecord
 
 **Location**: Member's PDS
-**Collection**: `com.atrarium.community.membership`
+**Collection**: `net.atrarium.community.membership`
 **Record Key**: `tid` (timestamp identifier, auto-generated)
 
 ```typescript
 interface MembershipRecord {
-  $type: 'com.atrarium.community.membership';
+  $type: 'net.atrarium.community.membership';
   community: string;                // AT-URI of CommunityConfig
   role: 'owner' | 'moderator' | 'member';
   joinedAt: string;                 // ISO 8601 datetime
@@ -86,13 +86,13 @@ interface MembershipRecord {
 }
 ```
 
-**AT-URI Format**: `at://did:plc:member/com.atrarium.community.membership/3k2j4xyz`
+**AT-URI Format**: `at://did:plc:member/net.atrarium.community.membership/3k2j4xyz`
 
 **Example**:
 ```json
 {
-  "$type": "com.atrarium.community.membership",
-  "community": "at://did:plc:alice123/com.atrarium.community.config/3jzfcijpj2z2a",
+  "$type": "net.atrarium.community.membership",
+  "community": "at://did:plc:alice123/net.atrarium.community.config/3jzfcijpj2z2a",
   "role": "member",
   "joinedAt": "2025-10-04T12:30:00.000Z",
   "active": true,
@@ -105,12 +105,12 @@ interface MembershipRecord {
 ### 3. ModerationAction
 
 **Location**: Moderator's PDS
-**Collection**: `com.atrarium.moderation.action`
+**Collection**: `net.atrarium.moderation.action`
 **Record Key**: `tid` (timestamp identifier, auto-generated)
 
 ```typescript
 interface ModerationAction {
-  $type: 'com.atrarium.moderation.action';
+  $type: 'net.atrarium.moderation.action';
   action: 'hide_post' | 'unhide_post' | 'block_user' | 'unblock_user';
   target: PostTarget | UserTarget;
   community: string;                // AT-URI of CommunityConfig
@@ -128,18 +128,18 @@ interface UserTarget {
 }
 ```
 
-**AT-URI Format**: `at://did:plc:moderator/com.atrarium.moderation.action/3m5n6pqr`
+**AT-URI Format**: `at://did:plc:moderator/net.atrarium.moderation.action/3m5n6pqr`
 
 **Example (Hide Post)**:
 ```json
 {
-  "$type": "com.atrarium.moderation.action",
+  "$type": "net.atrarium.moderation.action",
   "action": "hide_post",
   "target": {
     "uri": "at://did:plc:bob456/app.bsky.feed.post/3xyz789",
     "cid": "bafyreib2rxk3rw6putwqx7q7q7q7q7q7q7q7q7q7q7q"
   },
-  "community": "at://did:plc:alice123/com.atrarium.community.config/3jzfcijpj2z2a",
+  "community": "at://did:plc:alice123/net.atrarium.community.config/3jzfcijpj2z2a",
   "reason": "Violates community guidelines",
   "createdAt": "2025-10-04T13:00:00.000Z"
 }
@@ -215,7 +215,7 @@ interface StoredModerationAction extends ModerationAction {
 ```typescript
 // Inside CommunityFeedGenerator Durable Object
 async handleFirehoseEvent(event: FirehoseCommit) {
-  if (event.collection === 'com.atrarium.community.config') {
+  if (event.collection === 'net.atrarium.community.config') {
     const record = event.record as CommunityConfig;
 
     await this.storage.put(`config:${event.rkey}`, {
@@ -382,12 +382,12 @@ async handleModerationAction(event: FirehoseCommit) {
 ### PDS-Level Relationships
 
 ```
-CommunityConfig (at://did:plc:alice/com.atrarium.community.config/xxx)
+CommunityConfig (at://did:plc:alice/net.atrarium.community.config/xxx)
     ↑
     │ references (via AT-URI)
     │
-MembershipRecord (at://did:plc:bob/com.atrarium.community.membership/yyy)
-  community: "at://did:plc:alice/com.atrarium.community.config/xxx"
+MembershipRecord (at://did:plc:bob/net.atrarium.community.membership/yyy)
+  community: "at://did:plc:alice/net.atrarium.community.config/xxx"
 ```
 
 **Referential Integrity**:

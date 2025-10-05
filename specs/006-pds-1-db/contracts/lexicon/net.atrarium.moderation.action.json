@@ -1,6 +1,6 @@
 {
   "lexicon": 1,
-  "id": "com.atrarium.moderation.action",
+  "id": "net.atrarium.moderation.action",
   "defs": {
     "main": {
       "type": "record",

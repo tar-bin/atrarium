@@ -15,7 +15,7 @@ This document consolidates research findings for migrating Atrarium from a centr
 ### Decision: Use Standard Lexicon Structure with `tid` Keys
 
 **Chosen Approach**:
-- Define 3 custom Lexicon schemas: `com.atrarium.community.config`, `com.atrarium.community.membership`, `com.atrarium.moderation.action`
+- Define 3 custom Lexicon schemas: `net.atrarium.community.config`, `net.atrarium.community.membership`, `net.atrarium.moderation.action`
 - Use `tid` (timestamp identifier) for record keys to enable chronological ordering
 - Follow AT Protocol conventions: ISO 8601 timestamps, `maxGraphemes` for user text, `enum` for fixed values
 
@@ -36,7 +36,7 @@ This document consolidates research findings for migrating Atrarium from a centr
 ```json
 {
   "lexicon": 1,
-  "id": "com.atrarium.community.config",
+  "id": "net.atrarium.community.config",
   "defs": {
     "main": {
       "type": "record",
@@ -106,7 +106,7 @@ This document consolidates research findings for migrating Atrarium from a centr
 ```json
 {
   "lexicon": 1,
-  "id": "com.atrarium.community.membership",
+  "id": "net.atrarium.community.membership",
   "defs": {
     "main": {
       "type": "record",
@@ -144,7 +144,7 @@ This document consolidates research findings for migrating Atrarium from a centr
 ```json
 {
   "lexicon": 1,
-  "id": "com.atrarium.moderation.action",
+  "id": "net.atrarium.moderation.action",
   "defs": {
     "main": {
       "type": "record",
@@ -231,9 +231,9 @@ await agent.login({
 
 const response = await agent.com.atproto.repo.createRecord({
   repo: agent.session.did,
-  collection: 'com.atrarium.community.config',
+  collection: 'net.atrarium.community.config',
   record: {
-    $type: 'com.atrarium.community.config',
+    $type: 'net.atrarium.community.config',
     name: 'Design Community',
     hashtag: '#atr_a1b2c3d4',
     stage: 'theme',
@@ -245,7 +245,7 @@ const response = await agent.com.atproto.repo.createRecord({
   },
 });
 
-console.log(response.uri); // at://did:plc:xxx/com.atrarium.community.config/3jzfcijpj2z2a
+console.log(response.uri); // at://did:plc:xxx/net.atrarium.community.config/3jzfcijpj2z2a
 ```
 
 ### Code Example: Read Membership Records
@@ -254,7 +254,7 @@ console.log(response.uri); // at://did:plc:xxx/com.atrarium.community.config/3jz
 // List all memberships for current user
 const response = await agent.com.atproto.repo.listRecords({
   repo: agent.session.did,
-  collection: 'com.atrarium.community.membership',
+  collection: 'net.atrarium.community.membership',
   limit: 100,
 });
 
@@ -269,7 +269,7 @@ for (const { uri, value } of response.records) {
 try {
   const record = await agent.com.atproto.repo.getRecord({
     repo: 'did:plc:xxx',
-    collection: 'com.atrarium.community.config',
+    collection: 'net.atrarium.community.config',
     rkey: 'self',
   });
 } catch (error: any) {
@@ -292,7 +292,7 @@ try {
 
 **Chosen Approach**:
 - **Durable Object** maintains persistent WebSocket connection to `wss://bsky.network/xrpc/com.atproto.sync.subscribeRepos`
-- Filter events by `op.path.startsWith('com.atrarium.')`
+- Filter events by `op.path.startsWith('net.atrarium.')`
 - Decode CAR blocks using `@ipld/car` and `@ipld/dag-cbor`
 - Forward filtered events to Worker for D1 cache updates
 - Store cursor in Durable Object storage for resume/replay
@@ -318,7 +318,7 @@ Bluesky Firehose (wss://bsky.network)
 ┌─────────────────────────────────┐
 │  Durable Object: Firehose       │
 │  • Subscribe to repo commits    │
-│  • Filter com.atrarium.* ops    │
+│  • Filter net.atrarium.* ops    │
 │  • Decode CAR blocks            │
 │  • Store cursor in DO storage   │
 └────────────┬────────────────────┘
@@ -364,7 +364,7 @@ export class FirehoseSubscriber extends DurableObject {
 
         // Filter Atrarium records
         for (const op of evt.ops) {
-          if (op.path.startsWith('com.atrarium.')) {
+          if (op.path.startsWith('net.atrarium.')) {
             // Forward to Worker indexer
             await fetch('https://atrarium-indexer.workers.dev/index', {
               method: 'POST',
@@ -407,11 +407,11 @@ export default {
         const record = cbor.decode(block.bytes);
 
         // Route by $type
-        if (record.$type === 'com.atrarium.community.config') {
+        if (record.$type === 'net.atrarium.community.config') {
           await indexCommunityConfig(env.DB, repo, op.path, record);
-        } else if (record.$type === 'com.atrarium.community.membership') {
+        } else if (record.$type === 'net.atrarium.community.membership') {
           await indexMembership(env.DB, repo, op.path, record);
-        } else if (record.$type === 'com.atrarium.moderation.action') {
+        } else if (record.$type === 'net.atrarium.moderation.action') {
           await indexModerationAction(env.DB, repo, op.path, record);
         }
       }
@@ -658,7 +658,7 @@ async function applyModerationAction(
 
 2. **Phase 2: Deploy Firehose Durable Object**
    - Subscribe to `wss://bsky.network/xrpc/com.atproto.sync.subscribeRepos`
-   - Filter for `com.atrarium.*` collections
+   - Filter for `net.atrarium.*` collections
    - Forward events to Worker Indexer
 
 3. **Phase 3: Deploy Worker Indexer**
@@ -684,7 +684,7 @@ See [data-model.md](./data-model.md) for full schema definition with `pds_synced
 **Chosen Approach**:
 - Community owners publish their `CommunityConfig` records in their PDS
 - Multiple Feed Generators can independently:
-  1. Subscribe to Firehose for `com.atrarium.*` events
+  1. Subscribe to Firehose for `net.atrarium.*` events
   2. Query users' PDSs for community/membership records
   3. Build independent D1 caches
 - No coordination required between Feed Generators
@@ -704,10 +704,10 @@ See [data-model.md](./data-model.md) for full schema definition with `pds_synced
 ```typescript
 // Feed Generator discovers communities by:
 
-// 1. Subscribe to Firehose for com.atrarium.community.config creates
+// 1. Subscribe to Firehose for net.atrarium.community.config creates
 firehose.on('commit', (evt) => {
   for (const op of evt.ops) {
-    if (op.path.startsWith('com.atrarium.community.config')) {
+    if (op.path.startsWith('net.atrarium.community.config')) {
       // New community discovered!
       const communityUri = `at://${evt.repo}/${op.path}`;
       await indexCommunity(communityUri);
@@ -721,7 +721,7 @@ for (const userDid of knownUsers) {
   const pdsUrl = await resolveDID(userDid);
   const communities = await agent.com.atproto.repo.listRecords({
     repo: userDid,
-    collection: 'com.atrarium.community.config',
+    collection: 'net.atrarium.community.config',
   });
 
   for (const { uri, value } of communities.records) {
@@ -750,8 +750,8 @@ for (const userDid of knownUsers) {
 └─────────────┘   └─────────────┘
 
 Both read from same PDS records:
-  at://did:plc:alice/com.atrarium.community.config/xxx
-  at://did:plc:bob/com.atrarium.community.membership/yyy
+  at://did:plc:alice/net.atrarium.community.config/xxx
+  at://did:plc:bob/net.atrarium.community.membership/yyy
 ```
 
 **Key Properties**:

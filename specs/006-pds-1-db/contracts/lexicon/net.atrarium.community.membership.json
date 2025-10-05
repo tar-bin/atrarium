@@ -1,6 +1,6 @@
 {
   "lexicon": 1,
-  "id": "com.atrarium.community.membership",
+  "id": "net.atrarium.community.membership",
   "defs": {
     "main": {
       "type": "record",
@@ -13,7 +13,7 @@
           "community": {
             "type": "string",
             "format": "at-uri",
-            "description": "AT-URI of the community config record (at://did:plc:owner/com.atrarium.community.config/rkey)"
+            "description": "AT-URI of the community config record (at://did:plc:owner/net.atrarium.community.config/rkey)"
           },
           "role": {
             "type": "string",

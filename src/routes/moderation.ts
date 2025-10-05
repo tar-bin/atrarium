@@ -52,13 +52,13 @@ app.post('/hide-post', async (c) => {
     const atproto = new ATProtoService(c.env);
 
     await atproto.createModerationAction({
-      $type: 'com.atrarium.moderation.action',
+      $type: 'net.atrarium.moderation.action',
       action: 'hide_post',
       target: {
         uri: postUri,
         cid: '', // CID not required for hide action
       },
-      community: `at://did:plc:system/com.atrarium.community.config/${communityId}`,
+      community: `at://did:plc:system/net.atrarium.community.config/${communityId}`,
       reason: reason || '',
       createdAt: now,
     });

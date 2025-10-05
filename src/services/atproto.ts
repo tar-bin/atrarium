@@ -69,7 +69,7 @@ export class ATProtoService {
     // Create record in PDS using com.atproto.repo.createRecord
     const response = await agent.com.atproto.repo.createRecord({
       repo: agent.session?.did || '',
-      collection: 'com.atrarium.community.config',
+      collection: 'net.atrarium.community.config',
       record: validated,
     });
 
@@ -93,7 +93,7 @@ export class ATProtoService {
 
     const response = await agent.com.atproto.repo.createRecord({
       repo: agent.session?.did || '',
-      collection: 'com.atrarium.community.membership',
+      collection: 'net.atrarium.community.membership',
       record: validated,
     });
 
@@ -117,7 +117,7 @@ export class ATProtoService {
 
     const response = await agent.com.atproto.repo.createRecord({
       repo: agent.session?.did || '',
-      collection: 'com.atrarium.moderation.action',
+      collection: 'net.atrarium.moderation.action',
       record: validated,
     });
 
@@ -150,7 +150,7 @@ export class ATProtoService {
     // Query PDS for membership records
     const response = await agent.com.atproto.repo.listRecords({
       repo: userDid,
-      collection: 'com.atrarium.community.membership',
+      collection: 'net.atrarium.community.membership',
       limit: 100,
     });
 
