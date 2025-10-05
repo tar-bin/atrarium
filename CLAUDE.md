@@ -168,7 +168,7 @@ vitest.docs.config.ts # Vitest configuration for documentation tests
 ```
 
 **Documentation**:
-- **[Documentation Site](https://atrarium-docs.pages.dev)** - VitePress documentation (EN/JA) - **primary reference**
+- **[Documentation Site](https://docs.atrarium.net)** - VitePress documentation (EN/JA) - **primary reference**
 - [README.md](README.md) - Project summary (English) - **source of truth for project info**
 - [README.ja.md](README.ja.md) - Japanese translation (maintain sync with README.md)
 
@@ -296,14 +296,10 @@ wrangler secret put JWT_SECRET    # Set secrets (also: BLUESKY_HANDLE, BLUESKY_A
 
 # VitePress documentation site (Cloudflare Pages)
 # Automatic deployment via GitHub integration:
-# - Push to main → auto-deploys to https://atrarium-docs.pages.dev
+# - Push to master → auto-deploys to https://docs.atrarium.net
 # - Build command: cd docs && npm install && npm run docs:build
 # - Build output: docs/.vitepress/dist
-
-# Manual deployment (if needed)
-cd docs
-npm run docs:build
-wrangler pages deploy .vitepress/dist --project-name=atrarium-docs
+# - Custom domain: docs.atrarium.net (configured in Cloudflare Pages)
 
 # Dashboard (Cloudflare Pages)
 # Recommended deployment via GitHub integration:
