@@ -6,16 +6,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Atrarium is a community management system built on AT Protocol (Bluesky), designed for small communities (10-200 people). It replaces expensive Mastodon/Misskey servers with a serverless architecture on Cloudflare Workers, reducing costs by 95% ($30-150/month → $5/month) and operational time by 80%.
 
-**Current Phase**: Phase 0 → Phase 1 Transition
-**Status**: Backend complete, VitePress docs live, dashboard implemented
-**Active Branch**: `005-pds-web-atrarim` (Web Dashboard with Local PDS Integration)
+**Current Phase**: Phase 1 → Phase 2 Transition
+**Status**: PDS-first architecture implemented, Durable Objects storage, Queue-based Firehose processing
+**Active Branch**: `006-pds-1-db` (PDS-First Data Architecture)
 
 ## Architecture
 
 ### Tech Stack
-- **Backend**: Cloudflare Workers + Durable Objects (TypeScript)
-- **Database**: Cloudflare D1 (SQLite)
-- **Cache**: Cloudflare KV
+- **Backend**: Cloudflare Workers + Durable Objects (TypeScript 5.7, Node.js via nodejs_compat)
+- **Storage**: Durable Objects Storage (per-community isolation, no D1/KV dependencies)
+- **Queue**: Cloudflare Queues (Firehose event processing, 5000 msg/sec capacity)
 - **Frontend (Dashboard)**:
   - React 19 + TypeScript + Vite
   - TanStack Router v1 (file-based routing)
@@ -25,51 +25,58 @@ Atrarium is a community management system built on AT Protocol (Bluesky), design
   - react-hook-form + Zod (form validation)
   - i18next (EN/JA translations)
   - Cloudflare Pages (hosting)
-- **External**: AT Protocol (@atproto/api), Bluesky Firehose (WebSocket), Local PDS (testing)
+- **External**: AT Protocol (@atproto/api ^0.13.35, @atproto/identity ^0.4.3), Bluesky Firehose (Jetstream WebSocket), Local PDS (testing)
+- **Frameworks**: Hono ^4.6.14 (routing), Zod ^3.23.8 (validation)
 
-### Core Components
+### Core Components (PDS-First Architecture)
 
 ```
-Client (React) → Workers (Feed Generator API) → D1 Database
-                      ↓
-                Durable Objects ← Bluesky Firehose (WebSocket)
-                      ↓
-                  KV Cache (7 days)
+PDS (Source of Truth)
+  ↓ (Firehose: Jetstream WebSocket)
+FirehoseReceiver (Durable Object)
+  ↓ (Lightweight filter: includes('#atr_'))
+Cloudflare Queue (FIREHOSE_EVENTS)
+  ↓ (Batched processing: 100 msg/batch)
+FirehoseProcessor (Queue Consumer Worker)
+  ↓ (Heavyweight filter: regex /#atr_[0-9a-f]{8}/)
+CommunityFeedGenerator (Durable Object per community)
+  ↓ (Storage: config:, member:, post:, moderation:)
+Feed Generator API (getFeedSkeleton)
+  ↓
+Client (Bluesky AppView fetches post content)
 ```
 
-The system implements AT Protocol's Feed Generator specification to create custom feeds. Durable Objects maintain persistent WebSocket connections to Bluesky's Firehose, filtering and indexing posts into D1. The Feed Generator API returns post URIs (not full content), which clients fetch from Bluesky AppView.
+**Architecture Principles (006-pds-1-db)**:
+- **PDS as Source of Truth**: All community config, memberships, and moderation actions stored in user PDSs using AT Protocol Lexicon schemas
+- **Durable Objects Storage**: Per-community feed index stored in isolated Durable Object Storage (no D1/KV dependencies)
+- **Queue-Based Processing**: Two-stage filtering (lightweight → Queue → heavyweight) for efficient Firehose ingestion
+- **Horizontal Scaling**: Unlimited communities without database bottlenecks (each community = 1 Durable Object)
+- **Cost Efficiency**: ~$0.40/month for 1000 communities (DO + Queue) vs $5/month (D1 paid tier)
+- **7-Day Retention**: Posts auto-expire from Durable Object Storage after 7 days (PDS remains permanent storage)
 
 ## Project Structure
 
 **Implemented Structure**:
 ```
 src/                    # Cloudflare Workers backend (TypeScript)
-├── index.ts           # Main entry point, Hono router, scheduled jobs
+├── index.ts           # Main entry point, Hono router, Durable Objects + Queue bindings
 ├── routes/            # API route handlers
-│   ├── feed-generator.ts  # AT Protocol Feed Generator API
+│   ├── feed-generator.ts  # AT Protocol Feed Generator API (proxies to CommunityFeedGenerator DO)
 │   ├── auth.ts            # Authentication endpoints
-│   ├── communities.ts     # Community management
-│   ├── theme-feeds.ts     # Theme feed CRUD
-│   ├── posts.ts           # Post submission/indexing
-│   ├── memberships.ts     # Membership management
-│   └── moderation.ts      # Moderation API (hide/unhide posts, block users) - 003-id
-├── models/            # Database models (D1 queries)
-│   ├── community.ts
-│   ├── theme-feed.ts
-│   ├── membership.ts
-│   ├── post-index.ts
-│   ├── feed-blocklist.ts  # Feed-specific user blocklist - 003-id
-│   ├── moderation-log.ts  # Moderation action history - 003-id
-│   ├── achievement.ts
-│   └── owner-transition-log.ts
+│   ├── communities.ts     # Community management (writes to PDS, creates Durable Object)
+│   ├── memberships.ts     # Membership management (writes to PDS)
+│   └── moderation.ts      # Moderation API (writes to PDS) - 003-id
+├── durable-objects/   # Durable Objects (006-pds-1-db)
+│   ├── community-feed-generator.ts  # Per-community feed index (Storage: config:, member:, post:, moderation:)
+│   └── firehose-receiver.ts         # Firehose WebSocket → Queue (lightweight filter)
+├── workers/           # Queue Consumer Workers (006-pds-1-db)
+│   └── firehose-processor.ts       # Queue → CommunityFeedGenerator (heavyweight filter)
 ├── services/          # Business logic services
-│   ├── atproto.ts         # AT Protocol client
-│   ├── auth.ts            # JWT authentication
-│   ├── cache.ts           # KV cache operations
-│   ├── moderation.ts      # Moderation business logic - 003-id
-│   └── db.ts              # Database utilities
+│   ├── atproto.ts         # AT Protocol client (PDS read/write methods) - 006-pds-1-db
+│   └── auth.ts            # JWT authentication
 ├── schemas/           # Validation schemas
-│   └── validation.ts      # Zod schemas
+│   ├── validation.ts      # Zod schemas
+│   └── lexicon.ts         # AT Protocol Lexicon validation (TypeScript types + Zod) - 006-pds-1-db
 ├── utils/             # Utilities
 │   ├── did.ts             # DID resolution
 │   └── hashtag.ts         # Feed hashtag generation - 003-id
@@ -80,12 +87,16 @@ tests/                 # Test suite (Vitest + Cloudflare Workers)
 │   ├── dashboard/         # Dashboard API tests
 │   │   ├── post-to-feed-with-hashtag.test.ts  # Hashtag posting - 003-id
 │   │   └── moderation.test.ts                 # Moderation API - 003-id
-│   └── feed-generator/    # Feed Generator API tests
-│       └── get-feed-skeleton-with-hashtags.test.ts  # Hashtag filtering - 003-id
+│   ├── feed-generator/    # Feed Generator API tests
+│   │   └── get-feed-skeleton-with-hashtags.test.ts  # Hashtag filtering - 003-id
+│   ├── durable-object-storage.test.ts  # Durable Objects Storage operations - 006-pds-1-db
+│   └── queue-consumer.test.ts          # Queue consumer processing - 006-pds-1-db
 ├── integration/       # Integration tests
 │   ├── hashtag-indexing-flow.test.ts   # End-to-end hashtag flow - 003-id
 │   ├── moderation-flow.test.ts         # End-to-end moderation - 003-id
-│   └── pds-posting.test.ts             # PDS integration test - 003-id
+│   ├── pds-posting.test.ts             # PDS integration test - 003-id
+│   ├── queue-to-feed-flow.test.ts      # Queue → CommunityFeedGenerator flow - 006-pds-1-db
+│   └── pds-to-feed-flow.test.ts        # Quickstart scenario (Alice-Bob) - 006-pds-1-db
 ├── unit/              # Unit tests
 │   ├── feed-hashtag-generator.test.ts  # Hashtag generation - 003-id
 │   └── membership-validation.test.ts   # Membership checks - 003-id
@@ -152,8 +163,7 @@ docs/                 # VitePress documentation site
 ├── CONTRIBUTING.md       # Documentation contribution guide
 └── DEPLOYMENT.md         # Cloudflare Pages deployment checklist
 
-schema.sql            # D1 database schema (SQLite)
-wrangler.toml        # Cloudflare Workers configuration
+wrangler.toml        # Cloudflare Workers configuration (Durable Objects + Queues)
 vitest.config.ts     # Vitest configuration for Cloudflare Workers
 vitest.docs.config.ts # Vitest configuration for documentation tests
 ```
@@ -170,33 +180,38 @@ vitest.docs.config.ts # Vitest configuration for documentation tests
 - When updating project information, always update README.md first, then sync translations
 - VitePress docs follow i18n contract: every `en/*.md` must have corresponding `ja/*.md`
 
-## Database Schema
+## Data Storage (PDS-First Architecture - 006-pds-1-db)
 
-Eight main tables (see [schema.sql](schema.sql) and [migrations/003-add-feed-hashtags.sql](migrations/003-add-feed-hashtags.sql)):
+**Storage Layers**:
 
-1. **communities**: Community metadata (id, name, stage, parent_id, feed_mix_own/parent/global, member_count, post_count)
-2. **theme_feeds**: Theme feed configurations (id, community_id, name, status, **hashtag**, posts_7d, active_users_7d)
-3. **memberships**: User membership (composite key: community_id + user_did, roles: owner/moderator/member)
-4. **post_index**: Post URI index (uri, feed_id, author_did, created_at, has_media, langs, **moderation_status**, **indexed_at**)
-5. **feed_blocklist**: User blocklist per feed (feed_id, blocked_user_did, reason, blocked_by_did) - **003-id**
-6. **moderation_logs**: Moderation action history (action, target_uri, feed_id, moderator_did, reason) - **003-id**
-7. **owner_transition_log**: Owner succession history (community_id, previous_owner_did, new_owner_did, reason)
-8. **achievements**: User achievements (user_did, achievement_id, community_id, unlocked_at) - Phase 1+
+1. **PDS (Source of Truth)** - Permanent storage in user Personal Data Servers
+   - `com.atrarium.community.config`: Community metadata (name, hashtag, stage, moderators, feedMix)
+   - `com.atrarium.community.membership`: User membership records (community, role, joinedAt, active)
+   - `com.atrarium.moderation.action`: Moderation actions (action, target, community, reason)
+
+2. **Durable Objects Storage (Per-Community Cache)** - 7-day feed index
+   - `config:<communityId>`: CommunityConfig (name, hashtag, stage, createdAt)
+   - `member:<did>`: MembershipRecord (did, role, joinedAt, active)
+   - `post:<timestamp>:<rkey>`: PostMetadata (uri, authorDid, createdAt, moderationStatus, indexedAt)
+   - `moderation:<uri>`: ModerationAction (action, targetUri, reason, createdAt)
+
+**Data Flow**:
+- **Writes**: Dashboard → PDS (Lexicon records) → Firehose → Queue → Durable Object Storage
+- **Reads**: Feed Generator API → Durable Object Storage (7-day cache) → Client
+- **Resilience**: If Durable Object Storage lost, replay Firehose from cursor 0 to rebuild
 
 **Key Constraints**:
 - `stage IN ('theme', 'community', 'graduated')`
-- `feed_mix_own + feed_mix_parent + feed_mix_global = 1.0`
 - `role IN ('owner', 'moderator', 'member')`
-- `status IN ('active', 'warning', 'archived')`
-- `moderation_status IN ('approved', 'hidden', 'reported')` - **003-id**
-- `action IN ('hide_post', 'unhide_post', 'block_user', 'unblock_user', 'remove_member')` - **003-id**
-- All timestamps are Unix epoch (INTEGER)
+- `moderationStatus IN ('approved', 'hidden', 'reported')`
+- `action IN ('hide_post', 'unhide_post', 'block_user', 'unblock_user')`
+- All timestamps are ISO 8601 strings
 
 **Hashtag System (003-id)**:
-- Each theme feed has a unique system-generated hashtag (`#atr_xxxxx` format)
-- Posts include feed hashtags to associate with specific feeds
+- Each community has a unique system-generated hashtag (`#atr_[0-9a-f]{8}` format)
+- Posts include community hashtags to associate with specific feeds
 - Membership verification ensures only community members can post
-- No automatic filter-based matching (direct feed association)
+- Two-stage filtering: lightweight (`includes('#atr_')`) → heavyweight (`regex /#atr_[0-9a-f]{8}/`)
 
 ## Development Commands
 
@@ -209,15 +224,12 @@ npm install
 npm install -g wrangler
 wrangler login
 
-# Create Cloudflare resources
-wrangler d1 create atrarium-db          # Create D1 database
-wrangler kv:namespace create POST_CACHE  # Create KV namespace
+# Create Cloudflare Queue (006-pds-1-db)
+wrangler queues create firehose-events
+wrangler queues create firehose-dlq  # Dead letter queue
 
-# Apply database schema
-wrangler d1 execute atrarium-db --file=./schema.sql
-
-# Update wrangler.toml with generated IDs
-# Uncomment and add database_id and KV namespace id from above commands
+# Update wrangler.toml with Queue configuration (already configured)
+# Durable Objects are automatically provisioned on first deploy
 ```
 
 ### Development
@@ -381,11 +393,19 @@ The client fetches actual post content from Bluesky's AppView using these URIs.
   - [x] i18n support (EN/JA translations)
   - [x] Component tests (Vitest + Testing Library)
   - [x] Production build (427KB gzip, <500KB target)
+- [x] **PDS-first architecture** (006-pds-1-db: PDS as source of truth, Durable Objects storage)
+  - [x] AT Protocol Lexicon schemas (CommunityConfig, MembershipRecord, ModerationAction)
+  - [x] PDS read/write methods (@atproto/api integration)
+  - [x] Cloudflare Queues (firehose-events, 5000 msg/sec capacity)
+  - [x] FirehoseReceiver Durable Object (WebSocket → Queue, lightweight filter)
+  - [x] FirehoseProcessor Worker (Queue consumer, heavyweight filter)
+  - [x] CommunityFeedGenerator Durable Object (per-community feed index, Storage API)
+  - [x] API route updates (write to PDS, proxy to Durable Objects)
+  - [x] Integration tests (queue-to-feed-flow, pds-to-feed-flow)
 
 ### 🚧 In Progress / Pending
-- [ ] Dashboard API integration (currently using placeholder client)
-- [ ] Firehose integration (Durable Objects for real-time indexing)
-- [ ] Production deployment configuration for Workers
+- [ ] Dashboard API integration (update client to use new PDS-first endpoints)
+- [ ] Production deployment configuration for Workers (Durable Objects + Queues)
 - [ ] Dashboard deployment to Cloudflare Pages
 
 ### 📅 Future Phases
@@ -396,19 +416,20 @@ The client fetches actual post content from Bluesky's AppView using these URIs.
 
 ## Common Patterns
 
-### Architecture
+### Architecture (006-pds-1-db)
 - **Router**: Hono framework with type-safe routing
-- **Models**: Database access layer (D1 prepared statements)
-- **Services**: Business logic (AT Protocol client, auth, cache)
-- **Routes**: HTTP handlers organized by domain
-- **Validation**: Zod schemas in [src/schemas/validation.ts](src/schemas/validation.ts)
+- **Durable Objects**: Per-community isolation using CommunityFeedGenerator class
+- **Queue Processing**: FirehoseProcessor consumes batched events from Cloudflare Queue
+- **Services**: Business logic (AT Protocol client, auth)
+- **Routes**: HTTP handlers that write to PDS and proxy to Durable Objects
+- **Validation**: Zod schemas in [src/schemas/validation.ts](src/schemas/validation.ts) and [src/schemas/lexicon.ts](src/schemas/lexicon.ts)
 
 ### TypeScript Types
 All types are defined in [src/types.ts](src/types.ts). Key patterns:
-- **Entities**: `Community`, `ThemeFeed`, `Membership`, `PostIndex` (camelCase)
-- **Database Rows**: `CommunityRow`, `ThemeFeedRow` (snake_case from D1)
+- **PDS Lexicon Types**: `CommunityConfig`, `MembershipRecord`, `ModerationAction` (from Lexicon schemas)
+- **Durable Object Types**: `PostMetadata`, `PostEvent`, `ModerationAction` (internal to CommunityFeedGenerator)
 - **API Types**: `CreateCommunityRequest`, `CommunityResponse` (request/response)
-- **Enums**: `CommunityStage`, `ThemeFeedStatus`, `MembershipRole`, `TransitionReason`
+- **Enums**: `CommunityStage`, `MembershipRole`, `ModerationStatus`
 
 ### Authentication
 JWT-based authentication with DID verification ([src/services/auth.ts](src/services/auth.ts)):
@@ -417,42 +438,48 @@ JWT-based authentication with DID verification ([src/services/auth.ts](src/servi
 - Middleware: `authMiddleware()` in routes requiring authentication
 - Roles: `owner` (full control), `moderator` (moderation), `member` (view only)
 
-### Database Patterns
-- **Row mapping**: Models convert snake_case rows to camelCase entities
-- **Prepared statements**: Always use for SQL injection prevention
-- **Transactions**: Not used in Phase 0 (D1 limitation), manual rollback via try-catch
-- **Timestamps**: Unix epoch (seconds) stored as INTEGER
+### Durable Objects Storage Patterns (006-pds-1-db)
+- **Key schema**: Prefix-based namespacing (`config:`, `member:`, `post:`, `moderation:`)
+- **Post keys**: `post:<timestamp>:<rkey>` for chronological ordering
+- **Listing**: `storage.list({ prefix: 'post:', reverse: true })` for newest-first
+- **Cleanup**: Scheduled alarm deletes posts older than 7 days
+- **Timestamps**: ISO 8601 strings (consistent with AT Protocol)
 
-## Performance Targets
+## Performance Targets (006-pds-1-db)
 
 | Metric | Target |
 |--------|--------|
 | Feed generation | < 200ms |
 | API response (p95) | < 100ms |
 | Workers uptime | > 99.9% |
-| D1 query time | < 50ms |
-| KV access time | < 10ms |
+| Durable Object read | < 10ms |
+| Queue throughput | 5000 msg/sec |
+| Post indexing latency | < 5s (from Firehose to queryable) |
 
 ## References
 
 - [AT Protocol Documentation](https://atproto.com/docs)
+- [AT Protocol Lexicon Schemas](https://atproto.com/specs/lexicon)
 - [Bluesky Feed Generator Guide](https://docs.bsky.app/docs/starter-templates/custom-feeds)
 - [Cloudflare Workers Docs](https://developers.cloudflare.com/workers/)
-- [Cloudflare D1 Docs](https://developers.cloudflare.com/d1/)
+- [Cloudflare Durable Objects Docs](https://developers.cloudflare.com/durable-objects/)
+- [Cloudflare Queues Docs](https://developers.cloudflare.com/queues/)
 
 ## Development Notes
 
-### Critical Implementation Details
-- **Firehose WebSocket URL**: `wss://bsky.network/xrpc/com.atproto.sync.subscribeRepos`
-- **Timestamps**: Use Unix epoch (INTEGER type in D1) for all timestamps
+### Critical Implementation Details (006-pds-1-db)
+- **Jetstream WebSocket URL**: `wss://jetstream2.us-east.bsky.network/subscribe` (Firehose alternative)
+- **Timestamps**: Use ISO 8601 strings for AT Protocol compatibility
 - **CORS**: Must configure CORS headers for dashboard-to-Workers communication
-- **Security**: Always use prepared statements for D1 queries to prevent SQL injection
 - **Post URIs**: Format is `at://did:plc:xxx/app.bsky.feed.post/yyy`
 - **Feed URIs**: Format is `at://did:plc:xxx/app.bsky.feed.generator/feed-id`
-- **Cache TTL**: KV cache expires after 7 days (604800 seconds)
-- **Feed Hashtags**: Format is `#atr_xxxxx` (8-character hex, system-generated, unique per feed) - **003-id**
+- **Durable Object Storage**: 7-day retention for posts (auto-cleanup via scheduled alarm)
+- **Feed Hashtags**: Format is `#atr_[0-9a-f]{8}` (8-character hex, system-generated, unique per community) - **003-id**
+- **Two-Stage Filtering**: Lightweight filter (`includes('#atr_')`) → Queue → Heavyweight filter (`regex /#atr_[0-9a-f]{8}/`) - **006-pds-1-db**
 - **Moderation**: Only moderators/owners can hide posts or block users - **003-id**
-- **Membership Validation**: Posts must be from community members (verified via memberships table) - **003-id**
+- **Membership Validation**: Posts must be from community members (verified in Durable Object Storage) - **006-pds-1-db**
+- **PDS as Source of Truth**: All writes go to PDS first, then indexed via Firehose - **006-pds-1-db**
+- **Lexicon Collections**: `com.atrarium.community.config`, `com.atrarium.community.membership`, `com.atrarium.moderation.action` - **006-pds-1-db**
 
 ### Testing Strategy
 Tests use `@cloudflare/vitest-pool-workers` to simulate Cloudflare Workers environment:

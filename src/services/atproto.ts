@@ -1,16 +1,266 @@
-// Atrarium MVP - AT Protocol Service
-// Post existence check and metadata fetching from Bluesky
+// Atrarium PDS-First Architecture - AT Protocol Service
+// PDS read/write operations and Bluesky integration
 
+import { BskyAgent } from '@atproto/api';
 import type { Env } from '../types';
+import type {
+  CommunityConfig,
+  MembershipRecord,
+  PDSRecordResult,
+} from '../schemas/lexicon';
+import {
+  validateCommunityConfig,
+  validateMembershipRecord,
+  validateModerationAction,
+  validateDID,
+  validateATUri,
+} from '../schemas/lexicon';
 
 // ============================================================================
 // AT Protocol Service
 // ============================================================================
 
 export class ATProtoService {
-  constructor(_env: Env) {
-    // env unused in Phase 0 (mock implementation)
+  private env: Env;
+  private agent: BskyAgent | null = null;
+
+  constructor(env: Env) {
+    this.env = env;
   }
+
+  /**
+   * Initialize BskyAgent and authenticate
+   * @private
+   */
+  private async getAgent(): Promise<BskyAgent> {
+    if (this.agent) {
+      return this.agent;
+    }
+
+    const handle = this.env.BLUESKY_HANDLE;
+    const password = this.env.BLUESKY_APP_PASSWORD;
+
+    if (!handle || !password) {
+      throw new Error('BLUESKY_HANDLE and BLUESKY_APP_PASSWORD environment variables required');
+    }
+
+    const agent = new BskyAgent({ service: 'https://bsky.social' });
+    await agent.login({ identifier: handle, password });
+
+    this.agent = agent;
+    return agent;
+  }
+
+  // ============================================================================
+  // PDS Write Operations (T018)
+  // ============================================================================
+
+  /**
+   * Create CommunityConfig record in PDS
+   * @param config Community configuration data
+   * @returns Record creation result with URI, CID, rkey
+   */
+  async createCommunityConfig(config: unknown): Promise<PDSRecordResult> {
+    // Validate against Lexicon schema
+    const validated = validateCommunityConfig(config);
+
+    const agent = await this.getAgent();
+
+    // Create record in PDS using com.atproto.repo.createRecord
+    const response = await agent.com.atproto.repo.createRecord({
+      repo: agent.session?.did || '',
+      collection: 'com.atrarium.community.config',
+      record: validated,
+    });
+
+    return {
+      uri: response.data.uri,
+      cid: response.data.cid,
+      rkey: response.data.uri.split('/').pop() || '',
+    };
+  }
+
+  /**
+   * Create MembershipRecord in PDS
+   * @param membership Membership data
+   * @returns Record creation result
+   */
+  async createMembershipRecord(membership: unknown): Promise<PDSRecordResult> {
+    // Validate against Lexicon schema
+    const validated = validateMembershipRecord(membership);
+
+    const agent = await this.getAgent();
+
+    const response = await agent.com.atproto.repo.createRecord({
+      repo: agent.session?.did || '',
+      collection: 'com.atrarium.community.membership',
+      record: validated,
+    });
+
+    return {
+      uri: response.data.uri,
+      cid: response.data.cid,
+      rkey: response.data.uri.split('/').pop() || '',
+    };
+  }
+
+  /**
+   * Create ModerationAction in PDS
+   * @param action Moderation action data
+   * @returns Record creation result
+   */
+  async createModerationAction(action: unknown): Promise<PDSRecordResult> {
+    // Validate against Lexicon schema
+    const validated = validateModerationAction(action);
+
+    const agent = await this.getAgent();
+
+    const response = await agent.com.atproto.repo.createRecord({
+      repo: agent.session?.did || '',
+      collection: 'com.atrarium.moderation.action',
+      record: validated,
+    });
+
+    return {
+      uri: response.data.uri,
+      cid: response.data.cid,
+      rkey: response.data.uri.split('/').pop() || '',
+    };
+  }
+
+  // ============================================================================
+  // PDS Read Operations (T019)
+  // ============================================================================
+
+  /**
+   * List membership records for a user DID
+   * @param userDid User DID to query
+   * @param options Query options
+   * @returns Array of membership records
+   */
+  async listMemberships(
+    userDid: string,
+    options?: { activeOnly?: boolean }
+  ): Promise<Array<MembershipRecord & { uri: string }>> {
+    // Validate DID format
+    validateDID(userDid);
+
+    const agent = await this.getAgent();
+
+    // Query PDS for membership records
+    const response = await agent.com.atproto.repo.listRecords({
+      repo: userDid,
+      collection: 'com.atrarium.community.membership',
+      limit: 100,
+    });
+
+    const memberships = response.data.records.map((record) => {
+      const validated = validateMembershipRecord(record.value);
+      return {
+        ...validated,
+        uri: record.uri,
+      };
+    });
+
+    // Filter by active status if requested
+    if (options?.activeOnly) {
+      return memberships.filter((m) => m.active);
+    }
+
+    return memberships;
+  }
+
+  /**
+   * Get single membership record by URI
+   * @param membershipUri AT-URI of membership record
+   * @returns Membership record
+   */
+  async getMembershipRecord(membershipUri: string): Promise<MembershipRecord & { uri: string }> {
+    // Validate AT-URI format
+    validateATUri(membershipUri);
+
+    const agent = await this.getAgent();
+
+    // Parse AT-URI to extract repo, collection, rkey
+    const uriParts = membershipUri.replace('at://', '').split('/');
+    if (uriParts.length !== 3) {
+      throw new Error('Invalid AT-URI format');
+    }
+
+    const repo = uriParts[0];
+    const collection = uriParts[1];
+    const rkey = uriParts[2];
+
+    if (!repo || !collection || !rkey) {
+      throw new Error('Invalid AT-URI format');
+    }
+
+    // Fetch record from PDS
+    const response = await agent.com.atproto.repo.getRecord({
+      repo,
+      collection,
+      rkey,
+    });
+
+    if (!response.data.value) {
+      throw new Error(`Membership record not found: ${membershipUri}`);
+    }
+
+    const validated = validateMembershipRecord(response.data.value);
+
+    return {
+      ...validated,
+      uri: membershipUri,
+    };
+  }
+
+  /**
+   * Get community config by URI
+   * @param communityUri AT-URI of community config
+   * @returns Community config
+   */
+  async getCommunityConfig(communityUri: string): Promise<CommunityConfig & { uri: string }> {
+    // Validate AT-URI format
+    validateATUri(communityUri);
+
+    const agent = await this.getAgent();
+
+    // Parse AT-URI
+    const uriParts = communityUri.replace('at://', '').split('/');
+    if (uriParts.length !== 3) {
+      throw new Error('Invalid AT-URI format');
+    }
+
+    const repo = uriParts[0];
+    const collection = uriParts[1];
+    const rkey = uriParts[2];
+
+    if (!repo || !collection || !rkey) {
+      throw new Error('Invalid AT-URI format');
+    }
+
+    // Fetch record from PDS
+    const response = await agent.com.atproto.repo.getRecord({
+      repo,
+      collection,
+      rkey,
+    });
+
+    if (!response.data.value) {
+      throw new Error(`Community config not found: ${communityUri}`);
+    }
+
+    const validated = validateCommunityConfig(response.data.value);
+
+    return {
+      ...validated,
+      uri: communityUri,
+    };
+  }
+
+  // ============================================================================
+  // Legacy Methods (Phase 0 - kept for backward compatibility)
+  // ============================================================================
 
   /**
    * Check if posts exist on Bluesky (for deletion sync)
@@ -51,11 +301,16 @@ export class ATProtoService {
   /**
    * Batch fetch post metadata
    */
-  async fetchPostMetadataBatch(uris: string[]): Promise<Map<string, {
-    text: string;
-    hasMedia: boolean;
-    langs: string[] | null;
-  }>> {
+  async fetchPostMetadataBatch(uris: string[]): Promise<
+    Map<
+      string,
+      {
+        text: string;
+        hasMedia: boolean;
+        langs: string[] | null;
+      }
+    >
+  > {
     const results = new Map();
 
     // In production: Use @atproto/api batch operations

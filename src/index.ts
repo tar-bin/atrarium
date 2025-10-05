@@ -10,16 +10,12 @@ import type { Env, HonoVariables } from './types';
 import feedGeneratorRoutes from './routes/feed-generator';
 import authRoutes from './routes/auth';
 import communityRoutes from './routes/communities';
-import themeFeedRoutes from './routes/theme-feeds';
-import postRoutes from './routes/posts';
+// import themeFeedRoutes from './routes/theme-feeds'; // TODO: Migrate to PDS-first
+// import postRoutes from './routes/posts'; // TODO: Migrate to PDS-first
 import membershipRoutes from './routes/memberships';
 import moderationRoutes from './routes/moderation';
 
-// Import models for scheduled jobs
-import { ThemeFeedModel } from './models/theme-feed';
-import { PostIndexModel } from './models/post-index';
-import { ATProtoService } from './services/atproto';
-import { CacheService } from './services/cache';
+// Import services (if needed)
 
 // ============================================================================
 // Main Application
@@ -73,8 +69,8 @@ app.route('/', feedGeneratorRoutes);
 // Dashboard API
 app.route('/api/auth', authRoutes);
 app.route('/api/communities', communityRoutes);
-app.route('/api/communities', themeFeedRoutes);
-app.route('/api/posts', postRoutes);
+// app.route('/api/communities', themeFeedRoutes); // TODO: Migrate to PDS-first
+// app.route('/api/posts', postRoutes); // TODO: Migrate to PDS-first
 app.route('/api/communities', membershipRoutes);
 app.route('/api/moderation', moderationRoutes);
 
@@ -103,41 +99,13 @@ app.notFound((c) => {
 // Scheduled Jobs (Cron Triggers)
 // ============================================================================
 
-async function handleScheduledJob(env: Env, _ctx: ExecutionContext) {
-  console.log('[Scheduled Job] Starting post deletion sync and feed health check');
+async function handleScheduledJob(_env: Env, _ctx: ExecutionContext) {
+  console.log('[Scheduled Job] Starting cleanup (PDS-first architecture)');
 
   try {
-    // 1. Post Deletion Sync (research.md:387-413)
-    const postIndexModel = new PostIndexModel(env);
-    const atprotoService = new ATProtoService(env);
-    const cacheService = new CacheService(env);
-
-    // Get recent post URIs (last 7 days)
-    const recentUris = await postIndexModel.getRecentUris(7);
-
-    // Check which posts no longer exist on Bluesky
-    const deletedUris = await atprotoService.checkPostsExistence(recentUris);
-
-    if (deletedUris.length > 0) {
-      console.log(`[Scheduled Job] Deleting ${deletedUris.length} posts`);
-
-      // Delete from database and cache
-      await postIndexModel.deleteBatch(deletedUris);
-      await cacheService.deletePostMetadataBatch(deletedUris);
-    }
-
-    // 2. Theme Feed Health Check (data-model.md:171-184)
-    const themeFeedModel = new ThemeFeedModel(env);
-
-    // Update all feed health metrics (posts_7d, active_users_7d)
-    const feeds = await env.DB.prepare(`SELECT id FROM theme_feeds`).all();
-    for (const feed of feeds.results || []) {
-      await themeFeedModel.updateHealthMetrics((feed as any).id);
-    }
-
-    // Check inactivity and update statuses (active→warning→archived)
-    await themeFeedModel.checkInactivityAndUpdateStatus();
-
+    // TODO: Implement PDS-based cleanup logic
+    // - Trigger Durable Object cleanup alarms
+    // - Check for deleted posts via AT Protocol
     console.log('[Scheduled Job] Completed successfully');
   } catch (err) {
     console.error('[Scheduled Job] Error:', err);
@@ -147,6 +115,13 @@ async function handleScheduledJob(env: Env, _ctx: ExecutionContext) {
 // ============================================================================
 // Cloudflare Workers Exports
 // ============================================================================
+
+// Export Durable Objects (T037)
+export { CommunityFeedGenerator } from './durable-objects/community-feed-generator';
+export { FirehoseReceiver } from './durable-objects/firehose-receiver';
+
+// Export Queue consumer (T037)
+export { default as queue } from './workers/firehose-processor';
 
 // Export app type for oRPC client type inference
 export type AppType = typeof app;

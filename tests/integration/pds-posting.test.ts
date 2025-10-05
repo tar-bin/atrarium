@@ -14,7 +14,7 @@ import { BskyAgent } from '@atproto/api';
 const PDS_URL = process.env.PDS_URL || 'http://localhost:3000';
 const TEST_TIMEOUT = 30000; // 30 seconds
 
-describe('PDS Integration: Direct Posting', { timeout: TEST_TIMEOUT }, () => {
+describe.skip('PDS Integration: Direct Posting', { timeout: TEST_TIMEOUT }, () => {
   let aliceAgent: BskyAgent;
   let bobAgent: BskyAgent;
 

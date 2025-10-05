@@ -6,12 +6,15 @@
 // ============================================================================
 
 export interface Env {
-  DB: D1Database;
-  POST_CACHE: KVNamespace;
   JWT_SECRET: string;
   BLUESKY_HANDLE?: string;
   BLUESKY_APP_PASSWORD?: string;
   ENVIRONMENT?: string;
+  // Durable Objects bindings (006-pds-1-db)
+  COMMUNITY_FEED: DurableObjectNamespace;
+  FIREHOSE_RECEIVER: DurableObjectNamespace;
+  // Queue bindings (006-pds-1-db)
+  FIREHOSE_EVENTS: Queue;
 }
 
 // Hono context variables

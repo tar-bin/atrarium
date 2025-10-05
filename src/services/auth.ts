@@ -98,17 +98,15 @@ export class AuthService {
   async refreshAccessToken(refreshToken: string): Promise<AuthResponse> {
     const payload = await this.verifyDashboardJWT(refreshToken);
 
-    // Check if refresh token was already used (token rotation)
-    const isUsed = await this.env.POST_CACHE.get(`refresh:used:${payload.jti}`);
-    if (isUsed) {
-      // Refresh token reuse detected - revoke all user tokens (security measure)
-      throw new Error('Refresh token reuse detected');
-    }
-
-    // Mark refresh token as used
-    await this.env.POST_CACHE.put(`refresh:used:${payload.jti}`, '1', {
-      expirationTtl: this.refreshTokenTTL,
-    });
+    // TODO: Implement refresh token rotation tracking (PDS-first)
+    // - Use Durable Objects Storage or PDS records
+    // const isUsed = await this.env.POST_CACHE.get(`refresh:used:${payload.jti}`);
+    // if (isUsed) {
+    //   throw new Error('Refresh token reuse detected');
+    // }
+    // await this.env.POST_CACHE.put(`refresh:used:${payload.jti}`, '1', {
+    //   expirationTtl: this.refreshTokenTTL,
+    // });
 
     // Issue new tokens
     const accessJwt = await this.createDashboardJWT(payload.sub, payload.handle);

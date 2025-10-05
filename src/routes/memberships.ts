@@ -4,8 +4,6 @@
 import { Hono } from 'hono';
 import type { Env, HonoVariables } from '../types';
 import { AuthService } from '../services/auth';
-import { MembershipModel } from '../models/membership';
-import { CommunityModel } from '../models/community';
 
 const app = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -27,7 +25,7 @@ app.use('*', async (c, next) => {
 
 // ============================================================================
 // POST /api/communities/:communityId/members
-// Join community
+// Join community (PDS-first architecture)
 // ============================================================================
 
 app.post('/:communityId/members', async (c) => {
@@ -35,34 +33,52 @@ app.post('/:communityId/members', async (c) => {
     const userDid = c.get('userDid') as string;
     const communityId = c.req.param('communityId');
 
-    // Check if community exists
-    const communityModel = new CommunityModel(c.env);
-    const community = await communityModel.getById(communityId);
+    // Get Durable Object stub for community
+    if (!c.env.COMMUNITY_FEED) {
+      throw new Error('COMMUNITY_FEED Durable Object binding not found');
+    }
 
-    if (!community) {
+    const id = c.env.COMMUNITY_FEED.idFromName(communityId);
+    const stub = c.env.COMMUNITY_FEED.get(id);
+
+    // Check if community exists by trying to get config
+    const configResponse = await stub.fetch(new Request('http://fake-host/getFeedSkeleton?limit=1'));
+    if (!configResponse.ok && configResponse.status === 404) {
       return c.json({ error: 'NotFound', message: 'Community not found' }, 404);
     }
 
-    // Check if user is already a member
-    const membershipModel = new MembershipModel(c.env);
-    const existing = await membershipModel.getByUserAndCommunity(communityId, userDid);
+    const now = new Date().toISOString();
 
-    if (existing) {
-      return c.json({ error: 'Conflict', message: 'Already a member' }, 409);
-    }
+    // Create MembershipRecord in PDS (T034)
+    const { ATProtoService } = await import('../services/atproto');
+    const atproto = new ATProtoService(c.env);
 
-    // Create membership
-    const membership = await membershipModel.create(communityId, userDid, 'member');
+    await atproto.createMembershipRecord({
+      $type: 'com.atrarium.community.membership',
+      community: `at://did:plc:system/com.atrarium.community.config/${communityId}`,
+      role: 'member',
+      joinedAt: now,
+      active: true,
+    });
 
-    // Increment community member count
-    await communityModel.incrementMemberCount(communityId);
+    // Add member to Durable Object
+    await stub.fetch(new Request('http://fake-host/addMember', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        did: userDid,
+        role: 'member',
+        joinedAt: now,
+        active: true,
+      }),
+    }));
 
     return c.json(
       {
-        communityId: membership.communityId,
-        userDid: membership.userDid,
-        role: membership.role,
-        joinedAt: membership.joinedAt,
+        communityId,
+        userDid,
+        role: 'member',
+        joinedAt: Math.floor(new Date(now).getTime() / 1000),
       },
       201
     );
@@ -74,34 +90,18 @@ app.post('/:communityId/members', async (c) => {
 
 // ============================================================================
 // DELETE /api/communities/:communityId/members/me
-// Leave community
+// Leave community (PDS-first architecture)
 // ============================================================================
 
 app.delete('/:communityId/members/me', async (c) => {
   try {
-    const userDid = c.get('userDid') as string;
-    const communityId = c.req.param('communityId');
-
-    const membershipModel = new MembershipModel(c.env);
-
-    // Delete membership (will throw if user is owner)
-    await membershipModel.delete(communityId, userDid);
-
-    // Decrement community member count
-    const communityModel = new CommunityModel(c.env);
-    await communityModel.decrementMemberCount(communityId);
-
-    return c.json({ success: true });
+    // TODO: Implement PDS-based membership deletion
+    // - Verify user is not owner
+    // - Update membership record in PDS (set active: false)
+    // - Remove from Durable Object
+    return c.json({ error: 'NotImplemented', message: 'PDS-based leave not yet implemented' }, 501);
   } catch (err) {
     console.error('[DELETE /api/communities/:communityId/members/me] Error:', err);
-
-    if ((err as Error).message?.includes('Owner cannot leave')) {
-      return c.json(
-        { error: 'Forbidden', message: 'Owner cannot leave. Transfer ownership first.' },
-        403
-      );
-    }
-
     return c.json({ error: 'InternalServerError', message: 'Failed to leave community' }, 500);
   }
 });

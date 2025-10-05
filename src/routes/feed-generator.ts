@@ -3,9 +3,7 @@
 
 import { Hono } from 'hono';
 import type { Env, FeedSkeleton, FeedGeneratorDescription, HonoVariables } from '../types';
-import { generateDIDDocument, extractHostname, getFeedUri, parseFeedUri } from '../utils/did';
-import { PostIndexModel } from '../models/post-index';
-import { CacheService } from '../services/cache';
+import { generateDIDDocument, extractHostname, parseFeedUri } from '../utils/did';
 import { validateRequest, GetFeedSkeletonParamsSchema } from '../schemas/validation';
 
 const app = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
@@ -46,26 +44,12 @@ app.get('/xrpc/app.bsky.feed.describeFeedGenerator', async (c) => {
     const hostname = extractHostname(c.req.raw);
     const did = `did:web:${hostname.split(':')[0]}`;
 
-    // For Phase 0: List all active feeds across all communities
-    // In production: This would be more sophisticated
-    const result = await c.env.DB.prepare(
-      `SELECT tf.id, tf.name, tf.description, c.name as community_name
-      FROM theme_feeds tf
-      JOIN communities c ON tf.community_id = c.id
-      WHERE tf.archived_at IS NULL AND c.archived_at IS NULL
-      ORDER BY tf.last_post_at DESC, tf.created_at DESC
-      LIMIT 100`
-    ).all();
-
-    const feeds = (result.results || []).map((row: any) => ({
-      uri: getFeedUri(did, row.id),
-      displayName: `${row.community_name} - ${row.name}`,
-      description: row.description || undefined,
-    }));
-
+    // TODO: Implement PDS-based feed listing
+    // - Query PDS for community configs
+    // - Filter active communities
     const response: FeedGeneratorDescription = {
       did,
-      feeds,
+      feeds: [],
     };
 
     return c.json(response);
@@ -83,7 +67,7 @@ app.get('/xrpc/app.bsky.feed.describeFeedGenerator', async (c) => {
 
 // ============================================================================
 // GET /xrpc/app.bsky.feed.getFeedSkeleton
-// Returns feed skeleton (post URIs only, not full content)
+// Returns feed skeleton (PDS-first architecture, proxy to Durable Object)
 // ============================================================================
 
 app.get('/xrpc/app.bsky.feed.getFeedSkeleton', async (c) => {
@@ -108,7 +92,7 @@ app.get('/xrpc/app.bsky.feed.getFeedSkeleton', async (c) => {
 
     const { feed, limit, cursor } = validation.data;
 
-    // Parse feed URI to extract feed ID
+    // Parse feed URI to extract community ID
     const parsed = parseFeedUri(feed);
     if (!parsed) {
       return c.json(
@@ -120,34 +104,34 @@ app.get('/xrpc/app.bsky.feed.getFeedSkeleton', async (c) => {
       );
     }
 
-    const { feedId } = parsed;
+    const { feedId: communityId } = parsed;
 
-    // Check cache first
-    const cacheService = new CacheService(c.env);
-    const cacheKey = `feed:skeleton:${feedId}:${limit}:${cursor || 'start'}`;
-    const cached = await cacheService.get<FeedSkeleton>(cacheKey);
-
-    if (cached) {
-      return c.json(cached);
+    // Proxy request to CommunityFeedGenerator Durable Object (T036)
+    if (!c.env.COMMUNITY_FEED) {
+      throw new Error('COMMUNITY_FEED Durable Object binding not found');
     }
 
-    // Query database for post URIs with moderation filtering and membership validation
-    const postIndexModel = new PostIndexModel(c.env);
-    const { uris, cursor: nextCursor } = await postIndexModel.getFeedSkeletonWithMembership(
-      feedId,
-      limit,
-      cursor
+    const id = c.env.COMMUNITY_FEED.idFromName(communityId);
+    const stub = c.env.COMMUNITY_FEED.get(id);
+
+    // Call getFeedSkeleton on Durable Object
+    const response = await stub.fetch(
+      new Request(`http://fake-host/getFeedSkeleton?limit=${limit}${cursor ? `&cursor=${cursor}` : ''}`)
     );
 
-    // Build feed skeleton (URIs only, no content)
-    const skeleton: FeedSkeleton = {
-      feed: uris.map((uri) => ({ post: uri })),
-      cursor: nextCursor,
-    };
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('[getFeedSkeleton] Durable Object error:', error);
+      return c.json(
+        {
+          error: 'InternalServerError',
+          message: 'Failed to generate feed skeleton',
+        },
+        500
+      );
+    }
 
-    // Cache result for 1 minute
-    await cacheService.set(cacheKey, skeleton, 60);
-
+    const skeleton = await response.json() as FeedSkeleton;
     return c.json(skeleton);
   } catch (err) {
     console.error('[getFeedSkeleton] Error:', err);

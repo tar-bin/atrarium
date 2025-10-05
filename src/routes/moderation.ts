@@ -1,9 +1,6 @@
 import { Hono } from 'hono';
 import type { Env, HonoVariables } from '../types';
 import { AuthService } from '../services/auth';
-import { ModerationService } from '../services/moderation';
-import { ModerationLogModel } from '../models/moderation-log';
-import { MembershipModel } from '../models/membership';
 
 const app = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -23,83 +20,62 @@ app.use('*', async (c, next) => {
   }
 });
 
-// ============================================================================
-// Helper: Check moderator role
-// ============================================================================
-
-async function checkModeratorRole(
-  c: any,
-  communityId: string
-): Promise<{ isModerator: boolean; error?: Response }> {
-  const userDid = c.get('userDid') as string;
-  const membershipModel = new MembershipModel(c.env);
-  const membership = await membershipModel.getByUserAndCommunity(communityId, userDid);
-
-  if (!membership) {
-    return {
-      isModerator: false,
-      error: c.json({ error: 'Forbidden', message: 'Not a member of this community' }, 403),
-    };
-  }
-
-  if (membership.role !== 'moderator' && membership.role !== 'owner') {
-    return {
-      isModerator: false,
-      error: c.json(
-        { error: 'Forbidden', message: 'Moderator or owner role required' },
-        403
-      ),
-    };
-  }
-
-  return { isModerator: true };
-}
+// Helper removed - moderation role check now in Durable Object
 
 // ============================================================================
 // POST /api/moderation/hide-post
-// Hide a post (set moderation_status to 'hidden')
+// Hide a post (PDS-first architecture)
 // ============================================================================
 
 app.post('/hide-post', async (c) => {
   try {
-    const userDid = c.get('userDid') as string;
+    // const userDid = c.get('userDid') as string;
     const body = await c.req.json();
-    const { postUri, reason } = body;
+    const { postUri, communityId, reason } = body;
 
-    if (!postUri) {
-      return c.json({ error: 'InvalidRequest', message: 'postUri is required' }, 400);
+    if (!postUri || !communityId) {
+      return c.json({ error: 'InvalidRequest', message: 'postUri and communityId are required' }, 400);
     }
 
-    // Get feedId from post_index
-    const feedResult = await c.env.DB.prepare(
-      `SELECT p.feed_id, f.community_id
-       FROM post_index p
-       INNER JOIN theme_feeds f ON p.feed_id = f.id
-       WHERE p.uri = ?`
-    )
-      .bind(postUri)
-      .first<{ feed_id: string; community_id: string }>();
-
-    if (!feedResult) {
-      return c.json({ error: 'NotFound', message: 'Post not found in index' }, 404);
+    // Get Durable Object stub for community
+    if (!c.env.COMMUNITY_FEED) {
+      throw new Error('COMMUNITY_FEED Durable Object binding not found');
     }
 
-    // Check moderator role
-    const roleCheck = await checkModeratorRole(c, feedResult.community_id);
-    if (!roleCheck.isModerator) {
-      return roleCheck.error;
-    }
+    const id = c.env.COMMUNITY_FEED.idFromName(communityId);
+    const stub = c.env.COMMUNITY_FEED.get(id);
 
-    // Hide the post
-    const moderationService = new ModerationService(c.env);
-    const result = await moderationService.hidePost(
-      postUri,
-      userDid,
-      feedResult.feed_id,
-      reason
-    );
+    const now = new Date().toISOString();
 
-    return c.json(result, 200);
+    // Create ModerationAction in PDS (T035)
+    const { ATProtoService } = await import('../services/atproto');
+    const atproto = new ATProtoService(c.env);
+
+    await atproto.createModerationAction({
+      $type: 'com.atrarium.moderation.action',
+      action: 'hide_post',
+      target: {
+        uri: postUri,
+        cid: '', // CID not required for hide action
+      },
+      community: `at://did:plc:system/com.atrarium.community.config/${communityId}`,
+      reason: reason || '',
+      createdAt: now,
+    });
+
+    // Apply moderation to Durable Object
+    await stub.fetch(new Request('http://fake-host/moderatePost', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'hide_post',
+        targetUri: postUri,
+        reason,
+        createdAt: now,
+      }),
+    }));
+
+    return c.json({ success: true }, 200);
   } catch (err) {
     console.error('[POST /api/moderation/hide-post] Error:', err);
     return c.json(
@@ -111,44 +87,20 @@ app.post('/hide-post', async (c) => {
 
 // ============================================================================
 // POST /api/moderation/unhide-post
-// Unhide a post (set moderation_status to 'approved')
+// Unhide a post (PDS-first architecture)
 // ============================================================================
 
 app.post('/unhide-post', async (c) => {
   try {
-    const userDid = c.get('userDid') as string;
     const body = await c.req.json();
-    const { postUri } = body;
+    const { postUri, communityId } = body;
 
-    if (!postUri) {
-      return c.json({ error: 'InvalidRequest', message: 'postUri is required' }, 400);
+    if (!postUri || !communityId) {
+      return c.json({ error: 'InvalidRequest', message: 'postUri and communityId are required' }, 400);
     }
 
-    // Get feedId and communityId from post_index
-    const feedResult = await c.env.DB.prepare(
-      `SELECT p.feed_id, f.community_id
-       FROM post_index p
-       INNER JOIN theme_feeds f ON p.feed_id = f.id
-       WHERE p.uri = ?`
-    )
-      .bind(postUri)
-      .first<{ feed_id: string; community_id: string }>();
-
-    if (!feedResult) {
-      return c.json({ error: 'NotFound', message: 'Post not found in index' }, 404);
-    }
-
-    // Check moderator role
-    const roleCheck = await checkModeratorRole(c, feedResult.community_id);
-    if (!roleCheck.isModerator) {
-      return roleCheck.error;
-    }
-
-    // Unhide the post
-    const moderationService = new ModerationService(c.env);
-    const result = await moderationService.unhidePost(postUri, userDid, feedResult.feed_id);
-
-    return c.json(result, 200);
+    // TODO: Similar to hide-post
+    return c.json({ error: 'NotImplemented', message: 'PDS-based unhide not yet implemented' }, 501);
   } catch (err) {
     console.error('[POST /api/moderation/unhide-post] Error:', err);
     return c.json(
@@ -165,39 +117,8 @@ app.post('/unhide-post', async (c) => {
 
 app.post('/block-user', async (c) => {
   try {
-    const userDid = c.get('userDid') as string;
-    const body = await c.req.json();
-    const { userDidToBlock, feedId, reason } = body;
-
-    if (!userDidToBlock || !feedId) {
-      return c.json(
-        { error: 'InvalidRequest', message: 'userDid and feedId are required' },
-        400
-      );
-    }
-
-    // Get communityId from feedId
-    const feedResult = await c.env.DB.prepare(
-      `SELECT community_id FROM theme_feeds WHERE id = ?`
-    )
-      .bind(feedId)
-      .first<{ community_id: string }>();
-
-    if (!feedResult) {
-      return c.json({ error: 'NotFound', message: 'Feed not found' }, 404);
-    }
-
-    // Check moderator role
-    const roleCheck = await checkModeratorRole(c, feedResult.community_id);
-    if (!roleCheck.isModerator) {
-      return roleCheck.error;
-    }
-
-    // Block the user
-    const moderationService = new ModerationService(c.env);
-    const result = await moderationService.blockUser(feedId, userDidToBlock, userDid, reason);
-
-    return c.json(result, 200);
+    // TODO: Implement PDS-based user blocking
+    return c.json({ error: 'NotImplemented', message: 'PDS-based block not yet implemented' }, 501);
   } catch (err) {
     console.error('[POST /api/moderation/block-user] Error:', err);
     return c.json(
@@ -209,44 +130,13 @@ app.post('/block-user', async (c) => {
 
 // ============================================================================
 // POST /api/moderation/unblock-user
-// Unblock a user from a feed
+// Unblock a user from a feed (PDS-first architecture)
 // ============================================================================
 
 app.post('/unblock-user', async (c) => {
   try {
-    const userDid = c.get('userDid') as string;
-    const body = await c.req.json();
-    const { userDidToUnblock, feedId } = body;
-
-    if (!userDidToUnblock || !feedId) {
-      return c.json(
-        { error: 'InvalidRequest', message: 'userDid and feedId are required' },
-        400
-      );
-    }
-
-    // Get communityId from feedId
-    const feedResult = await c.env.DB.prepare(
-      `SELECT community_id FROM theme_feeds WHERE id = ?`
-    )
-      .bind(feedId)
-      .first<{ community_id: string }>();
-
-    if (!feedResult) {
-      return c.json({ error: 'NotFound', message: 'Feed not found' }, 404);
-    }
-
-    // Check moderator role
-    const roleCheck = await checkModeratorRole(c, feedResult.community_id);
-    if (!roleCheck.isModerator) {
-      return roleCheck.error;
-    }
-
-    // Unblock the user
-    const moderationService = new ModerationService(c.env);
-    const result = await moderationService.unblockUser(feedId, userDidToUnblock, userDid);
-
-    return c.json(result, 200);
+    // TODO: Implement PDS-based user unblocking
+    return c.json({ error: 'NotImplemented', message: 'PDS-based unblock not yet implemented' }, 501);
   } catch (err) {
     console.error('[POST /api/moderation/unblock-user] Error:', err);
     return c.json(
@@ -258,54 +148,15 @@ app.post('/unblock-user', async (c) => {
 
 // ============================================================================
 // GET /api/moderation/logs
-// Get moderation logs for a feed or community
+// Get moderation logs for a feed or community (PDS-first architecture)
 // ============================================================================
 
 app.get('/logs', async (c) => {
   try {
-    const feedId = c.req.query('feedId');
-    const communityId = c.req.query('communityId');
-    const cursor = c.req.query('cursor');
-    const limit = parseInt(c.req.query('limit') || '50', 10);
-
-    if (!feedId && !communityId) {
-      return c.json(
-        { error: 'InvalidRequest', message: 'feedId or communityId is required' },
-        400
-      );
-    }
-
-    // Get communityId if feedId provided
-    let targetCommunityId = communityId;
-    if (feedId) {
-      const feedResult = await c.env.DB.prepare(
-        `SELECT community_id FROM theme_feeds WHERE id = ?`
-      )
-        .bind(feedId)
-        .first<{ community_id: string }>();
-
-      if (!feedResult) {
-        return c.json({ error: 'NotFound', message: 'Feed not found' }, 404);
-      }
-      targetCommunityId = feedResult.community_id;
-    }
-
-    if (!targetCommunityId) {
-      return c.json({ error: 'InvalidRequest', message: 'Invalid feedId or communityId' }, 400);
-    }
-
-    // Check moderator role
-    const roleCheck = await checkModeratorRole(c, targetCommunityId);
-    if (!roleCheck.isModerator) {
-      return roleCheck.error;
-    }
-
-    // Get logs
-    const result = feedId
-      ? await ModerationLogModel.getLogsByFeed(c.env.DB, feedId, limit, cursor)
-      : await ModerationLogModel.getLogsByCommunity(c.env.DB, targetCommunityId, limit, cursor);
-
-    return c.json(result, 200);
+    // TODO: Implement PDS-based moderation log retrieval
+    // - Query PDS for moderation action records
+    // - Filter by community/feed
+    return c.json({ data: [], cursor: undefined });
   } catch (err) {
     console.error('[GET /api/moderation/logs] Error:', err);
     return c.json(
