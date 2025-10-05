@@ -60,36 +60,45 @@ Atrarium leverages AT Protocol's design to fundamentally solve these problems:
 
 | | Fediverse | Atrarium | Savings |
 |---|-----------|----------|---------|
-| **Monthly** | $30-150 | **$5** | **85-95%** |
-| **Annually** | $360-1,800 | **$60** | **85-95%** |
+| **Monthly** | $30-150 | **$0.40-5** | **92-99%** |
+| **Annually** | $360-1,800 | **$5-60** | **92-99%** |
 | **Weekly Time** | 5 hours | **1 hour** | **80%** |
+
+*Note: $0.40/month for 1000 communities (Durable Objects + Queues only), $5/month includes Workers Paid plan*
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ Architecture (PDS-First)
 
 ```
-┌─────────────────────────┐
-│  Cloudflare Workers     │ ← Feed Generator API (Hono)
-│  - AT Protocol Endpoints│    • /.well-known/did.json
-│  - Dashboard API        │    • /xrpc/app.bsky.feed.*
-│  - Scheduled Jobs       │    • /api/* (Dashboard)
-└──────────┬──────────────┘
-           │
-    ┌──────┴──────┐
-    │             │
-┌───▼──┐    ┌────▼─────┐
-│ D1   │    │ KV Cache │
-│ DB   │    │ (7 days) │
-└──────┘    └──────────┘
+PDS (Source of Truth)
+  ↓ Firehose: Jetstream WebSocket
+FirehoseReceiver (Durable Object)
+  ↓ Lightweight filter: includes('#atr_')
+Cloudflare Queue
+  ↓ Batched: 100 msg/batch
+FirehoseProcessor (Queue Consumer Worker)
+  ↓ Heavyweight filter: regex /#atr_[0-9a-f]{8}/
+CommunityFeedGenerator (Durable Object per community)
+  ↓ Storage: config:, member:, post:, moderation:
+Feed Generator API (getFeedSkeleton)
+  ↓
+Client (Bluesky AppView fetches post content)
 ```
+
+**Key Principles**:
+- **PDS as Source of Truth**: All community data stored in user PDSs via AT Protocol Lexicon
+- **Durable Objects Storage**: Per-community feed index with 7-day retention
+- **Queue-Based Processing**: Two-stage filtering for efficient Firehose ingestion
+- **Zero Database Costs**: No D1/KV, only Durable Objects Storage (~$0.40/month for 1000 communities)
 
 ### Tech Stack
 
 **Backend (Implemented)**:
 - **Cloudflare Workers**: Serverless edge computing with Hono framework
-- **D1 Database**: SQLite database (8 tables with indexes)
-- **KV Namespace**: Post metadata cache (7-day TTL)
+- **Durable Objects**: Per-community feed generators with persistent Storage API
+- **Cloudflare Queues**: Firehose event processing (5000 msg/sec capacity)
+- **AT Protocol**: `@atproto/api` (AtpAgent), `@atproto/identity`
 - **TypeScript 5.7**: Strict type safety with Zod validation
 - **Vitest**: Testing with `@cloudflare/vitest-pool-workers`
 
@@ -102,9 +111,9 @@ Atrarium leverages AT Protocol's design to fundamentally solve these problems:
 - **Cloudflare Pages**: Dashboard hosting (free)
 
 **External Services**:
-- **AT Protocol**: `@atproto/api`, `@atproto/xrpc-server`, `@atproto/identity`
-- **Bluesky PDS**: Local PDS integration for content posting
-- **Bluesky Firehose**: WebSocket (Durable Objects integration pending)
+- **AT Protocol**: `@atproto/api` (AtpAgent), `@atproto/identity`
+- **Bluesky Firehose**: Jetstream WebSocket (real-time event streaming)
+- **Local PDS**: DevContainer integration for testing
 
 ---
 
@@ -130,21 +139,17 @@ npm install
 npm install -g wrangler
 wrangler login
 
-# Create Cloudflare resources
-wrangler d1 create atrarium-db
-wrangler kv:namespace create POST_CACHE
+# Create Cloudflare Queues (for Firehose processing)
+wrangler queues create firehose-events
+wrangler queues create firehose-dlq  # Dead letter queue
 
-# Update wrangler.toml with generated IDs
-# Uncomment [[d1_databases]] and [[kv_namespaces]] sections
-# Add database_id and namespace id from above commands
-
-# Apply database schema
-wrangler d1 execute atrarium-db --file=./schema.sql
+# Durable Objects are automatically provisioned on first deploy
+# No database setup required (PDS-first architecture)
 
 # Set secrets (for production deployment)
 wrangler secret put JWT_SECRET
-wrangler secret put BLUESKY_HANDLE      # Optional
-wrangler secret put BLUESKY_APP_PASSWORD # Optional
+wrangler secret put BLUESKY_HANDLE         # For PDS write operations
+wrangler secret put BLUESKY_APP_PASSWORD   # For PDS write operations
 ```
 
 ### Development
@@ -170,14 +175,17 @@ npm run format
 ### Deployment
 
 ```bash
-# Deploy to Cloudflare Workers
+# Deploy to Cloudflare Workers (includes Durable Objects + Queues)
 npm run deploy
 
 # View production logs
-wrangler tail
+wrangler tail --format pretty
 
-# Query production database
-wrangler d1 execute atrarium-db --command "SELECT * FROM communities LIMIT 5"
+# Monitor Durable Objects
+wrangler tail --format json | grep "CommunityFeedGenerator"
+
+# Monitor Queue processing
+wrangler tail --format json | grep "FirehoseProcessor"
 ```
 
 ### Dashboard Setup
@@ -213,53 +221,50 @@ npm run dev
 
 For detailed dashboard documentation, see [dashboard/README.md](./dashboard/README.md).
 
-### Load Test Data
+### Testing with Local PDS
 
-To quickly populate your local database with test data:
+Atrarium uses a DevContainer with a local Bluesky PDS for testing:
 
 ```bash
-# Load schema and test data
-./scripts/load-test-data.sh
+# Open project in VS Code DevContainer
+# PDS automatically starts at http://localhost:3000
 
-# Or manually:
-npx wrangler d1 execute atrarium-db --local --file=seeds/dev-data.sql
+# Setup test accounts
+.devcontainer/setup-pds.sh
+
+# Run PDS integration tests
+npx vitest run tests/integration/pds-posting.test.ts
+npx vitest run tests/integration/pds-to-feed-flow.test.ts
 ```
 
-**Test data includes:**
-- 5 communities (anime, tech, games, manga, web3)
-- 9 theme feeds with unique hashtags
-- 20 sample posts (18 approved, 2 hidden)
-- 17 user memberships across communities
-- 3 moderation actions
-
-For details, see [seeds/README.md](./seeds/README.md).
+**Test data** is created dynamically via PDS write operations (no SQL seeds needed).
 
 ---
 
 ## 📖 Documentation
 
+- **[Documentation Site](https://atrarium-docs.pages.dev)** - Complete documentation (EN/JA)
 - [CLAUDE.md](./CLAUDE.md) - Development guide for Claude Code
-- [Project Overview & Design Philosophy](./docs/01-overview.md)
-- [System Design](./docs/02-system-design.md)
-- [Implementation Guide](./docs/03-implementation.md)
-- [API Reference](./docs/api-reference.md)
-- [Market Research](./docs/market-research.md)
+- [specs/006-pds-1-db/](./specs/006-pds-1-db/) - PDS-first architecture specification
+  - [spec.md](./specs/006-pds-1-db/spec.md) - Functional requirements
+  - [data-model.md](./specs/006-pds-1-db/data-model.md) - AT Protocol Lexicon schemas
+  - [plan.md](./specs/006-pds-1-db/plan.md) - Implementation plan
+  - [quickstart.md](./specs/006-pds-1-db/quickstart.md) - Alice-Bob scenario walkthrough
 
 ### API Endpoints
 
-**AT Protocol Feed Generator**:
-- `GET /.well-known/did.json` - DID document
-- `GET /xrpc/app.bsky.feed.describeFeedGenerator` - Feed generator description
-- `GET /xrpc/app.bsky.feed.getFeedSkeleton` - Feed skeleton (post URIs)
+**AT Protocol Feed Generator** (public):
+- `GET /.well-known/did.json` - DID document (`did:web:atrarium.net`)
+- `GET /xrpc/app.bsky.feed.describeFeedGenerator` - Feed generator metadata
+- `GET /xrpc/app.bsky.feed.getFeedSkeleton` - Feed skeleton (post URIs, proxies to Durable Object)
 
-**Dashboard API** (requires JWT authentication):
+**Dashboard API** (JWT authentication required):
 - `POST /api/auth/login` - Login with Bluesky DID
-- `GET /api/communities` - List communities
-- `POST /api/communities` - Create community
-- `GET /api/communities/:id/theme-feeds` - List theme feeds
-- `POST /api/communities/:id/theme-feeds` - Create theme feed
-- `POST /api/posts` - Submit post to index
-- `POST /api/communities/:id/memberships` - Join community
+- `GET /api/communities` - List communities (from Durable Objects)
+- `POST /api/communities` - Create community (writes to PDS + creates Durable Object)
+- `POST /api/communities/:id/memberships` - Join community (writes to PDS)
+- `POST /api/moderation/hide` - Hide post (writes to PDS)
+- `POST /api/moderation/block` - Block user (writes to PDS)
 
 ---
 
@@ -274,12 +279,12 @@ For details, see [seeds/README.md](./seeds/README.md).
 - Fear of decline
 
 **After:**
-- $5/month stable operation
+- $0.40-5/month stable operation (scale-dependent)
 - < 1 hour/week management
 - Discovery via Bluesky users
 - Flexible DID-based migration
 
-**Savings:** $480/year + 208 hours/year
+**Savings:** $475-1,740/year + 208 hours/year
 
 ### Case 2: Starting a New Community
 
@@ -291,7 +296,7 @@ For details, see [seeds/README.md](./seeds/README.md).
 **With Atrarium:**
 - Zero technical barriers (Custom Feed creation only)
 - Natural inflow from Bluesky
-- Start with $5/month
+- Start with $0.40/month (scales to $5/month with Workers Paid)
 - Gradual feature expansion as you grow
 
 ### Case 3: Small Community Ecosystem
@@ -306,70 +311,82 @@ For details, see [seeds/README.md](./seeds/README.md).
 
 ## 🌟 Implemented Features
 
-### 1. AT Protocol Feed Generator ✅
-- **DID Document**: `did:web` based identification
-- **Feed Skeleton API**: Returns post URIs for custom feeds
-- **Feed Description**: Metadata for feed discovery
-- Fully compliant with AT Protocol Feed Generator specification
+### 1. PDS-First Data Architecture ✅
+- **AT Protocol Lexicon Schemas**: `net.atrarium.community.config`, `net.atrarium.community.membership`, `net.atrarium.moderation.action`
+- **PDS as Source of Truth**: All community data stored in user PDSs
+- **Durable Objects Storage**: Per-community feed index (7-day retention)
+- **AtpAgent Integration**: PDS read/write operations via `@atproto/api`
 
-### 2. Community Management ✅
-- **Create Communities**: Theme → Community → Graduated stages
-- **Membership System**: Owner/Moderator/Member roles
-- **Theme Feeds**: Multiple feeds per community
-- **Health Metrics**: 7-day post count and active user tracking
-- **Parent-Child Relationships**: Hierarchical community structure
+### 2. Feed Generator & Firehose Processing ✅
+- **AT Protocol Feed Generator**: DID document, getFeedSkeleton, describeFeedGenerator
+- **FirehoseReceiver DO**: Jetstream WebSocket → Cloudflare Queue (lightweight filter)
+- **FirehoseProcessor Worker**: Queue consumer with heavyweight regex filter
+- **CommunityFeedGenerator DO**: Per-community feed index with RPC interface
+- **Two-Stage Filtering**: `includes('#atr_')` → `regex /#atr_[0-9a-f]{8}/`
 
-### 3. Post Indexing ✅
-- **Submit Posts**: Index AT-URIs to feeds
-- **KV Cache**: 7-day TTL for post metadata
-- **Multi-language Support**: BCP-47 language codes
-- **Media Detection**: Track posts with media attachments
+### 3. Community & Membership Management ✅
+- **Hashtag System**: System-generated unique hashtags (`#atr_[0-9a-f]{8}`)
+- **Role-Based Access**: Owner/Moderator/Member roles stored in PDS
+- **Community Lifecycle**: Theme → Community → Graduated stages
+- **Membership Records**: PDS-stored membership with Durable Object caching
 
-### 4. Automation (Scheduled Jobs) ✅
-- **Post Deletion Sync**: Remove deleted posts from Bluesky (every 12 hours)
-- **Feed Health Check**: Update activity metrics and status
-- **Inactivity Detection**: Auto-archive inactive feeds (active → warning → archived)
+### 4. Moderation System ✅
+- **Hide/Unhide Posts**: Moderation actions stored in PDS
+- **User Blocking**: Feed-level blocklist with moderation logs
+- **Role Enforcement**: Only moderators/owners can moderate
+- **Moderation History**: All actions tracked in `net.atrarium.moderation.action`
 
 ### 5. Security & Authentication ✅
 - **JWT Authentication**: DID-based authentication for dashboard
 - **Role-based Access Control**: Owner/Moderator/Member permissions
 - **CORS Configuration**: Secure cross-origin requests
-- **Prepared Statements**: SQL injection prevention
+- **Lexicon Validation**: Zod schemas for all AT Protocol records
 
-### 6. Testing ✅
-- **Contract Tests**: API endpoint validation (Dashboard + Feed Generator)
-- **Integration Tests**: End-to-end workflows
-- **Cloudflare Workers Environment**: Testing with `@cloudflare/vitest-pool-workers`
+### 6. Testing & Documentation ✅
+- **Contract Tests**: Durable Objects, Queue consumers, PDS operations
+- **Integration Tests**: Queue-to-feed flow, PDS-to-feed flow
+- **Local PDS Integration**: DevContainer with Bluesky PDS for testing
+- **VitePress Documentation**: 20 pages (EN/JA) deployed to Cloudflare Pages
 
 ---
 
 ## 🗺️ Roadmap
 
 ### Phase 0: MVP ✅ (Completed)
-- [x] Project planning and market research
-- [x] D1 database schema (6 tables with indexes)
-- [x] AT Protocol Feed Generator API
-- [x] Community and theme feed management
-- [x] Membership system with role-based access
-- [x] Post indexing with KV cache
+- [x] AT Protocol Feed Generator API (DID, getFeedSkeleton, describeFeedGenerator)
+- [x] AT Protocol Lexicon schemas (`net.atrarium.*`)
+- [x] PDS read/write service (AtpAgent integration)
+- [x] Hashtag-based community system (`#atr_[0-9a-f]{8}`)
+- [x] Moderation system (hide posts, block users)
 - [x] JWT authentication with DID verification
-- [x] Scheduled jobs (post sync, health checks)
-- [x] Comprehensive test suite (contract + integration)
+- [x] Comprehensive test suite (contract + integration + PDS tests)
+- [x] VitePress documentation (20 pages, EN/JA)
+- [x] React dashboard (Phase 0-1: community/feed/moderation UI)
 
-### Phase 1: Production Ready (Next)
-- [ ] **React Dashboard**: UI for community/feed management
-- [ ] **Firehose Integration**: Real-time post indexing via Durable Objects
-- [ ] **Production Deployment**: Cloudflare Workers + Pages deployment
-- [ ] **Monitoring & Alerts**: Error tracking and performance monitoring
-- [ ] **Achievement System**: User achievements and gamification
-- [ ] **Community Directory**: Discover and browse communities
+### Phase 1: PDS-First Architecture ✅ (Completed - Feature 006-pds-1-db)
+- [x] **Durable Objects Storage**: Per-community feed generators
+- [x] **Cloudflare Queues**: Firehose event processing (5000 msg/sec)
+- [x] **FirehoseReceiver DO**: Jetstream WebSocket → Queue
+- [x] **FirehoseProcessor Worker**: Queue consumer with two-stage filtering
+- [x] **CommunityFeedGenerator DO**: Per-community feed index with Storage API
+- [x] **PDS Integration**: All writes go to PDS first, then indexed via Firehose
+- [x] **Cost Optimization**: $0.40/month for 1000 communities (vs $5/month D1)
 
-### Phase 2: Ecosystem & Scale (Future)
+### Phase 2: Production Deployment (Next)
+- [ ] **Firehose Connection Monitoring**: Auto-reconnect and health checks
+- [ ] **Dashboard API Integration**: Update dashboard to use PDS-first endpoints
+- [ ] **Production Deployment**: Deploy Durable Objects + Queues to Cloudflare
+- [ ] **Feed Generator Registration**: Register in Bluesky AppView
+- [ ] **Monitoring & Alerts**: Durable Objects + Queue metrics
+- [ ] **Performance Optimization**: Feed generation < 200ms target
+
+### Phase 3: Ecosystem & Scale (Future)
+- [ ] **Achievement System**: User achievements stored in PDS
 - [ ] **Dynamic Feed Mixing**: 80% own / 15% parent / 5% global
 - [ ] **Starter Packs Integration**: Community onboarding
-- [ ] **Analytics Dashboard**: Activity trends and insights
+- [ ] **Analytics Dashboard**: Activity trends from Durable Objects data
 - [ ] **Community Graduation**: Auto-promotion from theme to community
-- [ ] **Moderation Tools**: Advanced moderation workflows
+- [ ] **Advanced Moderation**: Reporting workflows, appeal system
 
 ---
 
@@ -389,41 +406,45 @@ We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for de
 
 - **Code Style**: Follow existing TypeScript patterns (see [CLAUDE.md](./CLAUDE.md))
 - **Testing**: Write tests for all new features using Vitest
-  - Contract tests for API endpoints
-  - Integration tests for workflows
-- **Database**: Always use prepared statements for D1 queries
-- **Types**: Define types in [src/types.ts](src/types.ts) (Entity + Row + API)
-- **Documentation**: Update README and CLAUDE.md for major changes
+  - Contract tests for Durable Objects, Queue consumers, API endpoints
+  - Integration tests for PDS workflows
+  - Use `@cloudflare/vitest-pool-workers` for Workers environment
+- **Architecture**: PDS-first design (write to PDS, index via Firehose)
+- **Types**: Define types in [src/types.ts](src/types.ts) and [src/schemas/lexicon.ts](src/schemas/lexicon.ts)
+- **Documentation**: Update README, CLAUDE.md, and VitePress docs for major changes
 - **Commits**: Atomic commits with clear messages
 
 ### Project Structure
 
 ```
 src/
-├── index.ts           # Main entry point (Hono router + scheduled jobs)
-├── routes/            # API route handlers
-├── models/            # Database models (D1 queries)
-├── services/          # Business logic (AT Protocol, auth, cache)
-├── schemas/           # Zod validation schemas
-└── types.ts           # TypeScript type definitions
+├── index.ts                # Main entry point (Hono router + DO/Queue bindings)
+├── routes/                 # API route handlers (write to PDS, proxy to DOs)
+├── durable-objects/        # Durable Objects (CommunityFeedGenerator, FirehoseReceiver)
+├── workers/                # Queue Consumer Workers (FirehoseProcessor)
+├── services/               # Business logic (AT Protocol client, auth)
+├── schemas/                # Zod validation (Lexicon + API)
+└── types.ts                # TypeScript type definitions
 
 tests/
-├── contract/          # API contract tests
-├── integration/       # End-to-end workflow tests
-└── helpers/           # Test utilities and setup
+├── contract/               # API contract tests (DOs, Queues, endpoints)
+├── integration/            # End-to-end workflow tests (PDS integration)
+├── unit/                   # Unit tests (utilities, validators)
+└── helpers/                # Test utilities and setup
 ```
 
 ---
 
 ## 📊 Project Status
 
-- **Current Phase**: Phase 0 → Phase 1 Transition
-- **Backend**: ✅ Implemented and tested (all core APIs working)
-- **Frontend**: 🚧 Dashboard pending implementation
-- **Database**: ✅ Schema complete (6 tables, all migrations done)
-- **Tests**: ✅ 11 test files passing (contract + integration)
-- **Deployment**: 🚧 Production configuration pending
-- **Documentation**: ✅ [VitePress documentation site](https://atrarium-docs.pages.dev) (English + Japanese)
+- **Current Phase**: Phase 1 Complete (PDS-First Architecture) → Phase 2 (Production Deployment)
+- **Backend**: ✅ Fully implemented (Durable Objects + Queues + AT Protocol integration)
+- **Frontend**: ✅ Dashboard complete (React 19 + TanStack + shadcn/ui)
+- **Architecture**: ✅ PDS-first with Durable Objects Storage (no D1/KV)
+- **Tests**: ✅ Contract + Integration + Unit + PDS tests passing
+- **Documentation**: ✅ [VitePress site](https://atrarium-docs.pages.dev) (20 pages, EN/JA)
+- **Domain**: ✅ atrarium.net acquired and configured
+- **Next Milestone**: Production deployment + Firehose connection
 - **First Release Target**: Q2 2025
 
 ---
