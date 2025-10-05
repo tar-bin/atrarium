@@ -75,7 +75,3 @@ npm test             # Run tests
 ## License
 
 MIT License - see [LICENSE](LICENSE)
-
----
-
-Built with [AT Protocol](https://atproto.com/) • Powered by [Cloudflare Workers](https://workers.cloudflare.com/)
