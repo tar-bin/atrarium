@@ -151,6 +151,8 @@ dashboard/            # React web dashboard (Phase 0-1)
 │   └── helpers/             # Test utilities
 ├── package.json         # Dashboard dependencies (React 19, TanStack, shadcn/ui)
 ├── vite.config.ts       # Vite configuration
+├── vitest.config.ts     # Vitest configuration for component tests
+├── playwright.config.ts # Playwright E2E test configuration
 ├── tsconfig.json        # TypeScript configuration
 └── README.md            # Dashboard setup guide
 
@@ -174,6 +176,7 @@ docs/                 # VitePress documentation site
 wrangler.toml        # Cloudflare Workers configuration (Durable Objects + Queues)
 vitest.config.ts     # Vitest configuration for Cloudflare Workers
 vitest.docs.config.ts # Vitest configuration for documentation tests
+vitest.pds.config.ts  # Vitest configuration for PDS integration tests
 ```
 
 **Documentation**:
@@ -236,7 +239,10 @@ wrangler login
 wrangler queues create firehose-events
 wrangler queues create firehose-dlq  # Dead letter queue
 
-# Update wrangler.toml with Queue configuration (already configured)
+# Queue configuration in wrangler.toml:
+# - max_batch_size: 100 (process up to 100 messages per batch)
+# - max_batch_timeout: 5s (wait up to 5 seconds for batch to fill)
+# - max_retries: 3 (retry failed messages 3 times before DLQ)
 # Durable Objects are automatically provisioned on first deploy
 ```
 
@@ -291,11 +297,14 @@ npm test
 # Run tests in watch mode
 npm run test:watch
 
+# Run local unit tests only (fast, no Workers env)
+npm run test:local
+
 # Run specific test file
 npx vitest run tests/contract/feed-generator/get-feed-skeleton.test.ts
 
 # The test suite uses @cloudflare/vitest-pool-workers for Cloudflare Workers environment
-# Database schema is automatically loaded from tests/helpers/setup.ts
+# PDS-specific tests use vitest.pds.config.ts for isolated PDS testing
 ```
 
 ### Deployment
@@ -330,6 +339,9 @@ wrangler tail --format pretty
 # Durable Objects are automatically created on first request
 # Each community gets its own CommunityFeedGenerator instance
 # Storage is persistent and isolated per community
+
+# Scheduled cleanup runs every 12 hours (configured in wrangler.toml)
+# Cron trigger: "0 */12 * * *" - deletes posts older than 7 days
 
 # Note: D1 database deprecated in favor of Durable Objects Storage
 ```
