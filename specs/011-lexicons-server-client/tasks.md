@@ -41,40 +41,40 @@ Target structure: `lexicons/`, `server/`, `client/` (dashboard only), `docs/` (s
 ---
 
 ## Phase 0: Preparation
-- [ ] **T001** Verify git status clean (no uncommitted changes)
-- [ ] **T002** Create `server/` directory at repository root
-- [ ] **T003** Create `client/` directory at repository root
-- [ ] **T004** Record current structure for comparison (`tree -L 2 -d . > /tmp/structure-before.txt`)
+- [x] **T001** Verify git status clean (no uncommitted changes)
+- [x] **T002** Create `server/` directory at repository root
+- [x] **T003** Create `client/` directory at repository root
+- [x] **T004** Record current structure for comparison (`tree -L 2 -d . > /tmp/structure-before.txt`)
 
 ---
 
 ## Phase 1: Move Server Code
 **IMPORTANT**: Use `git mv` to preserve history. Do NOT copy+delete.
 
-- [ ] **T005** Move server source code: `git mv src/ server/src/`
-- [ ] **T006** Create temporary directory for docs tests: `mkdir -p /tmp/docs-tests-backup && cp -r tests/docs/ /tmp/docs-tests-backup/`
-- [ ] **T007** Move server tests (excluding docs): `git mv tests/ server/tests/`
-- [ ] **T008** Restore docs tests to original location: `mkdir -p tests/docs && mv /tmp/docs-tests-backup/docs/* tests/docs/ && rm -rf /tmp/docs-tests-backup`
-- [ ] **T009** Move wrangler config: `git mv wrangler.toml server/wrangler.toml`
-- [ ] **T010** Move server vitest config: `git mv vitest.config.ts server/vitest.config.ts`
-- [ ] **T011** Move PDS vitest config: `git mv vitest.pds.config.ts server/vitest.pds.config.ts`
-- [ ] **T012** Verify server structure: `ls -la server/src/ server/tests/ server/wrangler.toml`
+- [x] **T005** Move server source code: `git mv src/ server/src/`
+- [x] **T006** Create temporary directory for docs tests: `mkdir -p /tmp/docs-tests-backup && cp -r tests/docs/ /tmp/docs-tests-backup/`
+- [x] **T007** Move server tests (excluding docs): `git mv tests/ server/tests/`
+- [x] **T008** Restore docs tests to original location: `mkdir -p tests/docs && mv /tmp/docs-tests-backup/docs/* tests/docs/ && rm -rf /tmp/docs-tests-backup`
+- [x] **T009** Move wrangler config: `git mv wrangler.toml server/wrangler.toml`
+- [x] **T010** Move server vitest config: `git mv vitest.config.ts server/vitest.config.ts`
+- [x] **T011** Move PDS vitest config: `git mv vitest.pds.config.ts server/vitest.pds.config.ts`
+- [x] **T012** Verify server structure: `ls -la server/src/ server/tests/ server/wrangler.toml`
 
 ---
 
 ## Phase 2: Move Client Code (Dashboard Only)
 
-- [ ] **T013** Move dashboard: `git mv dashboard/ client/dashboard/`
-- [ ] **T014** Verify client structure: `ls -la client/dashboard/`
-- [ ] **T015** Verify docs remains at root: `ls -la docs/`
+- [x] **T013** Move dashboard: `git mv dashboard/ client/dashboard/`
+- [x] **T014** Verify client structure: `ls -la client/dashboard/`
+- [x] **T015** Verify docs remains at root: `ls -la docs/`
 
 ---
 
 ## Phase 3: Create Server Configuration Files
 
-- [ ] **T016** Create `server/package.json` with server dependencies (Hono, @atproto/api, Zod, Vitest, Cloudflare packages)
-- [ ] **T017** Create `server/tsconfig.json` extending root config with server-specific paths
-- [ ] **T018** Update `server/wrangler.toml` entry point from `src/index.ts` to `./src/index.ts`
+- [x] **T016** Create `server/package.json` with server dependencies (Hono, @atproto/api, Zod, Vitest, Cloudflare packages)
+- [x] **T017** Create `server/tsconfig.json` extending root config with server-specific paths
+- [x] **T018** Update `server/wrangler.toml` entry point from `src/index.ts` to `./src/index.ts`
 
 ---
 
