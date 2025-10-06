@@ -81,22 +81,24 @@ specs/010-lexicon/
 
 ### Source Code (repository root)
 ```
-src/
-├── lexicons/                  # NEW: Lexicon JSON schemas (single source of truth)
-│   ├── net.atrarium.community.config.json
-│   ├── net.atrarium.community.membership.json
-│   └── net.atrarium.moderation.action.json
+lexicons/                          # NEW: Lexicon schemas (protocol definition, implementation-agnostic)
+├── net.atrarium.community.config.json
+├── net.atrarium.community.membership.json
+├── net.atrarium.moderation.action.json
+└── README.md                      # Lexicon schema documentation
+
+src/                               # Cloudflare Workers implementation (reference implementation)
 ├── schemas/
-│   ├── lexicon.ts             # UPDATED: Auto-generated TypeScript types from JSON
-│   └── validation.ts          # Existing Zod schemas
+│   ├── generated/                 # UPDATED: Auto-generated TypeScript types from lexicons/
+│   └── validation.ts              # Existing Zod schemas
 ├── routes/
-│   └── lexicon.ts             # NEW: Lexicon publication endpoints
-├── router.ts                  # UPDATED: Add lexicon routes
-└── index.ts                   # Existing entry point
+│   └── lexicon.ts                 # NEW: Lexicon publication endpoints (serves lexicons/)
+├── router.ts                      # UPDATED: Add lexicon routes
+└── index.ts                       # Existing entry point
 
 tests/
 ├── contract/
-│   └── lexicon/               # NEW: Contract tests for Lexicon endpoints
+│   └── lexicon/                   # NEW: Contract tests for Lexicon endpoints
 │       ├── lexicon-endpoint.test.ts
 │       └── lexicon-caching.test.ts
 ├── integration/
@@ -105,7 +107,11 @@ tests/
     └── lexicon-codegen.test.ts      # NEW: TypeScript codegen validation
 ```
 
-**Structure Decision**: Single project (default) - Extends existing Cloudflare Workers backend with new Lexicon publication routes. No frontend changes required.
+**Structure Decision**: Lexicon schemas separated from implementation in top-level `lexicons/` directory to emphasize:
+- Protocol definition is implementation-agnostic (reusable by Go, Rust, Python servers)
+- Clear boundary between "what" (Lexicon) and "how" (Cloudflare Workers)
+- Single source of truth for community data structures
+- Reference implementation in `src/` serves schemas from `lexicons/`
 
 ## Phase 0: Outline & Research
 

@@ -90,14 +90,21 @@ Client (Bluesky AppView fetches post content)
 
 **Implemented Structure**:
 ```
-src/                    # Cloudflare Workers backend (TypeScript)
+lexicons/              # AT Protocol Lexicon schemas (protocol definition, implementation-agnostic)
+├── net.atrarium.community.config.json
+├── net.atrarium.community.membership.json
+├── net.atrarium.moderation.action.json
+└── README.md          # Lexicon schema documentation
+
+src/                   # Cloudflare Workers backend (reference implementation)
 ├── index.ts           # Main entry point, Hono router, Durable Objects + Queue bindings
 ├── routes/            # API route handlers
 │   ├── feed-generator.ts  # AT Protocol Feed Generator API (proxies to CommunityFeedGenerator DO)
 │   ├── auth.ts            # Authentication endpoints
 │   ├── communities.ts     # Community management (writes to PDS, creates Durable Object)
 │   ├── memberships.ts     # Membership management (writes to PDS)
-│   └── moderation.ts      # Moderation API (writes to PDS) - 003-id
+│   ├── moderation.ts      # Moderation API (writes to PDS) - 003-id
+│   └── lexicon.ts         # NEW (010-lexicon): Lexicon publication endpoints (serves lexicons/)
 ├── durable-objects/   # Durable Objects (006-pds-1-db)
 │   ├── community-feed-generator.ts  # Per-community feed index (Storage: config:, member:, post:, moderation:)
 │   └── firehose-receiver.ts         # Firehose WebSocket → Queue (lightweight filter)
@@ -107,6 +114,7 @@ src/                    # Cloudflare Workers backend (TypeScript)
 │   ├── atproto.ts         # AT Protocol client (PDS read/write methods) - 006-pds-1-db
 │   └── auth.ts            # JWT authentication
 ├── schemas/           # Validation schemas
+│   ├── generated/         # NEW (010-lexicon): Auto-generated TypeScript from lexicons/
 │   ├── validation.ts      # Zod schemas
 │   └── lexicon.ts         # AT Protocol Lexicon validation (TypeScript types + Zod) - 006-pds-1-db
 ├── utils/             # Utilities

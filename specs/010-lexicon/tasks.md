@@ -24,16 +24,18 @@ Phase 4: Validation → ⏳ PENDING
 ## Phase 3.1: Setup & Dependencies
 
 ### T001: Create Lexicon directory structure
-**Files**: `src/lexicons/` (new directory)
-**Description**: Create `src/lexicons/` directory to store Lexicon JSON schemas.
+**Files**: `lexicons/` (new directory at repository root)
+**Description**: Create top-level `lexicons/` directory to store Lexicon JSON schemas (protocol definition, separate from implementation).
 ```bash
-mkdir -p /workspaces/atrarium/src/lexicons
+mkdir -p /workspaces/atrarium/lexicons
 ```
 
+**Rationale**: Lexicon schemas are implementation-agnostic protocol definitions, separated from `src/` (Cloudflare Workers reference implementation).
+
 ### T002: Copy Lexicon JSON schemas from specs
-**Files**: `src/lexicons/*.json` (3 files)
+**Files**: `lexicons/*.json` (3 files)
 **Dependencies**: T001
-**Description**: Copy 3 Lexicon JSON schemas from `specs/006-pds-1-db/contracts/lexicon/` to `src/lexicons/`:
+**Description**: Copy 3 Lexicon JSON schemas from `specs/006-pds-1-db/contracts/lexicon/` to `lexicons/`:
 - `net.atrarium.community.config.json`
 - `net.atrarium.community.membership.json`
 - `net.atrarium.moderation.action.json`
@@ -55,9 +57,11 @@ Pin version to avoid breaking changes (e.g., `^0.9.1`).
 **Description**: Add npm script for TypeScript code generation:
 ```json
 "scripts": {
-  "codegen": "lex-cli gen-api src/schemas/generated/ src/lexicons/*.json"
+  "codegen": "lex-cli gen-api src/schemas/generated/ lexicons/*.json"
 }
 ```
+
+Note: Input path changed from `src/lexicons/` to `lexicons/` (top-level directory).
 
 ---
 
@@ -144,7 +148,7 @@ Expected: Test PASSES (generated files exist and compile).
 **Description**: Create Hono route handler for Lexicon endpoints:
 
 **Functionality**:
-- Import 3 Lexicon JSON schemas from `src/lexicons/`
+- Import 3 Lexicon JSON schemas from `lexicons/` (top-level directory)
 - Implement `GET /xrpc/net.atrarium.lexicon.get?nsid={nsid}`
 - Parse `nsid` query parameter
 - Return matching schema or 404 if not found
@@ -215,11 +219,12 @@ Expected: Integration test PASSES (end-to-end Lexicon publication works).
 **Dependencies**: None (already updated in Phase 1)
 **Description**: Verify CLAUDE.md includes:
 - Lexicon publication endpoints (`/xrpc/net.atrarium.lexicon.get`)
-- `src/lexicons/` directory as single source of truth
+- `lexicons/` directory (top-level) as single source of truth
+- Protocol-first design philosophy (Lexicon schemas = core value)
 - ETag caching strategy (beta: 1 hour, stable: 24 hours)
 - TypeScript codegen workflow (`npm run codegen`)
 
-Already updated via `.specify/scripts/bash/update-agent-context.sh` - verify changes committed.
+Already updated - verify changes committed.
 
 ### T017: [P] Add Lexicon codegen to CI/CD workflow
 **Files**: `.github/workflows/*.yml` (if exists) or document in README
@@ -231,7 +236,7 @@ Already updated via `.specify/scripts/bash/update-agent-context.sh` - verify cha
 If no CI workflow exists, document manual verification in README:
 ```markdown
 ## Development Workflow
-1. Edit Lexicon JSON schemas in `src/lexicons/`
+1. Edit Lexicon JSON schemas in `lexicons/` (top-level directory)
 2. Run `npm run codegen` to regenerate TypeScript types
 3. Commit generated files to Git
 ```
