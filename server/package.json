@@ -23,7 +23,7 @@
     "@orpc/zod": "^1.9.3",
     "hono": "^4.6.14",
     "jose": "^5.9.6",
-    "zod": "^3.23.8"
+    "zod": "^4.1.11"
   },
   "devDependencies": {
     "@atproto/lex-cli": "^0.9.5",

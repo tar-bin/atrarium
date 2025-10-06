@@ -113,7 +113,7 @@ export async function validateRequest<T>(
     return { success: true, data: validated };
   } catch (err) {
     if (err instanceof z.ZodError) {
-      const messages = err.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ');
+      const messages = err.issues.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ');
       return { success: false, error: messages };
     }
     return { success: false, error: 'Validation failed' };
