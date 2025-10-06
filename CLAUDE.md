@@ -6,6 +6,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Atrarium is a community management system built on AT Protocol (Bluesky), designed for small & open communities (10-200 people). It replaces expensive Mastodon/Misskey servers with a serverless architecture on Cloudflare Workers, reducing costs by 95% ($30-150/month → $0.40-5/month) and operational time by 80% (5 hours/week → 1 hour/week).
 
+### Design Philosophy (Core Principles)
+
+**The true value of Atrarium lies in AT Protocol Lexicon schemas (`net.atrarium.*`), NOT in the implementation.**
+
+1. **Protocol-First Architecture**:
+   - Community semantics are defined in AT Protocol Lexicon schemas
+   - Lexicon schemas are the API contract and single source of truth
+   - Current client/server implementations are reference implementations
+
+2. **Implementation Agnostic**:
+   - Cloudflare Workers stack is replaceable with any AT Protocol-compatible server
+   - React dashboard is replaceable with any client (official Bluesky apps work)
+   - No vendor lock-in by design
+
+3. **Economic Rationality, Not Architectural Necessity**:
+   - Cloudflare chosen for 95% cost reduction vs traditional VPS
+   - Infrastructure choice driven by economics, not technical limitations
+   - Can migrate to alternative platforms if economics change
+
+4. **Interoperability First**:
+   - All data stored in user PDSs using standard AT Protocol records
+   - DIDs enable portability across services
+   - Community membership is attestable independently of Atrarium infrastructure
+
 **Positioning**: Atrarium is positioned as an alternative to:
 - **Fediverse (Mastodon/Misskey)**: Open communities like Fediverse, but without the high operational burden (no VPS management, no database bottlenecks, DID portable identity)
 - **Discord**: Low operational burden like Discord, but with open/public communities instead of closed servers (no platform lock-in, decentralized identity)

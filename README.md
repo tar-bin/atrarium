@@ -35,13 +35,22 @@ Atrarium enables small & open communities (10-200 people) to operate sustainably
 
 ## Architecture
 
+**Core Value**: AT Protocol Lexicon schemas define community data structures. All implementations (client/server) are reference implementations and fully replaceable.
+
 PDS-First architecture: All community data stored in user Personal Data Servers, indexed in Durable Objects for 7-day feeds.
 
 ```
 PDS (Source of Truth) → Firehose → Queue → CommunityFeedGenerator (DO) → Feed API
 ```
 
-**Tech Stack**: Cloudflare Workers, Durable Objects, AT Protocol, React 19, TanStack Router/Query, shadcn/ui
+**Tech Stack**: Cloudflare Workers (chosen for economic efficiency, not lock-in), Durable Objects, AT Protocol, React 19, TanStack Router/Query, shadcn/ui
+
+### Design Philosophy
+
+1. **Protocol-First**: Community semantics defined in AT Protocol Lexicon (`net.atrarium.*` schemas)
+2. **Implementation Agnostic**: Current Cloudflare Workers stack is a reference implementation - can be replaced with any AT Protocol-compatible server
+3. **No Vendor Lock-In**: Lexicon schemas are the API contract; infrastructure is interchangeable
+4. **Economic Rationality**: Cloudflare chosen for 95% cost reduction, not architectural necessity
 
 See [Architecture Docs](https://docs.atrarium.net/architecture/) for details.
 
