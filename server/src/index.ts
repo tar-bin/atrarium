@@ -6,7 +6,7 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { RPCHandler } from '@orpc/server/fetch';
 import type { Env, HonoVariables } from './types';
-import type { Context } from './router';
+import type { Context } from '@atrarium/contracts/router';
 
 // Import oRPC router
 import { router } from './router';

@@ -1,0 +1,23 @@
+{
+  "name": "@atrarium/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./router": "./src/router.ts",
+    "./schemas": "./src/schemas.ts",
+    "./types": "./src/types.ts"
+  },
+  "dependencies": {
+    "@orpc/server": "^1.9.3",
+    "@orpc/zod": "^1.9.3",
+    "zod": "^4.1.11"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3"
+  }
+}

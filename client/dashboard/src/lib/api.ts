@@ -3,10 +3,11 @@ import { createORPCClient } from '@orpc/client';
 
 const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
 
-// Create type-safe oRPC client using fetch
-// oRPC v1.9.3 uses a simpler API without explicit links
-// Note: Type annotation removed due to oRPC v1.9.3 client type complexity
-// The client proxy will provide runtime type safety through the Router definition
+// Create type-safe oRPC client
+// Note: Type annotation requires the server-side router type (with .handler()),
+// not the contract type (without .handler()). The contract type doesn't satisfy
+// NestedClient<any> constraint. Runtime type safety is still enforced by oRPC.
+// TODO: Explore oRPC client type generation to get full compile-time safety
 export const apiClient = createORPCClient({
   fetch: async (url: string, init?: RequestInit) => {
     // Get JWT token from localStorage
@@ -24,6 +25,6 @@ export const apiClient = createORPCClient({
       headers,
     });
   },
-} as any); // Type assertion needed for oRPC client proxy
+} as any);
 
 export default apiClient;

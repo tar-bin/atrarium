@@ -16,6 +16,7 @@
     "test:e2e:debug": "playwright test --debug"
   },
   "dependencies": {
+    "@atrarium/contracts": "workspace:*",
     "@atproto/api": "^0.17.0",
     "@hookform/resolvers": "^5.2.2",
     "@orpc/client": "^1.9.3",

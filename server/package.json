@@ -15,6 +15,7 @@
     "codegen": "npx @atproto/lex-cli gen-api src/schemas/generated/ ../../lexicons/*.json"
   },
   "dependencies": {
+    "@atrarium/contracts": "workspace:*",
     "@atproto/api": "^0.13.35",
     "@atproto/identity": "^0.4.3",
     "@atproto/xrpc-server": "^0.7.4",

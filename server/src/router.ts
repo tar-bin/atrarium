@@ -1,68 +1,31 @@
-// Atrarium oRPC Router
-// Type-safe API router with automatic OpenAPI generation
+// Atrarium oRPC Router Implementation
+// Server-side handlers for the API contract
 
-import { os, ORPCError } from '@orpc/server';
-import { z } from 'zod';
+import { ORPCError } from '@orpc/server';
+import { contract, type Context } from '@atrarium/contracts/router';
 import type { Env } from './types';
-import { CreateCommunitySchema } from './schemas/validation';
 
 // ============================================================================
-// Context Definition
+// Server Context Type
 // ============================================================================
 
-export interface Context {
+export type ServerContext = Context & {
   env: Env;
-  userDid?: string;
-}
-
-// Base procedure with context
-const pub = os.$context<Context>();
-
-// Authenticated procedures
-const authed = pub.use(({ context, next }) => {
-  if (!context.userDid) {
-    throw new ORPCError('UNAUTHORIZED', { message: 'Missing or invalid authentication' });
-  }
-  return next({ context });
-});
+};
 
 // ============================================================================
-// Communities Router
+// Communities Router Implementation
 // ============================================================================
 
-const CommunityOutputSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string().nullable(),
-  stage: z.enum(['theme', 'community', 'graduated']),
-  memberCount: z.number(),
-  postCount: z.number(),
-  createdAt: z.number(),
-});
-
-const communitiesRouter = {
-  list: authed
-    .route({
-      method: 'GET',
-      path: '/api/communities',
-    })
-    .output(z.object({
-      data: z.array(CommunityOutputSchema),
-    }))
-    .handler(async () => {
+export const router = {
+  communities: {
+    list: contract.communities.list.handler(async () => {
       // TODO: Implement PDS-based community listing
       return { data: [] };
     }),
 
-  create: authed
-    .route({
-      method: 'POST',
-      path: '/api/communities',
-    })
-    .input(CreateCommunitySchema)
-    .output(CommunityOutputSchema)
-    .handler(async ({ input, context }) => {
-      const { env, userDid } = context;
+    create: contract.communities.create.handler(async ({ input, context }) => {
+      const { env, userDid } = context as ServerContext;
 
       // Generate unique hashtag for the community
       const hashtag = `#atr_${Math.random().toString(16).substring(2, 10)}`;
@@ -127,27 +90,13 @@ const communitiesRouter = {
       };
     }),
 
-  get: authed
-    .route({
-      method: 'GET',
-      path: '/api/communities/:id',
-    })
-    .input(z.object({ id: z.string() }))
-    .output(CommunityOutputSchema)
-    .handler(async () => {
+    get: contract.communities.get.handler(async () => {
       // TODO: Implement PDS-based community retrieval
       throw new ORPCError('NOT_IMPLEMENTED', {
         message: 'PDS-based retrieval not yet implemented',
       });
     }),
-};
-
-// ============================================================================
-// Root Router
-// ============================================================================
-
-export const router = {
-  communities: communitiesRouter,
+  },
 };
 
 export type Router = typeof router;
