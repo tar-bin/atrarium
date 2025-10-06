@@ -6,6 +6,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Atrarium is a community management system built on AT Protocol (Bluesky), designed for small & open communities (10-200 people). It replaces expensive Mastodon/Misskey servers with a serverless architecture on Cloudflare Workers, reducing costs by 95% ($30-150/month → $0.40-5/month) and operational time by 80% (5 hours/week → 1 hour/week).
 
+### Project Constitution
+
+**All features MUST comply with the [Project Constitution](.specify/memory/constitution.md) v1.0.0.**
+
+Six core principles govern all technical decisions:
+1. **Protocol-First Architecture**: Lexicon schemas are API contract, implementations are replaceable
+2. **Simplicity and Minimal Complexity**: No new projects/databases/services without necessity
+3. **Economic Efficiency**: <$5/month for communities with <200 members
+4. **Decentralized Identity and Data Ownership**: PDS stores all user data
+5. **PDS-First Architecture**: PDS as source of truth, Durable Objects as 7-day cache
+6. **Operational Burden Reduction**: <1 hour/week maintenance
+
+See [constitution.md](.specify/memory/constitution.md) for detailed rules and rationale.
+
 ### Design Philosophy (Core Principles)
 
 **The true value of Atrarium lies in AT Protocol Lexicon schemas (`net.atrarium.*`), NOT in the implementation.**
@@ -282,10 +296,15 @@ wrangler queues create firehose-dlq  # Dead letter queue
 ```bash
 npm run dev          # Run Workers locally with Miniflare
 npm run typecheck    # TypeScript type checking (no emit)
-npm run codegen      # Generate TypeScript types from Lexicon schemas (010-lexicon)
 npm test             # Run all tests with Vitest
 npm run test:watch   # Run tests in watch mode
 npm run test:docs    # Run VitePress documentation tests
+
+# Lexicon TypeScript Code Generation (010-lexicon)
+npm run codegen      # Generate TypeScript types from lexicons/*.json
+                     # Output: src/schemas/generated/ (excluded from tsconfig.json)
+                     # Uses: @atproto/lex-cli gen-api
+                     # Note: Generated code has dependency issues, use JSON imports instead
 
 # Documentation site
 cd docs
@@ -514,6 +533,36 @@ JWT-based authentication with DID verification ([src/services/auth.ts](src/servi
 
 ## Development Notes
 
+### .specify Workflow (Feature Development)
+
+This project uses `.specify/` slash commands for feature development workflow:
+
+```bash
+# Feature development workflow commands (in Claude Code)
+/specify      # Create spec.md from feature description
+/plan         # Generate plan.md with implementation design
+/tasks        # Generate tasks.md with dependency-ordered tasks
+/implement    # Execute tasks.md automatically
+/analyze      # Cross-artifact consistency check
+/clarify      # Ask clarification questions for underspecified areas
+/constitution # Update project constitution (requires principle inputs)
+```
+
+**Key files**:
+- `.specify/templates/spec-template.md` - Feature specification template
+- `.specify/templates/plan-template.md` - Implementation plan template (includes Constitution Check)
+- `.specify/templates/tasks-template.md` - Task generation template
+- `.specify/memory/constitution.md` - Project constitution v1.0.0 (6 principles)
+
+**Workflow**:
+1. `/specify` with feature description → generates `specs/{feature-id}/spec.md`
+2. `/plan` → generates `specs/{feature-id}/plan.md` (validates against constitution)
+3. `/tasks` → generates `specs/{feature-id}/tasks.md` (dependency-ordered)
+4. `/implement` → executes tasks autonomously
+5. `/analyze` → validates consistency across spec.md, plan.md, tasks.md
+
+All outputs include Constitution Check section validating compliance with 6 principles.
+
 ### Critical Implementation Details (006-pds-1-db)
 - **Jetstream WebSocket URL**: `wss://jetstream2.us-east.bsky.network/subscribe` (Firehose alternative)
 - **Timestamps**: Use ISO 8601 strings for AT Protocol compatibility
@@ -527,6 +576,7 @@ JWT-based authentication with DID verification ([src/services/auth.ts](src/servi
 - **Membership Validation**: Posts must be from community members (verified in Durable Object Storage) - **006-pds-1-db**
 - **PDS as Source of Truth**: All writes go to PDS first, then indexed via Firehose - **006-pds-1-db**
 - **Lexicon Collections**: `net.atrarium.community.config`, `net.atrarium.community.membership`, `net.atrarium.moderation.action` - **006-pds-1-db**
+- **Lexicon Publication** (010-lexicon): Schemas published at `/xrpc/net.atrarium.lexicon.get?nsid={nsid}` with ETag caching (SHA-256, 1-hour beta period)
 
 ### Testing Strategy
 Tests use `@cloudflare/vitest-pool-workers` to simulate Cloudflare Workers environment:
