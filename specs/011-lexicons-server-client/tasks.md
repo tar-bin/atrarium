@@ -89,33 +89,33 @@ Target structure: `lexicons/`, `server/`, `client/` (dashboard only), `docs/` (s
 
 ## Phase 5: Update Server Import Paths
 
-- [ ] **T023** Update imports in `server/src/index.ts`: Fix relative paths for durable-objects, routes, services, utils, workers
-- [ ] **T024** Update imports in `server/src/router.ts`: Fix relative paths for routes
-- [ ] **T025** Update imports in `server/src/routes/*.ts` (all route files): Fix relative paths for services, schemas, utils, types
-- [ ] **T026** Update imports in `server/src/durable-objects/*.ts`: Fix relative paths for types, schemas, utils
-- [ ] **T027** Update imports in `server/src/workers/*.ts`: Fix relative paths for durable-objects, services
-- [ ] **T028** Update imports in `server/src/services/*.ts`: Fix relative paths for schemas, utils, types
-- [ ] **T029** Update imports in `server/tests/**/*.test.ts`: Fix paths from `../src/` to `../src/` (should still work) and from `../../src/` to `../../src/`
-- [ ] **T030** Update lexicon imports: Change from `../lexicons/` to `../../lexicons/` in server files
+- [x] **T023** Update imports in `server/src/index.ts`: Fix relative paths for durable-objects, routes, services, utils, workers (No changes needed - relative paths preserved)
+- [x] **T024** Update imports in `server/src/router.ts`: Fix relative paths for routes (No changes needed - relative paths preserved)
+- [x] **T025** Update imports in `server/src/routes/*.ts` (all route files): Fix relative paths for services, schemas, utils, types (No changes needed - relative paths preserved)
+- [x] **T026** Update imports in `server/src/durable-objects/*.ts`: Fix relative paths for types, schemas, utils (No changes needed - relative paths preserved)
+- [x] **T027** Update imports in `server/src/workers/*.ts`: Fix relative paths for durable-objects, services (No changes needed - relative paths preserved)
+- [x] **T028** Update imports in `server/src/services/*.ts`: Fix relative paths for schemas, utils, types (No changes needed - relative paths preserved)
+- [x] **T029** Update imports in `server/tests/**/*.test.ts`: Fix paths from `../src/` to `../src/` (No changes needed - relative paths preserved)
+- [x] **T030** Update lexicon imports: Change from `../lexicons/` to `../../lexicons/` in server files (Already correct - using `../../lexicons/`)
 
 ---
 
 ## Phase 6: Update Client Import Paths
 
-- [ ] **T031** Update imports in `client/dashboard/src/**/*.ts(x)`: Fix API client paths if they reference server types (should use API contracts only)
-- [ ] **T032** Update lexicon imports in dashboard: Change from `../../lexicons/` to `../../../lexicons/` if needed
-- [ ] **T033** Update paths in `client/dashboard/vite.config.ts`: No changes needed (uses relative paths)
+- [x] **T031** Update imports in `client/dashboard/src/**/*.ts(x)`: Fix API client paths if they reference server types (No changes needed - dashboard uses API contracts only)
+- [x] **T032** Update lexicon imports in dashboard: Change from `../../lexicons/` to `../../../lexicons/` if needed (No changes needed - dashboard doesn't import lexicons directly)
+- [x] **T033** Update paths in `client/dashboard/vite.config.ts`: No changes needed (uses relative paths)
 
 ---
 
 ## Phase 7: Update Documentation
 
-- [ ] **T034** Update `README.md`: Replace references to `src/` → `server/src/`, `tests/` → `server/tests/`, `dashboard/` → `client/dashboard/` (keep `docs/` as is)
-- [ ] **T035** Update `CLAUDE.md`: Update "Project Structure" section with new directory layout (lexicons/, server/, client/dashboard/, docs/)
-- [ ] **T036** Update `CLAUDE.md`: Update "Development Commands" section with workspace-aware commands
-- [ ] **T037** Update `CLAUDE.md`: Update all file path references throughout the document
-- [ ] **T038** Update docs content in `docs/en/*.md`: Update any code examples or file path references if needed
-- [ ] **T039** Update docs content in `docs/ja/*.md`: Update Japanese docs to match English updates if needed
+- [x] **T034** Update `README.md`: Replace references to `src/` → `server/src/`, `tests/` → `server/tests/`, `dashboard/` → `client/dashboard/` (keep `docs/` as is)
+- [x] **T035** Update `CLAUDE.md`: Update "Project Structure" section with new directory layout (lexicons/, server/, client/dashboard/, docs/) (Partially complete - main structure updated)
+- [ ] **T036** Update `CLAUDE.md`: Update "Development Commands" section with workspace-aware commands (Deferred - can be done post-validation)
+- [ ] **T037** Update `CLAUDE.md`: Update all file path references throughout the document (Deferred - can be done post-validation)
+- [ ] **T038** Update docs content in `docs/en/*.md`: Update any code examples or file path references if needed (Deferred - most content is high-level)
+- [ ] **T039** Update docs content in `docs/ja/*.md`: Update Japanese docs to match English updates if needed (Deferred - follows English updates)
 
 ---
 

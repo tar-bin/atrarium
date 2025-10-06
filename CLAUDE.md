@@ -110,7 +110,8 @@ lexicons/              # AT Protocol Lexicon schemas (protocol definition, imple
 ├── net.atrarium.moderation.action.json
 └── README.md          # Lexicon schema documentation
 
-src/                   # Cloudflare Workers backend (reference implementation)
+server/                # Cloudflare Workers backend (reference implementation)
+├── src/               # Server source code
 ├── index.ts           # Main entry point, Hono router, Durable Objects + Queue bindings
 ├── routes/            # API route handlers
 │   ├── feed-generator.ts  # AT Protocol Feed Generator API (proxies to CommunityFeedGenerator DO)

@@ -59,11 +59,17 @@ See [Architecture Docs](https://docs.atrarium.net/architecture/) for details.
 ```bash
 git clone https://github.com/tar-bin/atrarium.git
 cd atrarium
-npm install
-npm run codegen      # Generate TypeScript types from Lexicon schemas
-npm run dev          # Start Workers locally
-npm test             # Run tests
+npm install          # Install all workspace dependencies (server, client, docs)
+npm run dev          # Start server (Cloudflare Workers)
+npm test             # Run all workspace tests
+npm run build        # Build all workspaces
 ```
+
+**Workspace structure**:
+- `server/` - Cloudflare Workers backend
+- `client/dashboard/` - React web dashboard
+- `docs/` - VitePress documentation site
+- `lexicons/` - AT Protocol Lexicon schemas
 
 📖 [Full Getting Started Guide](https://docs.atrarium.net/guide/getting-started.html)
 
