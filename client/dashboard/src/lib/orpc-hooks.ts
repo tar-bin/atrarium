@@ -1,14 +1,31 @@
 // oRPC React Query hooks for type-safe API calls
-// TODO: Update to oRPC v1.9.3 API
-// import { createORPCReact } from '@orpc/react';
-// import { apiClient } from './api';
+// oRPC v1.9.3 uses @tanstack/react-query directly
+import { useQuery as useTanstackQuery, useMutation as useTanstackMutation } from '@tanstack/react-query';
+import { apiClient } from './api';
 
-// Create type-safe React hooks
-// export const { useQuery, useMutation, useSuspenseQuery } = createORPCReact({
-//   client: apiClient,
-// });
+// Helper to create type-safe query hooks
+export function useQuery<T>(
+  queryKey: string[],
+  queryFn: () => Promise<T>,
+  options?: Parameters<typeof useTanstackQuery<T>>[0]
+) {
+  return useTanstackQuery<T>({
+    queryKey,
+    queryFn,
+    ...options,
+  });
+}
 
-// Placeholder exports until oRPC integration is updated
-export const useQuery = {} as any;
-export const useMutation = {} as any;
-export const useSuspenseQuery = {} as any;
+// Helper to create type-safe mutation hooks
+export function useMutation<TData, TVariables>(
+  mutationFn: (variables: TVariables) => Promise<TData>,
+  options?: Parameters<typeof useTanstackMutation<TData, Error, TVariables>>[0]
+) {
+  return useTanstackMutation<TData, Error, TVariables>({
+    mutationFn,
+    ...options,
+  });
+}
+
+// Export apiClient for direct usage
+export { apiClient };
