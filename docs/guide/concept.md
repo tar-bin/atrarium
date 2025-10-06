@@ -81,18 +81,35 @@ This architecture enables **zero migration cost** (users bring their DID) and **
 
 ### Data Flow Architecture
 
-```mermaid
-graph LR
-    A[PDS<br/>Personal Data Server] -->|Jetstream Firehose| B[Cloudflare Queue<br/>Event Processing]
-    B -->|Batched Events<br/>100 msg/batch| C[Durable Objects<br/>CommunityFeedGenerator]
-    C -->|Feed Index<br/>7-day retention| D[Feed Generator API<br/>getFeedSkeleton]
-    D -->|Post URIs| E[Bluesky Official AppView<br/>Fetch Full Content]
-
-    style A fill:#e1f5fe
-    style B fill:#f3e5f5
-    style C fill:#e8f5e9
-    style D fill:#fff3e0
-    style E fill:#fce4ec
+```
+┌─────────────────────────────────────────┐
+│  PDS (Personal Data Server)             │
+│  - Posts, profiles, membership records  │
+└──────────────┬──────────────────────────┘
+               │
+               ↓ Jetstream Firehose (WebSocket)
+┌──────────────────────────────────────────┐
+│  FirehoseReceiver (Durable Object)       │
+│  - Lightweight filter: includes('#atrarium_') │
+└──────────────┬───────────────────────────┘
+               │
+               ↓ Cloudflare Queue (batched: 100 msg/batch)
+┌──────────────────────────────────────────┐
+│  FirehoseProcessor (Queue Consumer)      │
+│  - Heavyweight filter: regex             │
+└──────────────┬───────────────────────────┘
+               │
+               ↓ RPC call
+┌──────────────────────────────────────────┐
+│  CommunityFeedGenerator (Durable Object) │
+│  - Feed Index (7-day retention)          │
+└──────────────┬───────────────────────────┘
+               │
+               ↓ Feed Generator API (getFeedSkeleton)
+┌──────────────────────────────────────────┐
+│  Bluesky Official AppView                │
+│  - Fetch full post content               │
+└──────────────────────────────────────────┘
 ```
 
 ### Component Descriptions

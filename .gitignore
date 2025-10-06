@@ -141,6 +141,7 @@ vite.config.ts.timestamp-*
 # AI Agents & Code Assistants
 .claude/*
 !.claude/commands/
+!.claude/TRANSLATION_GUIDE.md
 .github/copilot/
 .cursor/
 .windsurf/
