@@ -6,6 +6,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Atrarium is a community management system built on AT Protocol (Bluesky), designed for small & open communities (10-200 people). It replaces expensive Mastodon/Misskey servers with a serverless architecture on Cloudflare Workers, reducing costs by 95% ($30-150/month → $0.40-5/month) and operational time by 80% (5 hours/week → 1 hour/week).
 
+### Design Philosophy (Core Principles)
+
+**The true value of Atrarium lies in AT Protocol Lexicon schemas (`net.atrarium.*`), NOT in the implementation.**
+
+1. **Protocol-First Architecture**:
+   - Community semantics are defined in AT Protocol Lexicon schemas
+   - Lexicon schemas are the API contract and single source of truth
+   - Current client/server implementations are reference implementations
+
+2. **Implementation Agnostic**:
+   - Cloudflare Workers stack is replaceable with any AT Protocol-compatible server
+   - React dashboard is replaceable with any client (official Bluesky apps work)
+   - No vendor lock-in by design
+
+3. **Economic Rationality, Not Architectural Necessity**:
+   - Cloudflare chosen for 95% cost reduction vs traditional VPS
+   - Infrastructure choice driven by economics, not technical limitations
+   - Can migrate to alternative platforms if economics change
+
+4. **Interoperability First**:
+   - All data stored in user PDSs using standard AT Protocol records
+   - DIDs enable portability across services
+   - Community membership is attestable independently of Atrarium infrastructure
+
 **Positioning**: Atrarium is positioned as an alternative to:
 - **Fediverse (Mastodon/Misskey)**: Open communities like Fediverse, but without the high operational burden (no VPS management, no database bottlenecks, DID portable identity)
 - **Discord**: Low operational burden like Discord, but with open/public communities instead of closed servers (no platform lock-in, decentralized identity)
@@ -66,14 +90,21 @@ Client (Bluesky AppView fetches post content)
 
 **Implemented Structure**:
 ```
-src/                    # Cloudflare Workers backend (TypeScript)
+lexicons/              # AT Protocol Lexicon schemas (protocol definition, implementation-agnostic)
+├── net.atrarium.community.config.json
+├── net.atrarium.community.membership.json
+├── net.atrarium.moderation.action.json
+└── README.md          # Lexicon schema documentation
+
+src/                   # Cloudflare Workers backend (reference implementation)
 ├── index.ts           # Main entry point, Hono router, Durable Objects + Queue bindings
 ├── routes/            # API route handlers
 │   ├── feed-generator.ts  # AT Protocol Feed Generator API (proxies to CommunityFeedGenerator DO)
 │   ├── auth.ts            # Authentication endpoints
 │   ├── communities.ts     # Community management (writes to PDS, creates Durable Object)
 │   ├── memberships.ts     # Membership management (writes to PDS)
-│   └── moderation.ts      # Moderation API (writes to PDS) - 003-id
+│   ├── moderation.ts      # Moderation API (writes to PDS) - 003-id
+│   └── lexicon.ts         # NEW (010-lexicon): Lexicon publication endpoints (serves lexicons/)
 ├── durable-objects/   # Durable Objects (006-pds-1-db)
 │   ├── community-feed-generator.ts  # Per-community feed index (Storage: config:, member:, post:, moderation:)
 │   └── firehose-receiver.ts         # Firehose WebSocket → Queue (lightweight filter)
@@ -83,6 +114,7 @@ src/                    # Cloudflare Workers backend (TypeScript)
 │   ├── atproto.ts         # AT Protocol client (PDS read/write methods) - 006-pds-1-db
 │   └── auth.ts            # JWT authentication
 ├── schemas/           # Validation schemas
+│   ├── generated/         # NEW (010-lexicon): Auto-generated TypeScript from lexicons/
 │   ├── validation.ts      # Zod schemas
 │   └── lexicon.ts         # AT Protocol Lexicon validation (TypeScript types + Zod) - 006-pds-1-db
 ├── utils/             # Utilities
@@ -250,6 +282,7 @@ wrangler queues create firehose-dlq  # Dead letter queue
 ```bash
 npm run dev          # Run Workers locally with Miniflare
 npm run typecheck    # TypeScript type checking (no emit)
+npm run codegen      # Generate TypeScript types from Lexicon schemas (010-lexicon)
 npm test             # Run all tests with Vitest
 npm run test:watch   # Run tests in watch mode
 npm run test:docs    # Run VitePress documentation tests
@@ -369,6 +402,12 @@ wrangler tail --format pretty
 
 The client fetches actual post content from Bluesky's AppView using these URIs.
 
+**`GET /xrpc/net.atrarium.lexicon.get`**: Returns AT Protocol Lexicon schemas (010-lexicon)
+- Params: `nsid` (Lexicon NSID, e.g., `net.atrarium.community.config`)
+- Returns: Lexicon JSON schema
+- Headers: `ETag` (SHA-256 content hash), `Cache-Control: public, max-age=3600` (beta period)
+- Supports conditional requests (If-None-Match → 304 Not Modified)
+
 ### Data Flow (PDS-First Architecture - 006-pds-1-db)
 
 **Post Ingestion**:
@@ -408,6 +447,7 @@ The client fetches actual post content from Bluesky's AppView using these URIs.
 - [x] **React dashboard** (Phase 0-1: full web UI with PDS integration)
 - [x] **Local PDS integration** (DevContainer with Bluesky PDS for testing)
 - [x] **Domain migration** (atrarium.net acquired, all references updated)
+- [x] **Lexicon publication API** (010-lexicon: HTTP endpoints with ETag caching, beta status documented)
 
 ### 🚧 In Progress / Pending
 - [ ] Production deployment (Cloudflare Workers + Durable Objects + Queues)
