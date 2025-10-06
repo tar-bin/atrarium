@@ -7,6 +7,12 @@ import { describe, it, expect } from 'vitest';
 const BASE_URL = 'http://localhost:8787'; // Cloudflare Workers dev server
 const LEXICON_ENDPOINT = '/xrpc/net.atrarium.lexicon.get';
 
+type LexiconSchema = {
+  lexicon: number;
+  id: string;
+  defs: Record<string, unknown>;
+};
+
 describe('Lexicon Endpoint Contract', () => {
   const schemas = [
     'net.atrarium.community.config',
@@ -30,7 +36,7 @@ describe('Lexicon Endpoint Contract', () => {
 
       it(`should return valid Lexicon schema for ${nsid}`, async () => {
         const response = await fetch(`${BASE_URL}${LEXICON_ENDPOINT}?nsid=${nsid}`);
-        const data = await response.json();
+        const data = await response.json() as LexiconSchema;
 
         // Validate AT Protocol Lexicon structure
         expect(data).toHaveProperty('lexicon', 1);
@@ -62,7 +68,7 @@ describe('Lexicon Endpoint Contract', () => {
 
       expect(response.status).toBe(404);
 
-      const data = await response.json();
+      const data = await response.json() as { error: string; message: string };
       expect(data).toHaveProperty('error');
       expect(data.error).toBe('InvalidRequest');
     });

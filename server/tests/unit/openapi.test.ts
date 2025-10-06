@@ -18,8 +18,8 @@ describe('OpenAPI Specification', () => {
 
     // Check servers
     expect(spec.servers).toHaveLength(2);
-    expect(spec.servers?.[0].url).toBe('https://atrarium.net');
-    expect(spec.servers?.[1].url).toBe('http://localhost:8787');
+    expect(spec.servers?.[0]?.url).toBe('https://atrarium.net');
+    expect(spec.servers?.[1]?.url).toBe('http://localhost:8787');
   });
 
   it('should include communities endpoints', async () => {
@@ -50,8 +50,11 @@ describe('OpenAPI Specification', () => {
     expect(createPath?.responses?.['200']).toBeDefined();
 
     // Check schema structure in response
-    const listSchema = listPath?.responses?.['200']?.content?.['application/json']?.schema;
-    expect(listSchema).toBeDefined();
-    expect(listSchema).toHaveProperty('type', 'object');
+    const listResponse = listPath?.responses?.['200'];
+    if (listResponse && 'content' in listResponse) {
+      const listSchema = listResponse.content?.['application/json']?.schema;
+      expect(listSchema).toBeDefined();
+      expect(listSchema).toHaveProperty('type', 'object');
+    }
   });
 });

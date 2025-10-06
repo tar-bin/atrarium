@@ -102,6 +102,13 @@ Client (Bluesky AppView fetches post content)
 
 ## Project Structure
 
+**Monorepo Organization** (pnpm workspaces):
+- Root: Workspace coordinator
+- `server/`: Backend implementation (Cloudflare Workers)
+- `client/dashboard/`: Web dashboard (React)
+- `docs/`: Documentation site (VitePress)
+- `lexicons/`: Protocol definitions (shared across implementations)
+
 **Implemented Structure**:
 ```
 lexicons/              # AT Protocol Lexicon schemas (protocol definition, implementation-agnostic)
@@ -110,9 +117,9 @@ lexicons/              # AT Protocol Lexicon schemas (protocol definition, imple
 ├── net.atrarium.moderation.action.json
 └── README.md          # Lexicon schema documentation
 
-server/                # Cloudflare Workers backend (reference implementation)
-├── src/               # Server source code
-├── index.ts           # Main entry point, Hono router, Durable Objects + Queue bindings
+server/                # Cloudflare Workers backend (pnpm workspace: @atrarium/server)
+├── src/
+├── ├── index.ts           # Main entry point, Hono router, Durable Objects + Queue bindings
 ├── routes/            # API route handlers
 │   ├── feed-generator.ts  # AT Protocol Feed Generator API (proxies to CommunityFeedGenerator DO)
 │   ├── auth.ts            # Authentication endpoints
@@ -135,75 +142,74 @@ server/                # Cloudflare Workers backend (reference implementation)
 ├── utils/             # Utilities
 │   ├── did.ts             # DID resolution
 │   └── hashtag.ts         # Feed hashtag generation - 003-id
-└── types.ts           # TypeScript type definitions
+├── └── types.ts           # TypeScript type definitions
+├── tests/             # Server test suite (Vitest + Cloudflare Workers)
+│   ├── contract/          # API contract tests
+│   │   ├── dashboard/         # Dashboard API tests
+│   │   │   ├── post-to-feed-with-hashtag.test.ts  # Hashtag posting - 003-id
+│   │   │   └── moderation.test.ts                 # Moderation API - 003-id
+│   │   ├── feed-generator/    # Feed Generator API tests
+│   │   │   └── get-feed-skeleton-with-hashtags.test.ts  # Hashtag filtering - 003-id
+│   │   ├── durable-object-storage.test.ts  # Durable Objects Storage operations - 006-pds-1-db
+│   │   └── queue-consumer.test.ts          # Queue consumer processing - 006-pds-1-db
+│   ├── integration/       # Integration tests
+│   │   ├── hashtag-indexing-flow.test.ts   # End-to-end hashtag flow - 003-id
+│   │   ├── moderation-flow.test.ts         # End-to-end moderation - 003-id
+│   │   ├── pds-posting.test.ts             # PDS integration test - 003-id
+│   │   ├── queue-to-feed-flow.test.ts      # Queue → CommunityFeedGenerator flow - 006-pds-1-db
+│   │   └── pds-to-feed-flow.test.ts        # Quickstart scenario (Alice-Bob) - 006-pds-1-db
+│   ├── unit/              # Unit tests
+│   │   ├── feed-hashtag-generator.test.ts  # Hashtag generation - 003-id
+│   │   └── membership-validation.test.ts   # Membership checks - 003-id
+│   └── helpers/           # Test utilities
+│       ├── setup.ts           # Test database setup
+│       └── test-env.ts        # Test environment config
+├── package.json       # Server dependencies (Hono, Zod v3, @atproto/api)
+├── wrangler.toml      # Cloudflare Workers configuration
+├── tsconfig.json      # TypeScript configuration
+└── vitest.*.config.ts # Vitest configurations (main, pds, docs)
 
-tests/                 # Test suite (Vitest + Cloudflare Workers)
-├── contract/          # API contract tests
-│   ├── dashboard/         # Dashboard API tests
-│   │   ├── post-to-feed-with-hashtag.test.ts  # Hashtag posting - 003-id
-│   │   └── moderation.test.ts                 # Moderation API - 003-id
-│   ├── feed-generator/    # Feed Generator API tests
-│   │   └── get-feed-skeleton-with-hashtags.test.ts  # Hashtag filtering - 003-id
-│   ├── durable-object-storage.test.ts  # Durable Objects Storage operations - 006-pds-1-db
-│   └── queue-consumer.test.ts          # Queue consumer processing - 006-pds-1-db
-├── integration/       # Integration tests
-│   ├── hashtag-indexing-flow.test.ts   # End-to-end hashtag flow - 003-id
-│   ├── moderation-flow.test.ts         # End-to-end moderation - 003-id
-│   ├── pds-posting.test.ts             # PDS integration test - 003-id
-│   ├── queue-to-feed-flow.test.ts      # Queue → CommunityFeedGenerator flow - 006-pds-1-db
-│   └── pds-to-feed-flow.test.ts        # Quickstart scenario (Alice-Bob) - 006-pds-1-db
-├── unit/              # Unit tests
-│   ├── feed-hashtag-generator.test.ts  # Hashtag generation - 003-id
-│   └── membership-validation.test.ts   # Membership checks - 003-id
-├── docs/              # VitePress documentation tests
-│   ├── navigation.test.ts  # Navigation structure validation
-│   ├── i18n.test.ts        # i18n parity check (en ↔ ja)
-│   ├── links.test.ts       # Link validation (no 404s)
-│   └── build.test.ts       # VitePress build validation
-└── helpers/           # Test utilities
-    ├── setup.ts           # Test database setup
-    └── test-env.ts        # Test environment config
+client/               # Frontend implementations
+└── dashboard/        # React web dashboard (pnpm workspace: dashboard)
+    ├── src/
+    │   ├── components/          # React components
+    │   │   ├── communities/        # Community management components
+    │   │   ├── feeds/              # Feed management components
+    │   │   ├── posts/              # Post creation & display components
+    │   │   ├── moderation/         # Moderation components
+    │   │   ├── pds/                # PDS login component
+    │   │   ├── layout/             # Layout components (Header, Sidebar, Layout)
+    │   │   └── ui/                 # shadcn/ui components (button, card, etc.)
+    │   ├── routes/              # TanStack Router file-based routes
+    │   │   ├── __root.tsx          # Root route with Layout
+    │   │   ├── index.tsx           # Home page
+    │   │   ├── communities/        # Community routes
+    │   │   └── moderation.tsx      # Moderation log page
+    │   ├── contexts/            # React Context providers
+    │   │   └── PDSContext.tsx      # PDS session management
+    │   ├── lib/                 # Utilities
+    │   │   ├── api.ts              # API client (TODO: update to oRPC v1.9.3)
+    │   │   ├── pds.ts              # PDS integration (@atproto/api)
+    │   │   ├── queryClient.ts      # TanStack Query client
+    │   │   └── utils.ts            # Tailwind utilities
+    │   ├── i18n/                # i18next translations
+    │   │   ├── index.ts            # i18n setup
+    │   │   └── locales/            # EN/JA translations
+    │   ├── types.ts             # TypeScript type definitions
+    │   ├── router.tsx           # TanStack Router instance
+    │   └── main.tsx             # Entry point
+    ├── tests/               # Component & integration tests
+    │   ├── components/          # Component tests (Vitest + Testing Library)
+    │   ├── integration/         # Integration tests (DEFERRED)
+    │   └── helpers/             # Test utilities
+    ├── package.json         # Dashboard dependencies (React 19, Zod v3, TanStack, shadcn/ui)
+    ├── vite.config.ts       # Vite configuration
+    ├── vitest.config.ts     # Vitest configuration for component tests
+    ├── playwright.config.ts # Playwright E2E test configuration
+    ├── tsconfig.json        # TypeScript configuration
+    └── README.md            # Dashboard setup guide
 
-dashboard/            # React web dashboard (Phase 0-1)
-├── src/
-│   ├── components/          # React components
-│   │   ├── communities/        # Community management components
-│   │   ├── feeds/              # Feed management components
-│   │   ├── posts/              # Post creation & display components
-│   │   ├── moderation/         # Moderation components
-│   │   ├── pds/                # PDS login component
-│   │   ├── layout/             # Layout components (Header, Sidebar, Layout)
-│   │   └── ui/                 # shadcn/ui components (button, card, etc.)
-│   ├── routes/              # TanStack Router file-based routes
-│   │   ├── __root.tsx          # Root route with Layout
-│   │   ├── index.tsx           # Home page
-│   │   ├── communities/        # Community routes
-│   │   └── moderation.tsx      # Moderation log page
-│   ├── contexts/            # React Context providers
-│   │   └── PDSContext.tsx      # PDS session management
-│   ├── lib/                 # Utilities
-│   │   ├── api.ts              # API client (placeholder)
-│   │   ├── pds.ts              # PDS integration (@atproto/api)
-│   │   ├── queryClient.ts      # TanStack Query client
-│   │   └── utils.ts            # Tailwind utilities
-│   ├── i18n/                # i18next translations
-│   │   ├── index.ts            # i18n setup
-│   │   └── locales/            # EN/JA translations
-│   ├── types.ts             # TypeScript type definitions
-│   ├── router.tsx           # TanStack Router instance
-│   └── main.tsx             # Entry point
-├── tests/               # Component & integration tests
-│   ├── components/          # Component tests (Vitest + Testing Library)
-│   ├── integration/         # Integration tests (DEFERRED)
-│   └── helpers/             # Test utilities
-├── package.json         # Dashboard dependencies (React 19, TanStack, shadcn/ui)
-├── vite.config.ts       # Vite configuration
-├── vitest.config.ts     # Vitest configuration for component tests
-├── playwright.config.ts # Playwright E2E test configuration
-├── tsconfig.json        # TypeScript configuration
-└── README.md            # Dashboard setup guide
-
-docs/                 # VitePress documentation site
+docs/                 # VitePress documentation site (pnpm workspace: atrarium-docs)
 ├── en/                   # English documentation (10 pages)
 │   ├── guide/               # Getting started guides
 │   ├── architecture/        # System design docs
@@ -215,15 +221,24 @@ docs/                 # VitePress documentation site
 │   │   ├── en.ts
 │   │   └── ja.ts
 │   └── theme/               # Custom theme (Atrarium brand colors)
+├── tests/               # Documentation tests (in root tests/docs/)
 ├── package.json          # VitePress dependencies
 ├── README.md             # Documentation site setup guide
 ├── CONTRIBUTING.md       # Documentation contribution guide
 └── DEPLOYMENT.md         # Cloudflare Pages deployment checklist
 
-wrangler.toml        # Cloudflare Workers configuration (Durable Objects + Queues)
-vitest.config.ts     # Vitest configuration for Cloudflare Workers
-vitest.docs.config.ts # Vitest configuration for documentation tests
-vitest.pds.config.ts  # Vitest configuration for PDS integration tests
+tests/docs/          # Documentation validation tests (separate from server tests)
+├── navigation.test.ts  # Navigation structure validation
+├── i18n.test.ts        # i18n parity check (en ↔ ja)
+├── links.test.ts       # Link validation (no 404s)
+└── build.test.ts       # VitePress build validation
+
+pnpm-workspace.yaml  # pnpm workspace configuration
+package.json         # Root workspace coordinator
+wrangler.toml        # Cloudflare Workers configuration (in server/)
+vitest.config.ts     # Vitest configuration (in server/)
+vitest.docs.config.ts # Vitest configuration for documentation tests (root)
+vitest.pds.config.ts  # Vitest configuration for PDS integration tests (in server/)
 ```
 
 **Documentation**:
@@ -275,11 +290,11 @@ vitest.pds.config.ts  # Vitest configuration for PDS integration tests
 
 ### Setup
 ```bash
-# Install dependencies
-npm install
+# Install all workspace dependencies (uses pnpm workspaces)
+pnpm install
 
 # Install Wrangler CLI (if not already installed)
-npm install -g wrangler
+pnpm add -g wrangler
 wrangler login
 
 # Create Cloudflare Queue (006-pds-1-db)
@@ -295,36 +310,31 @@ wrangler queues create firehose-dlq  # Dead letter queue
 
 ### Development
 ```bash
-npm run dev          # Run Workers locally with Miniflare
-npm run typecheck    # TypeScript type checking (no emit)
-npm test             # Run all tests with Vitest
-npm run test:watch   # Run tests in watch mode
-npm run test:docs    # Run VitePress documentation tests
+# Server development (from root)
+pnpm --filter server dev          # Run Workers locally with Miniflare
+pnpm --filter server typecheck    # TypeScript type checking
+pnpm --filter server test         # Run server tests
+pnpm --filter server build        # Build server (dry-run deploy)
 
-# Lexicon TypeScript Code Generation (010-lexicon)
-npm run codegen      # Generate TypeScript types from lexicons/*.json
-                     # Output: src/schemas/generated/ (excluded from tsconfig.json)
-                     # Uses: @atproto/lex-cli gen-api
-                     # Note: Generated code has dependency issues, use JSON imports instead
+# Dashboard development
+pnpm --filter dashboard dev       # Start dashboard dev server (http://localhost:5173)
+pnpm --filter dashboard build     # Build dashboard production bundle
+pnpm --filter dashboard test      # Run dashboard tests
 
 # Documentation site
-cd docs
-npm install          # Install VitePress dependencies (first time only)
-npm run docs:dev     # Start VitePress dev server (http://localhost:5173)
-npm run docs:build   # Build static site
-npm run docs:preview # Preview production build
+pnpm --filter atrarium-docs docs:dev     # Start VitePress dev server (http://localhost:5173)
+pnpm --filter atrarium-docs docs:build   # Build static site
+pnpm --filter atrarium-docs docs:preview # Preview production build
 
-# Dashboard (Web UI)
-cd dashboard
-npm install          # Install dashboard dependencies (first time only)
-npm run dev          # Start dashboard dev server (http://localhost:5173)
-npm run build        # Build production bundle
-npm run preview      # Preview production build
-npm test             # Run dashboard tests
+# Run all workspaces
+pnpm -r build        # Build all workspaces
+pnpm -r test         # Run all tests
+pnpm -r typecheck    # Type check all workspaces
 
-# Code quality
-npm run lint         # ESLint
-npm run format       # Prettier
+# Lexicon TypeScript Code Generation (010-lexicon)
+pnpm --filter server codegen      # Generate TypeScript types from lexicons/*.json
+                                  # Output: server/src/schemas/generated/
+                                  # Note: Generated code excluded from tsconfig, use JSON imports
 ```
 
 ### Development with Local PDS (DevContainer)
@@ -335,8 +345,8 @@ npm run format       # Prettier
 # Setup test accounts (run after DevContainer starts)
 .devcontainer/setup-pds.sh
 
-# Run PDS integration tests
-npx vitest run tests/integration/pds-posting.test.ts
+# Run PDS integration tests (from server directory)
+pnpm --filter server test:pds
 
 # PDS is available at http://localhost:3000 (or http://pds:3000 from container)
 # Environment variable: PDS_URL=http://pds:3000
@@ -344,17 +354,22 @@ npx vitest run tests/integration/pds-posting.test.ts
 
 ### Testing
 ```bash
-# Run all tests
-npm test
+# Run all workspace tests
+pnpm -r test
 
-# Run tests in watch mode
-npm run test:watch
+# Server tests
+pnpm --filter server test           # Run all server tests
+pnpm --filter server test:watch     # Watch mode
+pnpm --filter server test:pds       # PDS integration tests
 
-# Run local unit tests only (fast, no Workers env)
-npm run test:local
+# Dashboard tests
+pnpm --filter dashboard test        # Run dashboard tests
 
-# Run specific test file
-npx vitest run tests/contract/feed-generator/get-feed-skeleton.test.ts
+# Documentation tests
+pnpm test:docs                      # Run VitePress validation tests (from root)
+
+# Run specific test file (in server)
+pnpm --filter server exec vitest run tests/contract/feed-generator/get-feed-skeleton.test.ts
 
 # The test suite uses @cloudflare/vitest-pool-workers for Cloudflare Workers environment
 # PDS-specific tests use vitest.pds.config.ts for isolated PDS testing
@@ -362,26 +377,26 @@ npx vitest run tests/contract/feed-generator/get-feed-skeleton.test.ts
 
 ### Deployment
 ```bash
-npm run deploy                    # Deploy Workers to production
-wrangler secret put JWT_SECRET    # Set secrets (also: BLUESKY_HANDLE, BLUESKY_APP_PASSWORD)
+# Server deployment
+pnpm --filter server deploy                # Deploy Workers to production
+wrangler secret put JWT_SECRET             # Set secrets (also: BLUESKY_HANDLE, BLUESKY_APP_PASSWORD)
 
 # VitePress documentation site (Cloudflare Pages)
 # Automatic deployment via GitHub integration:
 # - Push to master → auto-deploys to https://docs.atrarium.net
-# - Build command: cd docs && npm install && npm run docs:build
+# - Build command: cd docs && pnpm install && pnpm run docs:build
 # - Build output: docs/.vitepress/dist
 # - Custom domain: docs.atrarium.net (configured in Cloudflare Pages)
 
 # Dashboard (Cloudflare Pages)
 # Recommended deployment via GitHub integration:
-# - Build command: cd dashboard && npm install && npm run build
-# - Build output: dashboard/dist
+# - Build command: cd client/dashboard && pnpm install && pnpm run build
+# - Build output: client/dashboard/dist
 # - Environment variables: VITE_API_URL, VITE_PDS_URL
 
 # Manual deployment (if needed)
-cd dashboard
-npm run build
-wrangler pages deploy dist --project-name=atrarium-dashboard
+pnpm --filter dashboard build
+wrangler pages deploy client/dashboard/dist --project-name=atrarium-dashboard
 ```
 
 ### Durable Objects Management (006-pds-1-db)

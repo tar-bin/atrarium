@@ -83,8 +83,8 @@ describe.skip('PDS Integration: Direct Posting', { timeout: TEST_TIMEOUT }, () =
 
       // Parse URI to get repo and rkey
       const uriParts = createResponse.uri.split('/');
-      const repo = uriParts[2]; // did:plc:xxx
-      const rkey = uriParts[uriParts.length - 1]; // post ID
+      const repo = uriParts[2]!; // did:plc:xxx
+      const rkey = uriParts[uriParts.length - 1]!; // post ID
 
       // Retrieve post
       const getResponse = await aliceAgent.app.bsky.feed.post.get({
@@ -112,8 +112,8 @@ describe.skip('PDS Integration: Direct Posting', { timeout: TEST_TIMEOUT }, () =
 
       // Verify hashtag is in the post
       const uriParts = response.uri.split('/');
-      const repo = uriParts[2];
-      const rkey = uriParts[uriParts.length - 1];
+      const repo = uriParts[2]!;
+      const rkey = uriParts[uriParts.length - 1]!;
 
       const post = await aliceAgent.app.bsky.feed.post.get({ repo, rkey });
       expect(post.value.text).toContain(testHashtag);
@@ -130,8 +130,8 @@ describe.skip('PDS Integration: Direct Posting', { timeout: TEST_TIMEOUT }, () =
       });
 
       const uriParts = response.uri.split('/');
-      const repo = uriParts[2];
-      const rkey = uriParts[uriParts.length - 1];
+      const repo = uriParts[2]!;
+      const rkey = uriParts[uriParts.length - 1]!;
 
       const post = await aliceAgent.app.bsky.feed.post.get({ repo, rkey });
       expect(post.value.text).toContain(hashtag1);
@@ -168,8 +168,8 @@ describe.skip('PDS Integration: Direct Posting', { timeout: TEST_TIMEOUT }, () =
       });
 
       const uriParts = createResponse.uri.split('/');
-      const repo = uriParts[2];
-      const rkey = uriParts[uriParts.length - 1];
+      const repo = uriParts[2]!;
+      const rkey = uriParts[uriParts.length - 1]!;
 
       // Delete post
       await aliceAgent.app.bsky.feed.post.delete({
@@ -236,7 +236,7 @@ describe('PDS Availability Check', () => {
     const response = await fetch(`${PDS_URL}/xrpc/com.atproto.server.describeServer`);
     expect(response.ok).toBe(true);
 
-    const data = await response.json();
+    const data = await response.json() as { availableUserDomains: string[] };
     expect(data.availableUserDomains).toBeDefined();
   });
 });

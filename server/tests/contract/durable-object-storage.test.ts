@@ -5,6 +5,27 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { env } from 'cloudflare:test';
 
+type PostMetadata = {
+  uri: string;
+  authorDid: string;
+  createdAt: string;
+  moderationStatus?: string;
+};
+
+type MembershipRecord = {
+  did: string;
+  role: string;
+  joinedAt: string;
+  active: boolean;
+};
+
+type ModerationAction = {
+  action: string;
+  targetUri: string;
+  reason: string;
+  createdAt: string;
+};
+
 describe.skip('Contract: Durable Objects Storage', () => {
   let durableObjectId: DurableObjectId;
   let durableObjectStub: DurableObjectStub;
@@ -97,11 +118,11 @@ describe.skip('Contract: Durable Objects Storage', () => {
     );
 
     expect(listResponse.status).toBe(200);
-    const listedPosts = await listResponse.json();
+    const listedPosts = await listResponse.json() as PostMetadata[];
 
     // Assert: Posts returned in reverse chronological order
     expect(listedPosts).toHaveLength(2);
-    expect(listedPosts[0].createdAt).toBeGreaterThan(listedPosts[1].createdAt);
+    expect(new Date(listedPosts[0]!.createdAt).getTime()).toBeGreaterThan(new Date(listedPosts[1]!.createdAt).getTime());
   });
 
   it('should store membership records with DID-based keys', async () => {
@@ -136,7 +157,7 @@ describe.skip('Contract: Durable Objects Storage', () => {
     );
 
     expect(getResponse.status).toBe(200);
-    const retrieved = await getResponse.json();
+    const retrieved = await getResponse.json() as MembershipRecord & { memberDid: string };
 
     // Assert: Membership exists and matches
     expect(retrieved.memberDid).toBe(membership.memberDid);
@@ -180,11 +201,11 @@ describe.skip('Contract: Durable Objects Storage', () => {
     );
 
     expect(feedResponse.status).toBe(200);
-    const feed = await feedResponse.json();
+    const feed = await feedResponse.json() as { feed: PostMetadata[] };
 
     // Assert: Only approved posts returned
     expect(feed.feed).toHaveLength(2);
-    feed.feed.forEach((item: any) => {
+    feed.feed.forEach((item) => {
       expect(item.moderationStatus).toBe('approved');
     });
   });
@@ -235,11 +256,11 @@ describe.skip('Contract: Durable Objects Storage', () => {
       new Request('http://internal/storage/list?prefix=post:')
     );
 
-    const remainingPosts = await listResponse.json();
+    const remainingPosts = await listResponse.json() as PostMetadata[];
 
     // Assert: Only recent post remains
     expect(remainingPosts).toHaveLength(1);
-    expect(remainingPosts[0].createdAt).toBeGreaterThan(sevenDaysAgo);
+    expect(new Date(remainingPosts[0]!.createdAt).getTime()).toBeGreaterThan(new Date(sevenDaysAgo).getTime());
   });
 
   it('should support Last-Write-Wins for moderation actions', async () => {
@@ -281,7 +302,7 @@ describe.skip('Contract: Durable Objects Storage', () => {
     );
 
     expect(statusResponse.status).toBe(200);
-    const finalAction = await statusResponse.json();
+    const finalAction = await statusResponse.json() as ModerationAction & { pdsSyncedAt: number };
 
     // Assert: Latest action (unhide_post) wins
     expect(finalAction.action).toBe('unhide_post');

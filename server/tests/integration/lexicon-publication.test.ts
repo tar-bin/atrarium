@@ -7,6 +7,17 @@ import { describe, it, expect } from 'vitest';
 const BASE_URL = 'http://localhost:8787';
 const LEXICON_ENDPOINT = '/xrpc/net.atrarium.lexicon.get';
 
+type LexiconSchema = {
+  lexicon: number;
+  id: string;
+  defs: Record<string, unknown>;
+};
+
+type ErrorResponse = {
+  error: string;
+  message: string;
+};
+
 describe('Lexicon Publication Integration', () => {
   it('should complete end-to-end PDS workflow', async () => {
     // Step 1: PDS fetches community config schema
@@ -16,7 +27,7 @@ describe('Lexicon Publication Integration', () => {
     expect(response.status).toBe(200);
 
     // Step 2: Validate JSON structure (AT Protocol Lexicon format)
-    const schema = await response.json();
+    const schema = await response.json() as LexiconSchema;
 
     expect(schema).toHaveProperty('lexicon', 1);
     expect(schema).toHaveProperty('id', nsid);
@@ -56,7 +67,7 @@ describe('Lexicon Publication Integration', () => {
 
     for (const nsid of schemas) {
       const response = await fetch(`${BASE_URL}${LEXICON_ENDPOINT}?nsid=${nsid}`);
-      const schema = await response.json();
+      const schema = await response.json() as LexiconSchema;
 
       expect(response.status).toBe(200);
       expect(schema.id).toBe(nsid);
@@ -98,7 +109,7 @@ describe('Lexicon Publication Integration', () => {
 
     expect(response.status).toBe(404);
 
-    const error = await response.json();
+    const error = await response.json() as ErrorResponse;
     expect(error).toHaveProperty('error', 'InvalidRequest');
     expect(error).toHaveProperty('message');
     expect(error.message).toMatch(/not found|unknown/i);
@@ -106,7 +117,16 @@ describe('Lexicon Publication Integration', () => {
 
   it('should validate schema content matches Lexicon specification', async () => {
     const response = await fetch(`${BASE_URL}${LEXICON_ENDPOINT}?nsid=net.atrarium.community.config`);
-    const schema = await response.json();
+    const schema = await response.json() as LexiconSchema & {
+      defs: {
+        main: {
+          record: {
+            properties: Record<string, unknown>;
+            required: string[];
+          }
+        }
+      }
+    };
 
     // Community config specific validation
     expect(schema.defs.main.record.properties).toHaveProperty('name');

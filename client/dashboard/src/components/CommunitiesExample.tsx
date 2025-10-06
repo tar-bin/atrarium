@@ -23,7 +23,7 @@ export function CommunitiesExample() {
     <div>
       <h2>Communities</h2>
       <ul>
-        {data?.data.map((community) => (
+        {data?.data.map((community: any) => (
           <li key={community.id}>
             {community.name} - {community.stage}
           </li>

@@ -6,9 +6,9 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 
 // Import Lexicon JSON schemas from top-level lexicons/ directory
-import communityConfigSchema from '../../lexicons/net.atrarium.community.config.json';
-import communityMembershipSchema from '../../lexicons/net.atrarium.community.membership.json';
-import moderationActionSchema from '../../lexicons/net.atrarium.moderation.action.json';
+import communityConfigSchema from '../../../lexicons/net.atrarium.community.config.json';
+import communityMembershipSchema from '../../../lexicons/net.atrarium.community.membership.json';
+import moderationActionSchema from '../../../lexicons/net.atrarium.moderation.action.json';
 
 type LexiconSchema = {
   lexicon: number;

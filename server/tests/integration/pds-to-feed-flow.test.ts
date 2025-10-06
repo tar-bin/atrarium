@@ -16,7 +16,7 @@ import { env } from 'cloudflare:test';
 // Run these tests in production/staging environment after deployment
 
 describe.skip('PDS to Feed Flow (Quickstart Scenario - requires deployed environment)', () => {
-  const aliceDid = 'did:plc:alice123';
+  // const aliceDid = 'did:plc:alice123'; // Unused in skipped test
   const bobDid = 'did:plc:bob456';
   const communityId = 'design-community';
   const communityHashtag = '#atrarium_test1234';
