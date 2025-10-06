@@ -76,7 +76,7 @@ When a user creates a community record in their Personal Data Server (PDS), the 
 - **FR-003**: Lexicon endpoints MUST follow AT Protocol discovery conventions for custom namespaces
 - **FR-004**: Lexicon schemas MUST be accessible without authentication (publicly readable)
 - **FR-005**: System MUST serve Lexicon files with correct MIME type (`application/json`)
-- **FR-006**: System MUST use Lexicon JSON files in `src/lexicons/` as the single source of truth
+- **FR-006**: System MUST use Lexicon JSON files in `lexicons/` as the single source of truth
 - **FR-007**: System MUST generate TypeScript type definitions from Lexicon JSON files using `@atproto/lexicon` tooling (e.g., `lex-cli`)
 - **FR-012**: System MUST include generated TypeScript types in version control for build reproducibility
 - **FR-008**: Lexicon endpoints MUST support CORS headers for cross-origin access from PDS servers
@@ -96,12 +96,12 @@ When a user creates a community record in their Personal Data Server (PDS), the 
 - **Lexicon Schema**: JSON file defining record structure for AT Protocol custom records
   - Contains: schema ID, field definitions, validation rules, type constraints
   - 3 schemas exist: community.config, community.membership, moderation.action
-  - Source location: `src/lexicons/` (single source of truth)
+  - Source location: `lexicons/` (top-level directory, single source of truth)
   - TypeScript types auto-generated from JSON using `@atproto/lexicon` tooling
 - **Publication Endpoint**: HTTP endpoint serving Lexicon schemas to external systems
   - Must be publicly accessible (no authentication)
-  - Must follow AT Protocol conventions (likely `.well-known/atproto-lexicon/` path)
-  - Serves JSON files from `src/lexicons/` directory
+  - Must follow AT Protocol conventions (simple HTTP endpoint: `/xrpc/net.atrarium.lexicon.get`)
+  - Serves JSON files from `lexicons/` directory
 
 ---
 
@@ -142,5 +142,5 @@ When a user creates a community record in their Personal Data Server (PDS), the 
 - Q: 現在のLexiconスキーマ（`net.atrarium.*`）は本番公開準備完了ですか、それとも実験的ステータスですか？ → A: ベータステータス - 現在の名前空間を維持するが、初期フィードバック後に破壊的変更の可能性あり（第三者採用前）
 - Q: Lexiconエンドポイントの可用性目標は？ → A: ベストエフォート - Cloudflare Workersのデフォルト可用性に依存（特別な監視なし）
 - Q: Lexiconスキーマ配信時のHTTPキャッシュ戦略は？ → A: 条件付きキャッシュ（ベータ期間中） - `Cache-Control: public, max-age=3600` + `ETag`ヘッダー、安定後は長期キャッシュ（24時間 immutable）に移行
-- Q: Lexicon JSONファイルの配置場所は？ → A: `src/lexicons/` - ソースコードと一緒に管理（TypeScript型定義と近い場所）
+- Q: Lexicon JSONファイルの配置場所は？ → A: `lexicons/` - トップレベルディレクトリ（実装非依存のプロトコル定義として、ソースコードから分離）
 - Q: JSON定義とTypeScript型定義の整合性をどう保証する？ → A: 単一ソース - JSON定義からTypeScriptコードを自動生成（`@atproto/lexicon`の`lex-cli`使用）

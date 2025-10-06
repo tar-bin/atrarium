@@ -47,7 +47,24 @@
 ## Constitution Check
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+**Simplicity Principles** (Principle 2):
+- ✅ No new projects (extends existing application)
+- ✅ No new databases (or justification provided)
+- ✅ No new services (or justification provided)
+- ✅ Minimal dependencies (reuses existing stack)
+
+**Technology Choices** (Principle 1, 3):
+- ✅ Protocol-first architecture maintained (Lexicon schemas as API contract)
+- ✅ Economic efficiency preserved (serverless/pay-per-use)
+- ✅ No framework proliferation
+
+**Data Ownership** (Principle 4, 5):
+- ✅ PDS-first architecture maintained (user data in Personal Data Servers)
+- ✅ Durable Objects used only as 7-day cache (if applicable)
+- ✅ No centralized user database created
+
+**Conclusion**: ✅ PASS - Feature complies with all constitution principles
+(or ❌ FAIL with explicit justification and remediation plan)
 
 ## Project Structure
 

@@ -1,0 +1,72 @@
+{
+  "lexicon": 1,
+  "id": "net.atrarium.moderation.action",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Moderation action record stored in the moderator's Personal Data Server (PDS). Records moderation decisions (hide/unhide posts, block/unblock users) for a specific community.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["action", "target", "community", "createdAt"],
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "Type of moderation action",
+            "enum": ["hide_post", "unhide_post", "block_user", "unblock_user"]
+          },
+          "target": {
+            "type": "union",
+            "description": "Target of the moderation action (post or user)",
+            "refs": ["#postTarget", "#userTarget"]
+          },
+          "community": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "AT-URI of the community where this action applies"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason for the moderation action (optional). WARNING: This is a PUBLIC record. Do NOT include personal information (emails, phone numbers), confidential data, or defamatory language. Use brief, professional descriptions (e.g., 'Spam post', 'Community guidelines violation').",
+            "maxLength": 4000,
+            "maxGraphemes": 2000
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "Action timestamp (ISO 8601)"
+          }
+        }
+      }
+    },
+    "postTarget": {
+      "type": "object",
+      "description": "Post being moderated (uses strongRef for immutability)",
+      "required": ["uri", "cid"],
+      "properties": {
+        "uri": {
+          "type": "string",
+          "format": "at-uri",
+          "description": "AT-URI of the post (at://did:plc:author/app.bsky.feed.post/rkey)"
+        },
+        "cid": {
+          "type": "string",
+          "format": "cid",
+          "description": "Content identifier (CID) of the post record"
+        }
+      }
+    },
+    "userTarget": {
+      "type": "object",
+      "description": "User being moderated",
+      "required": ["did"],
+      "properties": {
+        "did": {
+          "type": "string",
+          "format": "did",
+          "description": "DID of the user being blocked/unblocked"
+        }
+      }
+    }
+  }
+}

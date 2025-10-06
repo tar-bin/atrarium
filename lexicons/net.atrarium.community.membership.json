@@ -1,0 +1,48 @@
+{
+  "lexicon": 1,
+  "id": "net.atrarium.community.membership",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Membership record stored in the member's Personal Data Server (PDS). Represents a user's membership in a specific community with associated role and status.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["community", "role", "joinedAt"],
+        "properties": {
+          "community": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "AT-URI of the community config record (at://did:plc:owner/net.atrarium.community.config/rkey)"
+          },
+          "role": {
+            "type": "string",
+            "description": "Membership role within the community",
+            "enum": ["owner", "moderator", "member"]
+          },
+          "joinedAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "Membership start timestamp (ISO 8601)"
+          },
+          "active": {
+            "type": "boolean",
+            "description": "Whether membership is currently active (false = left community)",
+            "default": true
+          },
+          "invitedBy": {
+            "type": "string",
+            "format": "did",
+            "description": "DID of user who invited this member (optional)"
+          },
+          "customTitle": {
+            "type": "string",
+            "description": "Custom role title displayed in community (optional)",
+            "maxLength": 100,
+            "maxGraphemes": 50
+          }
+        }
+      }
+    }
+  }
+}

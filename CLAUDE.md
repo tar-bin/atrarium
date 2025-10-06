@@ -282,6 +282,7 @@ wrangler queues create firehose-dlq  # Dead letter queue
 ```bash
 npm run dev          # Run Workers locally with Miniflare
 npm run typecheck    # TypeScript type checking (no emit)
+npm run codegen      # Generate TypeScript types from Lexicon schemas (010-lexicon)
 npm test             # Run all tests with Vitest
 npm run test:watch   # Run tests in watch mode
 npm run test:docs    # Run VitePress documentation tests
@@ -401,6 +402,12 @@ wrangler tail --format pretty
 
 The client fetches actual post content from Bluesky's AppView using these URIs.
 
+**`GET /xrpc/net.atrarium.lexicon.get`**: Returns AT Protocol Lexicon schemas (010-lexicon)
+- Params: `nsid` (Lexicon NSID, e.g., `net.atrarium.community.config`)
+- Returns: Lexicon JSON schema
+- Headers: `ETag` (SHA-256 content hash), `Cache-Control: public, max-age=3600` (beta period)
+- Supports conditional requests (If-None-Match → 304 Not Modified)
+
 ### Data Flow (PDS-First Architecture - 006-pds-1-db)
 
 **Post Ingestion**:
@@ -440,6 +447,7 @@ The client fetches actual post content from Bluesky's AppView using these URIs.
 - [x] **React dashboard** (Phase 0-1: full web UI with PDS integration)
 - [x] **Local PDS integration** (DevContainer with Bluesky PDS for testing)
 - [x] **Domain migration** (atrarium.net acquired, all references updated)
+- [x] **Lexicon publication API** (010-lexicon: HTTP endpoints with ETag caching, beta status documented)
 
 ### 🚧 In Progress / Pending
 - [ ] Production deployment (Cloudflare Workers + Durable Objects + Queues)

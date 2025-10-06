@@ -154,9 +154,9 @@ tests/
 
 **API Contracts** (`/contracts/`):
 ```
-GET /.well-known/atproto-lexicon/net.atrarium.community.config.json
-GET /.well-known/atproto-lexicon/net.atrarium.community.membership.json
-GET /.well-known/atproto-lexicon/net.atrarium.moderation.action.json
+GET /xrpc/net.atrarium.lexicon.get?nsid=net.atrarium.community.config
+GET /xrpc/net.atrarium.lexicon.get?nsid=net.atrarium.community.membership
+GET /xrpc/net.atrarium.lexicon.get?nsid=net.atrarium.moderation.action
 
 Response:
 - Status: 200 OK | 304 Not Modified

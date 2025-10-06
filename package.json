@@ -12,7 +12,8 @@
     "test:docs": "vitest run --config vitest.docs.config.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src tests --ext .ts",
-    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\""
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "codegen": "npx @atproto/lex-cli gen-api src/schemas/generated/ lexicons/*.json"
   },
   "keywords": [
     "atproto",
@@ -37,6 +38,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@atproto/lex-cli": "^0.9.5",
     "@cloudflare/vitest-pool-workers": "^0.5.30",
     "@cloudflare/workers-types": "^4.20241127.0",
     "@tanstack/react-query-devtools": "^5.90.2",

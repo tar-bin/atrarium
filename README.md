@@ -60,11 +60,28 @@ See [Architecture Docs](https://docs.atrarium.net/architecture/) for details.
 git clone https://github.com/tar-bin/atrarium.git
 cd atrarium
 npm install
+npm run codegen      # Generate TypeScript types from Lexicon schemas
 npm run dev          # Start Workers locally
 npm test             # Run tests
 ```
 
 📖 [Full Getting Started Guide](https://docs.atrarium.net/guide/getting-started.html)
+
+### Lexicon Schemas
+
+Atrarium publishes AT Protocol Lexicon schemas at public HTTP endpoints:
+
+```bash
+# Fetch community config schema
+curl https://atrarium.net/xrpc/net.atrarium.lexicon.get?nsid=net.atrarium.community.config
+
+# Available schemas:
+# - net.atrarium.community.config (community metadata)
+# - net.atrarium.community.membership (user memberships)
+# - net.atrarium.moderation.action (moderation actions)
+```
+
+See [lexicons/README.md](lexicons/README.md) for schema documentation and versioning policy.
 
 ## Documentation
 

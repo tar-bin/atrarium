@@ -1,0 +1,102 @@
+{
+  "lexicon": 1,
+  "id": "net.atrarium.community.config",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Community configuration record stored in the owner's Personal Data Server (PDS). Defines community metadata, moderation settings, and feed mixing ratios.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["name", "hashtag", "stage", "createdAt"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Community display name",
+            "maxLength": 200,
+            "maxGraphemes": 100
+          },
+          "description": {
+            "type": "string",
+            "description": "Community description or purpose statement",
+            "maxLength": 2000,
+            "maxGraphemes": 1000
+          },
+          "hashtag": {
+            "type": "string",
+            "description": "System-generated unique hashtag for feed identification (format: #atrarium_[8-hex])",
+            "maxLength": 20
+          },
+          "stage": {
+            "type": "string",
+            "description": "Community development stage",
+            "enum": ["theme", "community", "graduated"]
+          },
+          "moderators": {
+            "type": "array",
+            "description": "List of moderator DIDs (includes owner)",
+            "maxLength": 50,
+            "items": {
+              "type": "string",
+              "format": "did"
+            }
+          },
+          "blocklist": {
+            "type": "array",
+            "description": "List of blocked user DIDs",
+            "maxLength": 1000,
+            "items": {
+              "type": "string",
+              "format": "did"
+            }
+          },
+          "feedMix": {
+            "type": "ref",
+            "ref": "#feedMixConfig",
+            "description": "Feed content mixing ratios (own/parent/global)"
+          },
+          "parentCommunity": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "Parent community URI (for child communities in theme → community progression)"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "Community creation timestamp (ISO 8601)"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "Last update timestamp (ISO 8601)"
+          }
+        }
+      }
+    },
+    "feedMixConfig": {
+      "type": "object",
+      "description": "Feed content mixing ratios (must sum to 100)",
+      "required": ["own", "parent", "global"],
+      "properties": {
+        "own": {
+          "type": "integer",
+          "description": "Percentage of posts from own community (0-100)",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "parent": {
+          "type": "integer",
+          "description": "Percentage of posts from parent community (0-100)",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "global": {
+          "type": "integer",
+          "description": "Percentage of posts from global Bluesky feed (0-100)",
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    }
+  }
+}

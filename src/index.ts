@@ -19,6 +19,7 @@ import authRoutes from './routes/auth';
 // import postRoutes from './routes/posts'; // TODO: Migrate to PDS-first
 import membershipRoutes from './routes/memberships';
 import moderationRoutes from './routes/moderation';
+import lexiconRoutes from './routes/lexicon';
 
 // Import OpenAPI generator
 import { generateOpenAPISpec } from './openapi';
@@ -158,6 +159,9 @@ app.use('/api/*', async (c, next) => {
 
 // AT Protocol Feed Generator API
 app.route('/', feedGeneratorRoutes);
+
+// AT Protocol Lexicon Publication API (public, no auth)
+app.route('/', lexiconRoutes);
 
 // Dashboard API (legacy routes, to be migrated to oRPC)
 app.route('/api/auth', authRoutes);
