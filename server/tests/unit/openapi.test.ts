@@ -1,6 +1,6 @@
 // Unit tests for OpenAPI specification generation
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { generateOpenAPISpec } from '../../src/openapi';
 
 describe('OpenAPI Specification', () => {

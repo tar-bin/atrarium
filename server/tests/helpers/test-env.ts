@@ -37,4 +37,3 @@ export async function createMockJWT(userDid: string, handle: string): Promise<st
     .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
     .sign(secret);
 }
-

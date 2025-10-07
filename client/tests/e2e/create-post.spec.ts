@@ -115,7 +115,7 @@ test.describe.skip('Create Post Workflow', () => {
 
     // Check if character count is displayed (implementation-specific)
     // Note: This assumes a character counter UI element exists
-    const charCount = page.getByText(new RegExp(`${testContent.length}`));
+    const _charCount = page.getByText(new RegExp(`${testContent.length}`));
     // await expect(charCount).toBeVisible();
   });
 
@@ -167,7 +167,7 @@ test.describe.skip('Create Post Workflow', () => {
 
     // Check if feed hashtag is displayed as guidance
     // Note: This assumes the UI shows the feed's hashtag
-    const hashtagGuidance = page.getByText(/#atr_/i);
+    const _hashtagGuidance = page.getByText(/#atr_/i);
     // await expect(hashtagGuidance).toBeVisible();
   });
 });

@@ -35,14 +35,9 @@ export function FeedList({ feeds, loading, error }: FeedListProps) {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {feeds.map((feed) => (
-        <FeedCard
-          key={feed.id}
-          feed={feed}
-          onClick={() => {
-            // Navigation will be handled by parent/router
-            console.log('Navigate to feed:', feed.id);
-          }}
-        />
+        <FeedCard key={feed.id} feed={feed} onClick={() => {
+          // Click handler will be implemented by parent
+        }} />
       ))}
     </div>
   );

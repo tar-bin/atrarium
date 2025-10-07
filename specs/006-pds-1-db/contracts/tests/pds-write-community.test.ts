@@ -2,7 +2,7 @@
 // T014 - Verifies PDS write operations for community configuration records
 // MUST FAIL initially until PDS service implementation (T018-T019)
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { ATProtoService } from '../../../../src/services/atproto';
 import type { Env } from '../../../../src/types';
 
@@ -48,7 +48,9 @@ describe('Contract: PDS Write (CommunityConfig)', () => {
 
     // Assert: Record created with AT-URI and rkey
     expect(result).toBeDefined();
-    expect(result.uri).toMatch(/^at:\/\/did:plc:[a-z0-9]+\/com\.atrarium\.community\.config\/[a-z0-9]+$/);
+    expect(result.uri).toMatch(
+      /^at:\/\/did:plc:[a-z0-9]+\/com\.atrarium\.community\.config\/[a-z0-9]+$/
+    );
     expect(result.cid).toBeDefined();
     expect(result.rkey).toBeDefined();
   });
@@ -64,9 +66,9 @@ describe('Contract: PDS Write (CommunityConfig)', () => {
     } as any;
 
     // Act & Assert: Should throw validation error
-    await expect(
-      atprotoService.createCommunityConfig(invalidConfig)
-    ).rejects.toThrow(/name.*required/i);
+    await expect(atprotoService.createCommunityConfig(invalidConfig)).rejects.toThrow(
+      /name.*required/i
+    );
   });
 
   it('should validate hashtag format', async () => {
@@ -80,9 +82,9 @@ describe('Contract: PDS Write (CommunityConfig)', () => {
     } as any;
 
     // Act & Assert: Should throw validation error
-    await expect(
-      atprotoService.createCommunityConfig(configWithBadHashtag)
-    ).rejects.toThrow(/hashtag.*pattern/i);
+    await expect(atprotoService.createCommunityConfig(configWithBadHashtag)).rejects.toThrow(
+      /hashtag.*pattern/i
+    );
   });
 
   it('should validate feedMix ratios sum to 1.0', async () => {
@@ -101,9 +103,9 @@ describe('Contract: PDS Write (CommunityConfig)', () => {
     } as any;
 
     // Act & Assert: Should throw validation error
-    await expect(
-      atprotoService.createCommunityConfig(configWithBadFeedMix)
-    ).rejects.toThrow(/feedMix.*sum.*1\.0/i);
+    await expect(atprotoService.createCommunityConfig(configWithBadFeedMix)).rejects.toThrow(
+      /feedMix.*sum.*1\.0/i
+    );
   });
 
   it('should enforce moderators array max length (50)', async () => {
@@ -119,8 +121,8 @@ describe('Contract: PDS Write (CommunityConfig)', () => {
     } as any;
 
     // Act & Assert: Should throw validation error
-    await expect(
-      atprotoService.createCommunityConfig(configWithTooManyMods)
-    ).rejects.toThrow(/moderators.*maxLength.*50/i);
+    await expect(atprotoService.createCommunityConfig(configWithTooManyMods)).rejects.toThrow(
+      /moderators.*maxLength.*50/i
+    );
   });
 });

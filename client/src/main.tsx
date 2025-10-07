@@ -11,6 +11,7 @@ import './index.css';
 
 // ReactQueryDevtools removed from production build to avoid dependency issues
 
+// biome-ignore lint/style/noNonNullAssertion: root element is guaranteed to exist in index.html
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>

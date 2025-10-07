@@ -21,14 +21,12 @@ export function FeedDetail({ feed, posts, isAuthenticated, agent }: FeedDetailPr
   const navigate = useNavigate();
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
 
-  const handlePostSuccess = (postUri: string) => {
-    console.log('Post created:', postUri);
+  const handlePostSuccess = (_postUri: string) => {
     setIsCreatePostOpen(false);
     // Parent component will handle refresh
   };
 
-  const handleHidePost = async (uri: string) => {
-    console.log('Hide post:', uri);
+  const handleHidePost = async (_uri: string) => {
     // API call will be handled by parent
   };
 

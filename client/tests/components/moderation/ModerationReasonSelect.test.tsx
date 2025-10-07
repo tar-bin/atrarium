@@ -6,7 +6,6 @@
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { ModerationReasonSelect } from '@/components/moderation/ModerationReasonSelect';
-import type { ModerationReason } from '@/lib/moderation';
 
 // Mock i18next
 vi.mock('react-i18next', () => ({
@@ -61,7 +60,7 @@ describe.skip('ModerationReasonSelect Component', () => {
   });
 
   it('should display placeholder text', () => {
-    const onChange = vi.fn();
+    const _onChange = vi.fn();
     // TODO: Render component with no value
     // TODO: Verify placeholder is "moderation.selectReason"
 

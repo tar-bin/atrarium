@@ -9,7 +9,7 @@
  * Related Lexicon: specs/007-reason-enum-atproto/contracts/lexicon/net.atrarium.moderation.action.json
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { MODERATION_REASONS } from '../../../src/types';
 
 // Will be implemented after T006-T007 (backend validation)
@@ -20,15 +20,9 @@ describe.skip('POST /api/moderation/hide-post - Reason Enum Validation', () => {
   // - Load test data (community, membership, post)
   // - Setup mock AT Protocol service
 
-  beforeAll(async () => {
-    // TODO: Initialize test environment
-    console.log('Setup test environment for moderation reason enum validation');
-  });
+  beforeAll(async () => {});
 
-  afterAll(async () => {
-    // TODO: Cleanup test environment
-    console.log('Cleanup test environment');
-  });
+  afterAll(async () => {});
 
   describe('Valid enum values', () => {
     it('should accept all 17 predefined enum values', async () => {

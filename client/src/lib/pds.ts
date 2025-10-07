@@ -26,8 +26,7 @@ export async function loginToPDS(handle: string, password: string): Promise<Bsky
     });
 
     return agent;
-  } catch (error) {
-    console.error('[PDS] Login failed:', error);
+  } catch (_error) {
     throw new Error('Failed to login to PDS. Please check your credentials.');
   }
 }
@@ -51,8 +50,7 @@ export async function postToPDS(agent: BskyAgent, text: string): Promise<string>
     });
 
     return response.uri;
-  } catch (error) {
-    console.error('[PDS] Post creation failed:', error);
+  } catch (_error) {
     throw new Error('Failed to create post on PDS.');
   }
 }
@@ -81,14 +79,14 @@ export function getSessionHandle(agent: BskyAgent): string | null {
  * @returns Authenticated BskyAgent with restored session
  * @throws Error if session resume fails
  */
+// biome-ignore lint/suspicious/noExplicitAny: BskyAgent session data type is not exported
 export async function resumeSession(sessionData: any): Promise<BskyAgent> {
   const agent = createPDSAgent();
 
   try {
     await agent.resumeSession(sessionData);
     return agent;
-  } catch (error) {
-    console.error('[PDS] Session resume failed:', error);
+  } catch (_error) {
     throw new Error('Failed to resume session. Please login again.');
   }
 }

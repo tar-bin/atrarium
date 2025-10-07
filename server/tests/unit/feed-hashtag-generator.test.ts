@@ -1,5 +1,9 @@
-import { describe, it, expect } from 'vitest';
-import { generateFeedHashtag, validateHashtagFormat, extractFeedHashtags } from '../../src/utils/hashtag';
+import { describe, expect, it } from 'vitest';
+import {
+  extractFeedHashtags,
+  generateFeedHashtag,
+  validateHashtagFormat,
+} from '../../src/utils/hashtag';
 
 /**
  * Unit tests for feed hashtag generator
@@ -98,10 +102,10 @@ describe('Unit: Feed hashtag generator', () => {
   });
 
   it('should reject invalid formats', () => {
-    expect(validateHashtagFormat('#atrarium_xyz')).toBe(false);  // non-hex
-    expect(validateHashtagFormat('#atrarium_a1b2c3d')).toBe(false);  // 7 chars
-    expect(validateHashtagFormat('#atrarium_a1b2c3d4e')).toBe(false);  // 9 chars
-    expect(validateHashtagFormat('atrarium_a1b2c3d4')).toBe(false);  // no #
+    expect(validateHashtagFormat('#atrarium_xyz')).toBe(false); // non-hex
+    expect(validateHashtagFormat('#atrarium_a1b2c3d')).toBe(false); // 7 chars
+    expect(validateHashtagFormat('#atrarium_a1b2c3d4e')).toBe(false); // 9 chars
+    expect(validateHashtagFormat('atrarium_a1b2c3d4')).toBe(false); // no #
   });
 
   it('should extract new format hashtags from text', () => {

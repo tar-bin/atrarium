@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 
 const REPO_ROOT = path.resolve(__dirname, '..');
 const DOCS_PATH = path.join(REPO_ROOT, 'docs');
@@ -14,10 +14,7 @@ interface ConsolidationRule {
 
 const CONSOLIDATION_RULES: ConsolidationRule[] = [
   {
-    sources: [
-      'docs/architecture/system-design.md',
-      'docs/architecture/database.md',
-    ],
+    sources: ['docs/architecture/system-design.md', 'docs/architecture/database.md'],
     destination: 'server/ARCHITECTURE.md',
     strategy: 'merge',
   },
@@ -27,10 +24,7 @@ const CONSOLIDATION_RULES: ConsolidationRule[] = [
     strategy: 'merge',
   },
   {
-    sources: [
-      'docs/reference/development-spec.md',
-      'docs/reference/implementation.md',
-    ],
+    sources: ['docs/reference/development-spec.md', 'docs/reference/implementation.md'],
     destination: null,
     strategy: 'delete',
   },
@@ -50,10 +44,7 @@ async function transformContent(content: string): Promise<string> {
   let transformed = content;
 
   // Remove image references
-  transformed = transformed.replace(
-    /!\[([^\]]*)\]\(([^)]+)\)/g,
-    '<!-- Image removed: $2 -->'
-  );
+  transformed = transformed.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<!-- Image removed: $2 -->');
 
   // Update VitePress URLs to component paths
   transformed = transformed.replace(
@@ -68,79 +59,45 @@ async function transformContent(content: string): Promise<string> {
     /https:\/\/docs\.atrarium\.net\/en\/guide\/setup\.html/g,
     '/SETUP.md'
   );
-  transformed = transformed.replace(
-    /https:\/\/docs\.atrarium\.net/g,
-    '/CONCEPT.md'
-  );
+  transformed = transformed.replace(/https:\/\/docs\.atrarium\.net/g, '/CONCEPT.md');
 
   // Update internal doc links to absolute repo paths
-  transformed = transformed.replace(
-    /docs\/architecture\/api\.md/g,
-    '/server/API.md'
-  );
-  transformed = transformed.replace(
-    /docs\/architecture\/database\.md/g,
-    '/server/ARCHITECTURE.md'
-  );
+  transformed = transformed.replace(/docs\/architecture\/api\.md/g, '/server/API.md');
+  transformed = transformed.replace(/docs\/architecture\/database\.md/g, '/server/ARCHITECTURE.md');
   transformed = transformed.replace(
     /docs\/architecture\/system-design\.md/g,
     '/server/ARCHITECTURE.md'
   );
-  transformed = transformed.replace(
-    /docs\/reference\/api-reference\.md/g,
-    '/server/API.md'
-  );
-  transformed = transformed.replace(
-    /docs\/guide\/concept\.md/g,
-    '/CONCEPT.md'
-  );
+  transformed = transformed.replace(/docs\/reference\/api-reference\.md/g, '/server/API.md');
+  transformed = transformed.replace(/docs\/guide\/concept\.md/g, '/CONCEPT.md');
   transformed = transformed.replace(/docs\/guide\/quickstart\.md/g, '/QUICKSTART.md');
   transformed = transformed.replace(/docs\/guide\/setup\.md/g, '/SETUP.md');
 
   return transformed;
 }
 
-async function migrateFile(
-  sourcePath: string,
-  destPath: string
-): Promise<void> {
+async function migrateFile(sourcePath: string, destPath: string): Promise<void> {
   const fullSourcePath = path.join(REPO_ROOT, sourcePath);
   const fullDestPath = path.join(REPO_ROOT, destPath);
+  // Read source content
+  const content = await fs.readFile(fullSourcePath, 'utf-8');
 
-  console.log(`[INFO] Migrating: ${sourcePath} -> ${destPath}`);
+  // Transform content
+  const transformed = await transformContent(content);
 
-  try {
-    // Read source content
-    const content = await fs.readFile(fullSourcePath, 'utf-8');
+  // Ensure destination directory exists
+  await fs.mkdir(path.dirname(fullDestPath), { recursive: true });
 
-    // Transform content
-    const transformed = await transformContent(content);
-
-    // Ensure destination directory exists
-    await fs.mkdir(path.dirname(fullDestPath), { recursive: true });
-
-    // Write to destination
-    await fs.writeFile(fullDestPath, transformed, 'utf-8');
-    console.log(`[SUCCESS] Written: ${destPath}`);
-  } catch (error) {
-    console.error(`[ERROR] Failed to migrate ${sourcePath}:`, error);
-    throw error;
-  }
+  // Write to destination
+  await fs.writeFile(fullDestPath, transformed, 'utf-8');
 }
 
 async function consolidateFiles(rule: ConsolidationRule): Promise<void> {
   if (rule.strategy === 'delete') {
-    console.log(
-      `[INFO] Skipping outdated files (will be deleted): ${rule.sources.join(', ')}`
-    );
     return;
   }
 
   if (rule.strategy === 'merge' && rule.destination) {
-    console.log(
-      `[INFO] Consolidating ${rule.sources.length} files -> ${rule.destination}`
-    );
-
     // Read all source files
     const contents = await Promise.all(
       rule.sources.map(async (src) => {
@@ -174,27 +131,20 @@ async function consolidateFiles(rule: ConsolidationRule): Promise<void> {
     const fullDestPath = path.join(REPO_ROOT, rule.destination!);
     await fs.mkdir(path.dirname(fullDestPath), { recursive: true });
     await fs.writeFile(fullDestPath, transformed, 'utf-8');
-
-    console.log(`[SUCCESS] Consolidated: ${rule.destination}`);
   }
 }
 
 async function updateWorkspaceConfig(): Promise<void> {
-  console.log('[INFO] Updating pnpm-workspace.yaml...');
-
   const workspaceFile = path.join(REPO_ROOT, 'pnpm-workspace.yaml');
   let content = await fs.readFile(workspaceFile, 'utf-8');
 
   // Remove 'docs' line
-  content = content.replace(/\n  - 'docs'\n/, '\n');
+  content = content.replace(/\n {2}- 'docs'\n/, '\n');
 
   await fs.writeFile(workspaceFile, content, 'utf-8');
-  console.log('[SUCCESS] Updated pnpm-workspace.yaml');
 }
 
 async function updatePackageJson(): Promise<void> {
-  console.log('[INFO] Updating package.json...');
-
   const packageFile = path.join(REPO_ROOT, 'package.json');
   const content = await fs.readFile(packageFile, 'utf-8');
   const pkg = JSON.parse(content);
@@ -202,18 +152,16 @@ async function updatePackageJson(): Promise<void> {
   // Remove test:docs script
   delete pkg.scripts['test:docs'];
 
-  await fs.writeFile(packageFile, JSON.stringify(pkg, null, 2) + '\n', 'utf-8');
-  console.log('[SUCCESS] Updated package.json');
+  await fs.writeFile(packageFile, `${JSON.stringify(pkg, null, 2)}\n`, 'utf-8');
 }
 
 async function updateReferences(): Promise<void> {
-  console.log('[INFO] Updating README.md...');
-
   const readmeFile = path.join(REPO_ROOT, 'README.md');
   let content = await fs.readFile(readmeFile, 'utf-8');
 
   // Replace VitePress documentation links
-  const oldPattern = /📖 \*\*\[Documentation\]\(https:\/\/docs\.atrarium\.net\)\*\* \| \[日本語\]\(https:\/\/docs\.atrarium\.net\/ja\/\)/;
+  const oldPattern =
+    /📖 \*\*\[Documentation\]\(https:\/\/docs\.atrarium\.net\)\*\* \| \[日本語\]\(https:\/\/docs\.atrarium\.net\/ja\/\)/;
   const newText = `📖 **Documentation**: Component-specific docs are located in respective directories:
 - [Lexicons](/lexicons/README.md) - AT Protocol Lexicon schemas
 - [Server](/server/README.md) - Backend server documentation
@@ -223,43 +171,27 @@ async function updateReferences(): Promise<void> {
   content = content.replace(oldPattern, newText);
 
   await fs.writeFile(readmeFile, content, 'utf-8');
-  console.log('[SUCCESS] Updated README.md');
 }
 
 async function deleteDocsWorkspace(force: boolean): Promise<void> {
   if (!force) {
-    console.log(
-      '[WARN] Skipping docs/ deletion (use --force to delete)'
-    );
     return;
   }
 
-  console.log('[WARN] Deleting docs/ workspace...');
-
   await fs.rm(DOCS_PATH, { recursive: true, force: true });
-  console.log('[SUCCESS] Deleted docs/ workspace');
 }
 
 async function main(): Promise<void> {
   const dryRun = process.argv.includes('--dry-run');
   const force = process.argv.includes('--force');
 
-  console.log('[INFO] Starting VitePress documentation migration...');
-  console.log(`[INFO] Mode: ${dryRun ? 'DRY-RUN' : 'EXECUTE'}`);
-
   if (dryRun) {
-    console.log('[INFO] Dry-run mode: No files will be modified');
-    console.log('[INFO] Consolidation rules:');
     for (const rule of CONSOLIDATION_RULES) {
       if (rule.strategy === 'merge') {
-        console.log(`  ${rule.sources.join(' + ')} -> ${rule.destination}`);
       } else {
-        console.log(`  DELETE: ${rule.sources.join(', ')}`);
       }
     }
-    console.log('[INFO] File mapping:');
-    for (const [source, dest] of Object.entries(FILE_MAPPING)) {
-      console.log(`  ${source} -> ${dest}`);
+    for (const [_source, _dest] of Object.entries(FILE_MAPPING)) {
     }
     return;
   }
@@ -284,19 +216,11 @@ async function main(): Promise<void> {
 
     // Step 5: Delete docs workspace (requires force flag)
     await deleteDocsWorkspace(force);
-
-    console.log('[SUCCESS] Migration completed!');
-    console.log('[INFO] Next steps:');
-    console.log('  1. Run: pnpm install');
-    console.log('  2. Verify: git status');
-    console.log('  3. Test: pnpm run build');
-  } catch (error) {
-    console.error('[ERROR] Migration failed:', error);
+  } catch (_error) {
     process.exit(1);
   }
 }
 
-main().catch((error) => {
-  console.error('[ERROR] Migration failed:', error);
+main().catch((_error) => {
   process.exit(1);
 });

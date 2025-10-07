@@ -2,8 +2,7 @@
 // Per-community feed index stored in Durable Objects Storage
 // Handles post indexing, membership verification, and feed skeleton generation
 
-import { DurableObject } from "cloudflare:workers";
-import type { Env } from "../types";
+import { DurableObject } from 'cloudflare:workers';
 
 interface PostEvent {
   uri: string;
@@ -48,37 +47,33 @@ export class CommunityFeedGenerator extends DurableObject {
   private readonly POST_RETENTION_DAYS = 7;
   private readonly POST_RETENTION_MS = this.POST_RETENTION_DAYS * 24 * 60 * 60 * 1000;
 
-  constructor(ctx: DurableObjectState, env: Env) {
-    super(ctx, env);
-  }
-
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
 
     switch (url.pathname) {
-      case "/indexPost":
+      case '/indexPost':
         return this.handleIndexPost(request);
 
-      case "/getFeedSkeleton":
+      case '/getFeedSkeleton':
         return this.handleGetFeedSkeleton(request);
 
-      case "/updateConfig":
+      case '/updateConfig':
         return this.handleUpdateConfig(request);
 
-      case "/addMember":
+      case '/addMember':
         return this.handleAddMember(request);
 
-      case "/removeMember":
+      case '/removeMember':
         return this.handleRemoveMember(request);
 
-      case "/moderatePost":
+      case '/moderatePost':
         return this.handleModeratePost(request);
 
-      case "/cleanup":
+      case '/cleanup':
         return this.handleCleanup();
 
       default:
-        return new Response("Not Found", { status: 404 });
+        return new Response('Not Found', { status: 404 });
     }
   }
 
@@ -93,34 +88,40 @@ export class CommunityFeedGenerator extends DurableObject {
   // POST /indexPost - Index a new post to the feed
   private async handleIndexPost(request: Request): Promise<Response> {
     try {
-      const postEvent = await request.json() as PostEvent;
+      const postEvent = (await request.json()) as PostEvent;
 
       // Verify membership
       const isMember = await this.verifyMembership(postEvent.authorDid);
       if (!isMember) {
-        return new Response(JSON.stringify({
-          error: "NotMember",
-          message: "Author is not a member of this community",
-        }), {
-          status: 403,
-          headers: { "Content-Type": "application/json" },
-        });
+        return new Response(
+          JSON.stringify({
+            error: 'NotMember',
+            message: 'Author is not a member of this community',
+          }),
+          {
+            status: 403,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
       }
 
       // Index post
       await this.indexPost(postEvent);
 
       return new Response(JSON.stringify({ success: true }), {
-        headers: { "Content-Type": "application/json" },
+        headers: { 'Content-Type': 'application/json' },
       });
     } catch (error) {
-      return new Response(JSON.stringify({
-        error: "InternalError",
-        message: error instanceof Error ? error.message : "Unknown error",
-      }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          error: 'InternalError',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
   }
 
@@ -128,93 +129,105 @@ export class CommunityFeedGenerator extends DurableObject {
   private async handleGetFeedSkeleton(request: Request): Promise<Response> {
     try {
       const url = new URL(request.url);
-      const limit = parseInt(url.searchParams.get("limit") || "50", 10);
-      const cursor = url.searchParams.get("cursor") || undefined;
+      const limit = parseInt(url.searchParams.get('limit') || '50', 10);
+      const cursor = url.searchParams.get('cursor') || undefined;
 
       const result = await this.getFeedSkeleton(limit, cursor);
 
       return new Response(JSON.stringify(result), {
-        headers: { "Content-Type": "application/json" },
+        headers: { 'Content-Type': 'application/json' },
       });
     } catch (error) {
-      return new Response(JSON.stringify({
-        error: "InternalError",
-        message: error instanceof Error ? error.message : "Unknown error",
-      }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          error: 'InternalError',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
   }
 
   // POST /updateConfig - Update community configuration
   private async handleUpdateConfig(request: Request): Promise<Response> {
     try {
-      const config = await request.json() as CommunityConfig;
-      await this.ctx.storage.put("config", config);
+      const config = (await request.json()) as CommunityConfig;
+      await this.ctx.storage.put('config', config);
 
       return new Response(JSON.stringify({ success: true }), {
-        headers: { "Content-Type": "application/json" },
+        headers: { 'Content-Type': 'application/json' },
       });
     } catch (error) {
-      return new Response(JSON.stringify({
-        error: "InternalError",
-        message: error instanceof Error ? error.message : "Unknown error",
-      }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          error: 'InternalError',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
   }
 
   // POST /addMember - Add a member to the community
   private async handleAddMember(request: Request): Promise<Response> {
     try {
-      const membership = await request.json() as MembershipRecord;
+      const membership = (await request.json()) as MembershipRecord;
       await this.ctx.storage.put(`member:${membership.did}`, membership);
 
       return new Response(JSON.stringify({ success: true }), {
-        headers: { "Content-Type": "application/json" },
+        headers: { 'Content-Type': 'application/json' },
       });
     } catch (error) {
-      return new Response(JSON.stringify({
-        error: "InternalError",
-        message: error instanceof Error ? error.message : "Unknown error",
-      }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          error: 'InternalError',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
   }
 
   // POST /removeMember - Remove a member from the community
   private async handleRemoveMember(request: Request): Promise<Response> {
     try {
-      const { did } = await request.json() as { did: string };
+      const { did } = (await request.json()) as { did: string };
       await this.ctx.storage.delete(`member:${did}`);
 
       return new Response(JSON.stringify({ success: true }), {
-        headers: { "Content-Type": "application/json" },
+        headers: { 'Content-Type': 'application/json' },
       });
     } catch (error) {
-      return new Response(JSON.stringify({
-        error: "InternalError",
-        message: error instanceof Error ? error.message : "Unknown error",
-      }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          error: 'InternalError',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
   }
 
   // POST /moderatePost - Apply moderation action to a post
   private async handleModeratePost(request: Request): Promise<Response> {
     try {
-      const action = await request.json() as ModerationAction;
+      const action = (await request.json()) as ModerationAction;
 
-      if (action.action === "hide_post") {
+      if (action.action === 'hide_post') {
         await this.hidePost(action.targetUri);
-      } else if (action.action === "unhide_post") {
+      } else if (action.action === 'unhide_post') {
         await this.unhidePost(action.targetUri);
       }
 
@@ -222,16 +235,19 @@ export class CommunityFeedGenerator extends DurableObject {
       await this.ctx.storage.put(`moderation:${action.targetUri}`, action);
 
       return new Response(JSON.stringify({ success: true }), {
-        headers: { "Content-Type": "application/json" },
+        headers: { 'Content-Type': 'application/json' },
       });
     } catch (error) {
-      return new Response(JSON.stringify({
-        error: "InternalError",
-        message: error instanceof Error ? error.message : "Unknown error",
-      }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          error: 'InternalError',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
   }
 
@@ -240,27 +256,33 @@ export class CommunityFeedGenerator extends DurableObject {
     try {
       const deletedCount = await this.cleanup();
 
-      return new Response(JSON.stringify({
-        success: true,
-        deletedCount,
-      }), {
-        headers: { "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          success: true,
+          deletedCount,
+        }),
+        {
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     } catch (error) {
-      return new Response(JSON.stringify({
-        error: "InternalError",
-        message: error instanceof Error ? error.message : "Unknown error",
-      }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          error: 'InternalError',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
   }
 
   // Internal: Verify if user is a member
   private async verifyMembership(did: string): Promise<boolean> {
     const membership = await this.ctx.storage.get<MembershipRecord>(`member:${did}`);
-    return membership !== undefined && membership.active;
+    return membership?.active;
   }
 
   // Internal: Index a post
@@ -291,7 +313,7 @@ export class CommunityFeedGenerator extends DurableObject {
 
     // List posts in reverse chronological order
     const listOptions: DurableObjectListOptions = {
-      prefix: "post:",
+      prefix: 'post:',
       reverse: true,
       limit: limit + 1, // Fetch one extra to determine if there's more
     };
@@ -306,9 +328,9 @@ export class CommunityFeedGenerator extends DurableObject {
     const postArray = Array.from(posts.values());
 
     // Filter out hidden posts
-    const visiblePosts = postArray.filter(
-      post => post.moderationStatus !== 'hidden'
-    ).slice(0, limit); // Only take up to limit (we fetched limit+1)
+    const visiblePosts = postArray
+      .filter((post) => post.moderationStatus !== 'hidden')
+      .slice(0, limit); // Only take up to limit (we fetched limit+1)
 
     // Determine next cursor
     let nextCursor: string | undefined;
@@ -320,7 +342,7 @@ export class CommunityFeedGenerator extends DurableObject {
     }
 
     return {
-      feed: visiblePosts.map(post => ({ post: post.uri })),
+      feed: visiblePosts.map((post) => ({ post: post.uri })),
       cursor: nextCursor,
     };
   }
@@ -329,7 +351,7 @@ export class CommunityFeedGenerator extends DurableObject {
   private async hidePost(uri: string): Promise<void> {
     // Find post by URI
     const posts = await this.ctx.storage.list<PostMetadata>({
-      prefix: "post:",
+      prefix: 'post:',
     });
 
     for (const [key, post] of posts.entries()) {
@@ -345,7 +367,7 @@ export class CommunityFeedGenerator extends DurableObject {
   private async unhidePost(uri: string): Promise<void> {
     // Find post by URI
     const posts = await this.ctx.storage.list<PostMetadata>({
-      prefix: "post:",
+      prefix: 'post:',
     });
 
     for (const [key, post] of posts.entries()) {
@@ -364,7 +386,7 @@ export class CommunityFeedGenerator extends DurableObject {
 
     // List all posts
     const posts = await this.ctx.storage.list<PostMetadata>({
-      prefix: "post:",
+      prefix: 'post:',
     });
 
     const keysToDelete: string[] = [];
@@ -380,8 +402,6 @@ export class CommunityFeedGenerator extends DurableObject {
       await this.ctx.storage.delete(keysToDelete);
       deletedCount = keysToDelete.length;
     }
-
-    console.log(`[CommunityFeedGenerator] Cleaned up ${deletedCount} posts older than ${this.POST_RETENTION_DAYS} days`);
 
     return deletedCount;
   }

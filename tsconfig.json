@@ -21,11 +21,7 @@
     "isolatedModules": true,
     "outDir": "./dist"
   },
-  "references": [
-    { "path": "./server" },
-    { "path": "./client/dashboard" },
-    { "path": "./docs" }
-  ],
+  "references": [{ "path": "./server" }, { "path": "./client/dashboard" }, { "path": "./docs" }],
   "files": [],
   "include": [],
   "exclude": ["node_modules"]

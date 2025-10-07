@@ -3,9 +3,9 @@
 
 import type { z } from 'zod';
 import type {
-  CreateCommunitySchema,
-  CommunityOutputSchema,
   CommunityListOutputSchema,
+  CommunityOutputSchema,
+  CreateCommunitySchema,
   GetCommunityInputSchema,
 } from './schemas';
 

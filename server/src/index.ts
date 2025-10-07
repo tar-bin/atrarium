@@ -1,28 +1,26 @@
 // Atrarium MVP - Main entry point
 // Cloudflare Workers handler with Hono router + oRPC
 
+import type { Context } from '@atrarium/contracts/router';
+import { RPCHandler } from '@orpc/server/fetch';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
-import { RPCHandler } from '@orpc/server/fetch';
-import type { Env, HonoVariables } from './types';
-import type { Context } from '@atrarium/contracts/router';
+// Import OpenAPI generator
+import { generateOpenAPISpec } from './openapi';
 
 // Import oRPC router
 import { router } from './router';
-
+import authRoutes from './routes/auth';
 // Import routes (legacy, to be migrated)
 import feedGeneratorRoutes from './routes/feed-generator';
-import authRoutes from './routes/auth';
+import lexiconRoutes from './routes/lexicon';
 // import communityRoutes from './routes/communities'; // Migrated to oRPC
 // import themeFeedRoutes from './routes/theme-feeds'; // TODO: Migrate to PDS-first
 // import postRoutes from './routes/posts'; // TODO: Migrate to PDS-first
 import membershipRoutes from './routes/memberships';
 import moderationRoutes from './routes/moderation';
-import lexiconRoutes from './routes/lexicon';
-
-// Import OpenAPI generator
-import { generateOpenAPISpec } from './openapi';
+import type { Env, HonoVariables } from './types';
 
 // ============================================================================
 // Main Application
@@ -55,7 +53,6 @@ app.use('*', async (c, next) => {
 
 // Global error handler
 app.onError((err, c) => {
-  console.error('[Global Error]', err);
   return c.json(
     {
       error: 'InternalServerError',
@@ -197,16 +194,8 @@ app.notFound((c) => {
 // ============================================================================
 
 async function handleScheduledJob(_env: Env, _ctx: ExecutionContext) {
-  console.log('[Scheduled Job] Starting cleanup (PDS-first architecture)');
-
   try {
-    // TODO: Implement PDS-based cleanup logic
-    // - Trigger Durable Object cleanup alarms
-    // - Check for deleted posts via AT Protocol
-    console.log('[Scheduled Job] Completed successfully');
-  } catch (err) {
-    console.error('[Scheduled Job] Error:', err);
-  }
+  } catch (_err) {}
 }
 
 // ============================================================================

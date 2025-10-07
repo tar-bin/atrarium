@@ -9,8 +9,8 @@ import { contract } from './router';
 const router = {
   communities: {
     list: contract.communities.list.handler(async () => ({ data: [] })),
-    create: contract.communities.create.handler(async () => ({} as any)),
-    get: contract.communities.get.handler(async () => ({} as any)),
+    create: contract.communities.create.handler(async () => ({}) as any),
+    get: contract.communities.get.handler(async () => ({}) as any),
   },
 };
 

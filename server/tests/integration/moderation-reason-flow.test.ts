@@ -5,23 +5,13 @@
  * Based on quickstart.md scenario (Alice-Bob moderation flow)
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 // Will be implemented after T006-T012 (full stack implementation)
 describe.skip('Moderation Reason Flow (End-to-End)', () => {
-  beforeAll(async () => {
-    // TODO: Setup test environment
-    // - Start local PDS
-    // - Create test users (Alice as moderator, Bob as member)
-    // - Create test community (Anime Community)
-    // - Create Bob's spam post
-    console.log('Setup E2E test environment');
-  });
+  beforeAll(async () => {});
 
-  afterAll(async () => {
-    // TODO: Cleanup test environment
-    console.log('Cleanup E2E test environment');
-  });
+  afterAll(async () => {});
 
   it('should complete full moderation flow with enum reason', async () => {
     // Step 1: Alice logs in as moderator

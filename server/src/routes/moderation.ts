@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
+import { AuthService } from '../services/auth';
 import type { Env, HonoVariables } from '../types';
 import { MODERATION_REASONS, type ModerationReason } from '../types';
-import { AuthService } from '../services/auth';
 
 const app = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -16,7 +16,7 @@ app.use('*', async (c, next) => {
     const userDid = await authService.extractUserFromHeader(authHeader);
     c.set('userDid', userDid);
     await next();
-  } catch (err) {
+  } catch (_err) {
     return c.json({ error: 'Unauthorized', message: 'Invalid or missing JWT' }, 401);
   }
 });
@@ -55,7 +55,10 @@ app.post('/hide-post', async (c) => {
     const { postUri, communityId, reason } = body;
 
     if (!postUri || !communityId) {
-      return c.json({ error: 'InvalidRequest', message: 'postUri and communityId are required' }, 400);
+      return c.json(
+        { error: 'InvalidRequest', message: 'postUri and communityId are required' },
+        400
+      );
     }
 
     // Validate moderation reason (prevent PII/confidential data in public records)
@@ -91,24 +94,22 @@ app.post('/hide-post', async (c) => {
     });
 
     // Apply moderation to Durable Object
-    await stub.fetch(new Request('http://fake-host/moderatePost', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'hide_post',
-        targetUri: postUri,
-        reason,
-        createdAt: now,
-      }),
-    }));
+    await stub.fetch(
+      new Request('http://fake-host/moderatePost', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'hide_post',
+          targetUri: postUri,
+          reason,
+          createdAt: now,
+        }),
+      })
+    );
 
     return c.json({ success: true }, 200);
   } catch (err) {
-    console.error('[POST /api/moderation/hide-post] Error:', err);
-    return c.json(
-      { error: 'InternalServerError', message: (err as Error).message },
-      500
-    );
+    return c.json({ error: 'InternalServerError', message: (err as Error).message }, 500);
   }
 });
 
@@ -123,7 +124,10 @@ app.post('/unhide-post', async (c) => {
     const { postUri, communityId, reason } = body;
 
     if (!postUri || !communityId) {
-      return c.json({ error: 'InvalidRequest', message: 'postUri and communityId are required' }, 400);
+      return c.json(
+        { error: 'InvalidRequest', message: 'postUri and communityId are required' },
+        400
+      );
     }
 
     // Validate moderation reason (enum-only, 007-reason-enum-atproto)
@@ -133,13 +137,12 @@ app.post('/unhide-post', async (c) => {
     }
 
     // TODO: Similar to hide-post (create PDS record + update Durable Object)
-    return c.json({ error: 'NotImplemented', message: 'PDS-based unhide not yet implemented' }, 501);
-  } catch (err) {
-    console.error('[POST /api/moderation/unhide-post] Error:', err);
     return c.json(
-      { error: 'InternalServerError', message: (err as Error).message },
-      500
+      { error: 'NotImplemented', message: 'PDS-based unhide not yet implemented' },
+      501
     );
+  } catch (err) {
+    return c.json({ error: 'InternalServerError', message: (err as Error).message }, 500);
   }
 });
 
@@ -154,7 +157,10 @@ app.post('/block-user', async (c) => {
     const { userDid, communityId, reason } = body;
 
     if (!userDid || !communityId) {
-      return c.json({ error: 'InvalidRequest', message: 'userDid and communityId are required' }, 400);
+      return c.json(
+        { error: 'InvalidRequest', message: 'userDid and communityId are required' },
+        400
+      );
     }
 
     // Validate moderation reason (prevent PII/confidential data in public records)
@@ -166,11 +172,7 @@ app.post('/block-user', async (c) => {
     // TODO: Implement PDS-based user blocking
     return c.json({ error: 'NotImplemented', message: 'PDS-based block not yet implemented' }, 501);
   } catch (err) {
-    console.error('[POST /api/moderation/block-user] Error:', err);
-    return c.json(
-      { error: 'InternalServerError', message: (err as Error).message },
-      500
-    );
+    return c.json({ error: 'InternalServerError', message: (err as Error).message }, 500);
   }
 });
 
@@ -185,7 +187,10 @@ app.post('/unblock-user', async (c) => {
     const { userDid, communityId, reason } = body;
 
     if (!userDid || !communityId) {
-      return c.json({ error: 'InvalidRequest', message: 'userDid and communityId are required' }, 400);
+      return c.json(
+        { error: 'InvalidRequest', message: 'userDid and communityId are required' },
+        400
+      );
     }
 
     // Validate moderation reason (enum-only, 007-reason-enum-atproto)
@@ -195,13 +200,12 @@ app.post('/unblock-user', async (c) => {
     }
 
     // TODO: Implement PDS-based user unblocking
-    return c.json({ error: 'NotImplemented', message: 'PDS-based unblock not yet implemented' }, 501);
-  } catch (err) {
-    console.error('[POST /api/moderation/unblock-user] Error:', err);
     return c.json(
-      { error: 'InternalServerError', message: (err as Error).message },
-      500
+      { error: 'NotImplemented', message: 'PDS-based unblock not yet implemented' },
+      501
     );
+  } catch (err) {
+    return c.json({ error: 'InternalServerError', message: (err as Error).message }, 500);
   }
 });
 
@@ -217,11 +221,7 @@ app.get('/logs', async (c) => {
     // - Filter by community/feed
     return c.json({ data: [], cursor: undefined });
   } catch (err) {
-    console.error('[GET /api/moderation/logs] Error:', err);
-    return c.json(
-      { error: 'InternalServerError', message: (err as Error).message },
-      500
-    );
+    return c.json({ error: 'InternalServerError', message: (err as Error).message }, 500);
   }
 });
 

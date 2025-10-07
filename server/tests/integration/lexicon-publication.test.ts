@@ -2,7 +2,7 @@
 // Simulates PDS workflow: fetch schema → validate → cache → conditional request
 // Based on quickstart.md steps 1-3
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 const BASE_URL = 'http://localhost:8787';
 const LEXICON_ENDPOINT = '/xrpc/net.atrarium.lexicon.get';
@@ -27,7 +27,7 @@ describe('Lexicon Publication Integration', () => {
     expect(response.status).toBe(200);
 
     // Step 2: Validate JSON structure (AT Protocol Lexicon format)
-    const schema = await response.json() as LexiconSchema;
+    const schema = (await response.json()) as LexiconSchema;
 
     expect(schema).toHaveProperty('lexicon', 1);
     expect(schema).toHaveProperty('id', nsid);
@@ -67,7 +67,7 @@ describe('Lexicon Publication Integration', () => {
 
     for (const nsid of schemas) {
       const response = await fetch(`${BASE_URL}${LEXICON_ENDPOINT}?nsid=${nsid}`);
-      const schema = await response.json() as LexiconSchema;
+      const schema = (await response.json()) as LexiconSchema;
 
       expect(response.status).toBe(200);
       expect(schema.id).toBe(nsid);
@@ -78,11 +78,14 @@ describe('Lexicon Publication Integration', () => {
 
   it('should support cross-origin requests (CORS)', async () => {
     // PDS from different domain fetches schema
-    const response = await fetch(`${BASE_URL}${LEXICON_ENDPOINT}?nsid=net.atrarium.community.config`, {
-      headers: {
-        'Origin': 'https://example-pds.com',
-      },
-    });
+    const response = await fetch(
+      `${BASE_URL}${LEXICON_ENDPOINT}?nsid=net.atrarium.community.config`,
+      {
+        headers: {
+          Origin: 'https://example-pds.com',
+        },
+      }
+    );
 
     expect(response.status).toBe(200);
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
@@ -92,7 +95,7 @@ describe('Lexicon Publication Integration', () => {
     const preflightResponse = await fetch(`${BASE_URL}${LEXICON_ENDPOINT}`, {
       method: 'OPTIONS',
       headers: {
-        'Origin': 'https://example-pds.com',
+        Origin: 'https://example-pds.com',
         'Access-Control-Request-Method': 'GET',
         'Access-Control-Request-Headers': 'If-None-Match',
       },
@@ -109,23 +112,25 @@ describe('Lexicon Publication Integration', () => {
 
     expect(response.status).toBe(404);
 
-    const error = await response.json() as ErrorResponse;
+    const error = (await response.json()) as ErrorResponse;
     expect(error).toHaveProperty('error', 'InvalidRequest');
     expect(error).toHaveProperty('message');
     expect(error.message).toMatch(/not found|unknown/i);
   });
 
   it('should validate schema content matches Lexicon specification', async () => {
-    const response = await fetch(`${BASE_URL}${LEXICON_ENDPOINT}?nsid=net.atrarium.community.config`);
-    const schema = await response.json() as LexiconSchema & {
+    const response = await fetch(
+      `${BASE_URL}${LEXICON_ENDPOINT}?nsid=net.atrarium.community.config`
+    );
+    const schema = (await response.json()) as LexiconSchema & {
       defs: {
         main: {
           record: {
             properties: Record<string, unknown>;
             required: string[];
-          }
-        }
-      }
+          };
+        };
+      };
     };
 
     // Community config specific validation

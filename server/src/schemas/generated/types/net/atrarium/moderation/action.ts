@@ -1,26 +1,17 @@
-/**
- * GENERATED CODE - DO NOT MODIFY
- */
-import { type ValidationResult, BlobRef } from '@atproto/lexicon'
-import { CID } from 'multiformats/cid'
-import { validate as _validate } from '../../../../lexicons'
-import {
-  type $Typed,
-  is$typed as _is$typed,
-  type OmitKey,
-} from '../../../../util'
+import { validate as _validate } from '../../../../lexicons';
+import { is$typed as _is$typed, type $Typed } from '../../../../util';
 
 const is$typed = _is$typed,
-  validate = _validate
-const id = 'net.atrarium.moderation.action'
+  validate = _validate;
+const id = 'net.atrarium.moderation.action';
 
 export interface Record {
-  $type: 'net.atrarium.moderation.action'
+  $type: 'net.atrarium.moderation.action';
   /** Type of moderation action */
-  action: 'hide_post' | 'unhide_post' | 'block_user' | 'unblock_user'
-  target: $Typed<PostTarget> | $Typed<UserTarget> | { $type: string }
+  action: 'hide_post' | 'unhide_post' | 'block_user' | 'unblock_user';
+  target: $Typed<PostTarget> | $Typed<UserTarget> | { $type: string };
   /** AT-URI of the community where this action applies */
-  community: string
+  community: string;
   /** Reason for the moderation action (predefined enum values only). Public record stored in moderator's PDS. See MODERATION_REASONS.md for detailed descriptions. */
   reason?:
     | 'spam'
@@ -39,54 +30,54 @@ export interface Record {
     | 'bot_activity'
     | 'impersonation'
     | 'ban_evasion'
-    | 'other'
+    | 'other';
   /** Action timestamp (ISO 8601) */
-  createdAt: string
-  [k: string]: unknown
+  createdAt: string;
+  [k: string]: unknown;
 }
 
-const hashRecord = 'main'
+const hashRecord = 'main';
 
 export function isRecord<V>(v: V) {
-  return is$typed(v, id, hashRecord)
+  return is$typed(v, id, hashRecord);
 }
 
 export function validateRecord<V>(v: V) {
-  return validate<Record & V>(v, id, hashRecord, true)
+  return validate<Record & V>(v, id, hashRecord, true);
 }
 
 /** Post being moderated (uses strongRef for immutability) */
 export interface PostTarget {
-  $type?: 'net.atrarium.moderation.action#postTarget'
+  $type?: 'net.atrarium.moderation.action#postTarget';
   /** AT-URI of the post (at://did:plc:author/app.bsky.feed.post/rkey) */
-  uri: string
+  uri: string;
   /** Content identifier (CID) of the post record */
-  cid: string
+  cid: string;
 }
 
-const hashPostTarget = 'postTarget'
+const hashPostTarget = 'postTarget';
 
 export function isPostTarget<V>(v: V) {
-  return is$typed(v, id, hashPostTarget)
+  return is$typed(v, id, hashPostTarget);
 }
 
 export function validatePostTarget<V>(v: V) {
-  return validate<PostTarget & V>(v, id, hashPostTarget)
+  return validate<PostTarget & V>(v, id, hashPostTarget);
 }
 
 /** User being moderated */
 export interface UserTarget {
-  $type?: 'net.atrarium.moderation.action#userTarget'
+  $type?: 'net.atrarium.moderation.action#userTarget';
   /** DID of the user being blocked/unblocked */
-  did: string
+  did: string;
 }
 
-const hashUserTarget = 'userTarget'
+const hashUserTarget = 'userTarget';
 
 export function isUserTarget<V>(v: V) {
-  return is$typed(v, id, hashUserTarget)
+  return is$typed(v, id, hashUserTarget);
 }
 
 export function validateUserTarget<V>(v: V) {
-  return validate<UserTarget & V>(v, id, hashUserTarget)
+  return validate<UserTarget & V>(v, id, hashUserTarget);
 }

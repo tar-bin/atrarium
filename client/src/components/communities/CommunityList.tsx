@@ -123,7 +123,6 @@ export function CommunityList({ communities, loading, error, onCreateClick }: Co
               userRole={getCommunityRole(community)}
               onClick={() => {
                 // Navigation will be handled by parent/router
-                console.log('Navigate to community:', community.id);
               }}
             />
           ))}

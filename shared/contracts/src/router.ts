@@ -3,9 +3,9 @@
 
 import { os } from '@orpc/server';
 import {
-  CreateCommunitySchema,
-  CommunityOutputSchema,
   CommunityListOutputSchema,
+  CommunityOutputSchema,
+  CreateCommunitySchema,
   GetCommunityInputSchema,
 } from './schemas';
 

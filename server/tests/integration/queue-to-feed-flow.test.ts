@@ -2,8 +2,8 @@
 // Validates the complete Firehose → Queue → CommunityFeedGenerator → getFeedSkeleton flow
 // Tests lightweight filter, heavyweight filter, membership verification, and moderation
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { env } from 'cloudflare:test';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 // NOTE: These tests are designed for the PDS-first architecture (006-pds-1-db)
 // They validate the Queue → CommunityFeedGenerator → getFeedSkeleton flow
@@ -40,41 +40,47 @@ describe.skip('Queue to Feed Flow Integration (requires deployed environment)', 
     const communityStub = env.COMMUNITY_FEED.get(communityId);
 
     // Configure community
-    await communityStub.fetch(new Request('http://test/updateConfig', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: 'Design Community',
-        description: 'A community for designers',
-        hashtag: testHashtag,
-        stage: 'theme',
-        createdAt: new Date().toISOString(),
-      }),
-    }));
+    await communityStub.fetch(
+      new Request('http://test/updateConfig', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: 'Design Community',
+          description: 'A community for designers',
+          hashtag: testHashtag,
+          stage: 'theme',
+          createdAt: new Date().toISOString(),
+        }),
+      })
+    );
 
     // Add Alice as owner/moderator
-    await communityStub.fetch(new Request('http://test/addMember', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        did: aliceDid,
-        role: 'owner',
-        joinedAt: new Date().toISOString(),
-        active: true,
-      }),
-    }));
+    await communityStub.fetch(
+      new Request('http://test/addMember', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          did: aliceDid,
+          role: 'owner',
+          joinedAt: new Date().toISOString(),
+          active: true,
+        }),
+      })
+    );
 
     // Add Bob as member
-    await communityStub.fetch(new Request('http://test/addMember', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        did: bobDid,
-        role: 'member',
-        joinedAt: new Date().toISOString(),
-        active: true,
-      }),
-    }));
+    await communityStub.fetch(
+      new Request('http://test/addMember', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          did: bobDid,
+          role: 'member',
+          joinedAt: new Date().toISOString(),
+          active: true,
+        }),
+      })
+    );
   });
 
   afterAll(async () => {
@@ -104,7 +110,7 @@ describe.skip('Queue to Feed Flow Integration (requires deployed environment)', 
     // Step 3: Wait for Queue processing (FirehoseProcessor Worker)
     // NOTE: In test environment, Queue consumer runs automatically
     // but we need to wait for async processing
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // Step 4: Verify post was indexed in CommunityFeedGenerator DO
     const communityId = env.COMMUNITY_FEED.idFromName(testCommunityId);
@@ -114,7 +120,7 @@ describe.skip('Queue to Feed Flow Integration (requires deployed environment)', 
     const response = await stub.fetch(new Request('http://test/getFeedSkeleton?limit=10'));
     expect(response.ok).toBe(true);
 
-    const result = await response.json() as {
+    const result = (await response.json()) as {
       feed: Array<{ post: string }>;
       cursor?: string;
     };
@@ -124,7 +130,7 @@ describe.skip('Queue to Feed Flow Integration (requires deployed environment)', 
     expect(result.feed.length).toBeGreaterThan(0);
 
     const expectedUri = `at://${bobDid}/app.bsky.feed.post/test123`;
-    const foundPost = result.feed.find(item => item.post === expectedUri);
+    const foundPost = result.feed.find((item) => item.post === expectedUri);
     expect(foundPost).toBeDefined();
   });
 
@@ -145,7 +151,7 @@ describe.skip('Queue to Feed Flow Integration (requires deployed environment)', 
     };
 
     await env.FIREHOSE_EVENTS.send(mockEvent);
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // This event should be filtered out by FirehoseReceiver (lightweight filter)
     // and never reach CommunityFeedGenerator
@@ -153,13 +159,13 @@ describe.skip('Queue to Feed Flow Integration (requires deployed environment)', 
     const stub = env.COMMUNITY_FEED.get(communityId);
 
     const response = await stub.fetch(new Request('http://test/getFeedSkeleton?limit=10'));
-    const result = await response.json() as {
+    const result = (await response.json()) as {
       feed: Array<{ post: string }>;
     };
 
     // Post without hashtag should NOT appear
     const unexpectedUri = `at://${bobDid}/app.bsky.feed.post/test456`;
-    const foundPost = result.feed.find(item => item.post === unexpectedUri);
+    const foundPost = result.feed.find((item) => item.post === unexpectedUri);
     expect(foundPost).toBeUndefined();
   });
 
@@ -180,20 +186,20 @@ describe.skip('Queue to Feed Flow Integration (requires deployed environment)', 
     };
 
     await env.FIREHOSE_EVENTS.send(mockEvent);
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // Post should pass lightweight/heavyweight filters but fail membership check
     const communityId = env.COMMUNITY_FEED.idFromName(testCommunityId);
     const stub = env.COMMUNITY_FEED.get(communityId);
 
     const response = await stub.fetch(new Request('http://test/getFeedSkeleton?limit=10'));
-    const result = await response.json() as {
+    const result = (await response.json()) as {
       feed: Array<{ post: string }>;
     };
 
     // Non-member's post should NOT appear
     const unexpectedUri = `at://${charlieDid}/app.bsky.feed.post/test789`;
-    const foundPost = result.feed.find(item => item.post === unexpectedUri);
+    const foundPost = result.feed.find((item) => item.post === unexpectedUri);
     expect(foundPost).toBeUndefined();
   });
 
@@ -215,7 +221,7 @@ describe.skip('Queue to Feed Flow Integration (requires deployed environment)', 
     };
 
     await env.FIREHOSE_EVENTS.send(mockEvent);
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     const targetUri = `at://${bobDid}/app.bsky.feed.post/moderate123`;
     const communityId = env.COMMUNITY_FEED.idFromName(testCommunityId);
@@ -223,11 +229,11 @@ describe.skip('Queue to Feed Flow Integration (requires deployed environment)', 
 
     // Step 2: Verify post appears in feed
     let response = await stub.fetch(new Request('http://test/getFeedSkeleton?limit=10'));
-    let result = await response.json() as {
+    let result = (await response.json()) as {
       feed: Array<{ post: string }>;
     };
 
-    let foundPost = result.feed.find(item => item.post === targetUri);
+    let foundPost = result.feed.find((item) => item.post === targetUri);
     expect(foundPost).toBeDefined();
 
     // Step 3: Alice moderates the post (hide)
@@ -238,22 +244,24 @@ describe.skip('Queue to Feed Flow Integration (requires deployed environment)', 
       createdAt: new Date().toISOString(),
     };
 
-    const moderateResponse = await stub.fetch(new Request('http://test/moderatePost', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(moderationAction),
-    }));
+    const moderateResponse = await stub.fetch(
+      new Request('http://test/moderatePost', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(moderationAction),
+      })
+    );
 
     expect(moderateResponse.ok).toBe(true);
 
     // Step 4: Verify post is hidden in feed
     response = await stub.fetch(new Request('http://test/getFeedSkeleton?limit=10'));
-    result = await response.json() as {
+    result = (await response.json()) as {
       feed: Array<{ post: string }>;
     };
 
     // Hidden post should not appear in feed
-    foundPost = result.feed.find(item => item.post === targetUri);
+    foundPost = result.feed.find((item) => item.post === targetUri);
     expect(foundPost).toBeUndefined();
   });
 
@@ -283,20 +291,20 @@ describe.skip('Queue to Feed Flow Integration (requires deployed environment)', 
       await env.FIREHOSE_EVENTS.send(event);
     }
 
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // Verify all 5 posts were indexed
     const communityId = env.COMMUNITY_FEED.idFromName(testCommunityId);
     const stub = env.COMMUNITY_FEED.get(communityId);
 
     const response = await stub.fetch(new Request('http://test/getFeedSkeleton?limit=50'));
-    const result = await response.json() as {
+    const result = (await response.json()) as {
       feed: Array<{ post: string }>;
     };
 
     // Count batch posts
-    const batchPosts = result.feed.filter(item =>
-      item.post.includes('/batch') && item.post.includes(bobDid)
+    const batchPosts = result.feed.filter(
+      (item) => item.post.includes('/batch') && item.post.includes(bobDid)
     );
 
     expect(batchPosts.length).toBe(5);
@@ -315,26 +323,30 @@ describe.skip('Queue to Feed Flow Integration (requires deployed environment)', 
       hashtags: [testHashtag],
     };
 
-    await stub.fetch(new Request('http://test/indexPost', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(oldPost),
-    }));
+    await stub.fetch(
+      new Request('http://test/indexPost', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(oldPost),
+      })
+    );
 
     // Trigger cleanup
-    const cleanupResponse = await stub.fetch(new Request('http://test/cleanup', {
-      method: 'POST',
-    }));
+    const cleanupResponse = await stub.fetch(
+      new Request('http://test/cleanup', {
+        method: 'POST',
+      })
+    );
 
     expect(cleanupResponse.ok).toBe(true);
 
     // Verify old post was removed
     const response = await stub.fetch(new Request('http://test/getFeedSkeleton?limit=50'));
-    const result = await response.json() as {
+    const result = (await response.json()) as {
       feed: Array<{ post: string }>;
     };
 
-    const oldPostFound = result.feed.find(item => item.post === oldPost.uri);
+    const oldPostFound = result.feed.find((item) => item.post === oldPost.uri);
     expect(oldPostFound).toBeUndefined();
   });
 });

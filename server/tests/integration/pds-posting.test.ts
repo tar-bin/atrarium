@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { BskyAgent } from '@atproto/api';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 /**
  * Integration tests for PDS posting functionality
@@ -19,36 +19,23 @@ describe.skip('PDS Integration: Direct Posting', { timeout: TEST_TIMEOUT }, () =
   let bobAgent: BskyAgent;
 
   beforeAll(async () => {
-    // Check if PDS is available
-    try {
-      const healthCheck = await fetch(`${PDS_URL}/xrpc/_health`);
-      if (!healthCheck.ok) {
-        throw new Error('PDS health check failed');
-      }
-    } catch (error) {
-      console.error('❌ PDS not available. Run: bash .devcontainer/setup-pds.sh');
-      throw error;
+    const healthCheck = await fetch(`${PDS_URL}/xrpc/_health`);
+    if (!healthCheck.ok) {
+      throw new Error('PDS health check failed');
     }
 
     // Initialize agents for test users
     aliceAgent = new BskyAgent({ service: PDS_URL });
     bobAgent = new BskyAgent({ service: PDS_URL });
+    await aliceAgent.login({
+      identifier: 'alice.test',
+      password: 'test123',
+    });
 
-    // Login test users
-    try {
-      await aliceAgent.login({
-        identifier: 'alice.test',
-        password: 'test123'
-      });
-
-      await bobAgent.login({
-        identifier: 'bob.test',
-        password: 'test123'
-      });
-    } catch (error) {
-      console.error('❌ Login failed. Ensure test accounts exist.');
-      throw error;
-    }
+    await bobAgent.login({
+      identifier: 'bob.test',
+      password: 'test123',
+    });
   });
 
   afterAll(async () => {
@@ -66,7 +53,7 @@ describe.skip('PDS Integration: Direct Posting', { timeout: TEST_TIMEOUT }, () =
       const text = 'Hello from Atrarium tests!';
       const response = await aliceAgent.post({
         text,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       });
 
       expect(response.uri).toMatch(/^at:\/\//);
@@ -78,7 +65,7 @@ describe.skip('PDS Integration: Direct Posting', { timeout: TEST_TIMEOUT }, () =
       const text = 'Test post for retrieval';
       const createResponse = await aliceAgent.post({
         text,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       });
 
       // Parse URI to get repo and rkey
@@ -89,7 +76,7 @@ describe.skip('PDS Integration: Direct Posting', { timeout: TEST_TIMEOUT }, () =
       // Retrieve post
       const getResponse = await aliceAgent.app.bsky.feed.post.get({
         repo,
-        rkey
+        rkey,
       });
 
       expect(getResponse.value.text).toBe(text);
@@ -104,7 +91,7 @@ describe.skip('PDS Integration: Direct Posting', { timeout: TEST_TIMEOUT }, () =
 
       const response = await aliceAgent.post({
         text,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       });
 
       expect(response.uri).toBeDefined();
@@ -126,7 +113,7 @@ describe.skip('PDS Integration: Direct Posting', { timeout: TEST_TIMEOUT }, () =
 
       const response = await aliceAgent.post({
         text,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       });
 
       const uriParts = response.uri.split('/');
@@ -144,12 +131,12 @@ describe.skip('PDS Integration: Direct Posting', { timeout: TEST_TIMEOUT }, () =
 
       const aliceResponse = await aliceAgent.post({
         text: aliceText,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       });
 
       const bobResponse = await bobAgent.post({
         text: bobText,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       });
 
       expect(aliceResponse.uri).toBeDefined();
@@ -164,7 +151,7 @@ describe.skip('PDS Integration: Direct Posting', { timeout: TEST_TIMEOUT }, () =
       const text = 'This post will be deleted';
       const createResponse = await aliceAgent.post({
         text,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       });
 
       const uriParts = createResponse.uri.split('/');
@@ -174,7 +161,7 @@ describe.skip('PDS Integration: Direct Posting', { timeout: TEST_TIMEOUT }, () =
       // Delete post
       await aliceAgent.app.bsky.feed.post.delete({
         repo,
-        rkey
+        rkey,
       });
 
       // Verify deletion (should throw or return null)
@@ -194,7 +181,7 @@ describe.skip('PDS Integration: Direct Posting', { timeout: TEST_TIMEOUT }, () =
 
       const response = await aliceAgent.post({
         text,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       });
 
       expect(response.uri).toBeDefined();
@@ -202,11 +189,11 @@ describe.skip('PDS Integration: Direct Posting', { timeout: TEST_TIMEOUT }, () =
 
     it('should handle long posts (near character limit)', async () => {
       // AT Protocol allows 300 characters
-      const longText = 'A'.repeat(270) + ' #atrarium_longpost';
+      const longText = `${'A'.repeat(270)} #atrarium_longpost`;
 
       const response = await aliceAgent.post({
         text: longText,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       });
 
       expect(response.uri).toBeDefined();
@@ -219,7 +206,7 @@ describe.skip('PDS Integration: Direct Posting', { timeout: TEST_TIMEOUT }, () =
       await expect(
         aliceAgent.post({
           text: tooLongText,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
         })
       ).rejects.toThrow();
     });
@@ -236,7 +223,7 @@ describe('PDS Availability Check', () => {
     const response = await fetch(`${PDS_URL}/xrpc/com.atproto.server.describeServer`);
     expect(response.ok).toBe(true);
 
-    const data = await response.json() as { availableUserDomains: string[] };
+    const data = (await response.json()) as { availableUserDomains: string[] };
     expect(data.availableUserDomains).toBeDefined();
   });
 });

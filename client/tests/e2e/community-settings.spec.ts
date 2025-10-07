@@ -94,7 +94,7 @@ test.describe.skip('Feed Mix Configuration', () => {
 
     // Verify value is a valid percentage (0-100)
     const value = await ownFeedSlider.inputValue();
-    const numValue = parseInt(value);
+    const numValue = parseInt(value, 10);
     expect(numValue).toBeGreaterThanOrEqual(0);
     expect(numValue).toBeLessThanOrEqual(100);
   });
@@ -160,7 +160,7 @@ test.describe.skip('Feed Mix Configuration', () => {
 
   test('should show visual feedback for feed mix distribution', async ({ page }) => {
     // Check if there's a visual representation (e.g., pie chart, bar chart)
-    const visualization = page.locator('[data-testid="feed-mix-visualization"]');
+    const _visualization = page.locator('[data-testid="feed-mix-visualization"]');
     // Note: Implementation-specific
   });
 });
@@ -200,7 +200,7 @@ test.describe.skip('Member Management', () => {
 
     if (await firstMember.isVisible()) {
       // Check for role badge (owner/moderator/member)
-      const roleBadge = firstMember.locator('[data-testid="role-badge"]');
+      const _roleBadge = firstMember.locator('[data-testid="role-badge"]');
       // await expect(roleBadge).toBeVisible();
     }
   });
@@ -292,7 +292,7 @@ test.describe.skip('Member Management', () => {
 
   test('should show member count', async ({ page }) => {
     // Check for member count display
-    const memberCount = page.getByText(/\d+ members/i);
+    const _memberCount = page.getByText(/\d+ members/i);
     // await expect(memberCount).toBeVisible();
   });
 });
@@ -311,14 +311,14 @@ test.describe.skip('Community Deletion', () => {
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
 
     // Verify danger zone section
-    const dangerZone = page.getByText(/danger zone/i);
+    const _dangerZone = page.getByText(/danger zone/i);
     // await expect(dangerZone).toBeVisible();
   });
 
   test('should show delete community button', async ({ page }) => {
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
 
-    const deleteButton = page.getByRole('button', { name: /delete community/i });
+    const _deleteButton = page.getByRole('button', { name: /delete community/i });
     // await expect(deleteButton).toBeVisible();
   });
 

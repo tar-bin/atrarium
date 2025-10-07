@@ -41,8 +41,7 @@ export async function copyToClipboard(text: string): Promise<void> {
 
   try {
     await navigator.clipboard.writeText(text);
-  } catch (error) {
-    console.error('[Hashtag] Failed to copy to clipboard:', error);
+  } catch (_error) {
     throw new Error('Failed to copy to clipboard');
   }
 }

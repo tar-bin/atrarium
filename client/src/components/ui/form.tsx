@@ -105,6 +105,7 @@ const FormControl = React.forwardRef<
       ...props,
       // Ensure child's original props are preserved
       ...(children.props || {}),
+      // biome-ignore lint/suspicious/noExplicitAny: React.cloneElement requires dynamic props merging
     } as any);
   }
 

@@ -1,8 +1,8 @@
 // Atrarium MVP - Authentication Service
 // JWT creation/verification with DID verification (OAuth 2.1)
 
-import type { Env, DashboardJWTPayload, AuthResponse } from '../types';
-import { SignJWT, jwtVerify } from 'jose';
+import { jwtVerify, SignJWT } from 'jose';
+import type { AuthResponse, DashboardJWTPayload, Env } from '../types';
 
 // ============================================================================
 // JWT Token Service
@@ -87,7 +87,7 @@ export class AuthService {
       });
 
       return payload as unknown as DashboardJWTPayload;
-    } catch (err) {
+    } catch (_err) {
       throw new Error('Invalid or expired JWT');
     }
   }
@@ -176,8 +176,6 @@ export class AuthService {
   private getHostname(): string {
     // In production: Extract from request
     // For Phase 0: Use environment variable or default
-    return this.env.ENVIRONMENT === 'production'
-      ? 'atrarium.net'
-      : '127.0.0.1:8787';
+    return this.env.ENVIRONMENT === 'production' ? 'atrarium.net' : '127.0.0.1:8787';
   }
 }

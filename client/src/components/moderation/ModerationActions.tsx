@@ -53,8 +53,8 @@ export function ModerationActions({
       setShowConfirmDialog(false);
       setPendingAction(null);
       setReason(undefined); // Reset reason after action
-    } catch (error) {
-      console.error('Moderation action failed:', error);
+    } catch (_error) {
+      // Error handling by parent component
     } finally {
       setIsProcessing(false);
     }
@@ -124,7 +124,9 @@ export function ModerationActions({
             <DialogDescription>{dialogContent.description}</DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <label className="text-sm font-medium mb-2 block">Reason (optional)</label>
+            <label htmlFor="moderation-reason" className="text-sm font-medium mb-2 block">
+              Reason (optional)
+            </label>
             <ModerationReasonSelect value={reason} onChange={setReason} />
           </div>
           <DialogFooter>

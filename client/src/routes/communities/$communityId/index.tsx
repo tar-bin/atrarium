@@ -24,6 +24,7 @@ function CommunityDetailPage() {
 
   // TODO: Replace with TanStack Query in Phase 3.6
   // Mock community data based on seeds/dev-data.sql
+  // biome-ignore lint/suspicious/noExplicitAny: Mock data structure, will be replaced with proper types
   const communityData: Record<string, any> = {
     'comm-anime-lovers': {
       id: 'comm-anime-lovers',
@@ -147,7 +148,6 @@ function CommunityDetailPage() {
   const isOwner = currentUserDid === mockCommunity.ownerDid;
 
   const handleCreateFeed = async (data: { name: string; description: string }): Promise<Feed> => {
-    console.log('Creating feed:', data);
     // TODO: Implement API call with TanStack Query mutation
     const newFeed: Feed = {
       id: 'feed-1',
@@ -165,13 +165,11 @@ function CommunityDetailPage() {
     return newFeed;
   };
 
-  const handleUpdateCommunity = async (data: { name: string; description: string }) => {
-    console.log('Updating community:', data);
+  const handleUpdateCommunity = async (_data: { name: string; description: string }) => {
     // TODO: Implement API call with TanStack Query mutation
   };
 
   const handleCloseCommunity = async () => {
-    console.log('Closing community');
     // TODO: Implement API call with TanStack Query mutation, then redirect
   };
 

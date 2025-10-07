@@ -2,9 +2,9 @@
 // OAuth login initiation and callback handling
 
 import { Hono } from 'hono';
-import type { Env, AuthResponse, HonoVariables } from '../types';
+import { LoginRequestSchema, validateRequest } from '../schemas/validation';
 import { AuthService } from '../services/auth';
-import { validateRequest, LoginRequestSchema } from '../schemas/validation';
+import type { AuthResponse, Env, HonoVariables } from '../types';
 
 const app = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -31,8 +31,7 @@ app.post('/login', async (c) => {
     const authResponse: AuthResponse = JSON.parse(result);
 
     return c.json(authResponse);
-  } catch (err) {
-    console.error('[/api/auth/login] Error:', err);
+  } catch (_err) {
     return c.json({ error: 'InternalServerError', message: 'Login failed' }, 500);
   }
 });
@@ -72,8 +71,7 @@ app.post('/refresh', async (c) => {
     const response = await authService.refreshAccessToken(refreshToken);
 
     return c.json(response);
-  } catch (err) {
-    console.error('[/api/auth/refresh] Error:', err);
+  } catch (_err) {
     return c.json({ error: 'Unauthorized', message: 'Invalid refresh token' }, 401);
   }
 });

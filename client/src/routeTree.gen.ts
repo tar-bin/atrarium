@@ -1,5 +1,5 @@
 /* eslint-disable */
-
+// biome-ignore lint: auto-generated file by TanStack Router
 // @ts-nocheck
 
 // noinspection JSUnusedGlobalSymbols

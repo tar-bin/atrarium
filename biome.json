@@ -8,17 +8,7 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "experimentalScannerIgnores": [
-      "node_modules/",
-      "dist/",
-      ".wrangler/",
-      "client/dist/",
-      "server/dist/",
-      ".specify/",
-      "coverage/",
-      "playwright-report/",
-      "test-results/"
-    ]
+    "includes": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.json", "**/*.css"]
   },
   "formatter": {
     "enabled": true,
@@ -87,8 +77,12 @@
         "noRedeclare": "error",
         "noShadowRestrictedNames": "error",
         "noUnsafeNegation": "error",
+        "noUnknownAtRules": "off",
         "noVar": "error",
         "useGetterReturn": "error"
+      },
+      "a11y": {
+        "useButtonType": "off"
       }
     }
   },

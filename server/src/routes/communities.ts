@@ -2,9 +2,9 @@
 // Community management API
 
 import { Hono } from 'hono';
-import type { Env, CommunityResponse, HonoVariables } from '../types';
+import { CreateCommunitySchema, validateRequest } from '../schemas/validation';
 import { AuthService } from '../services/auth';
-import { validateRequest, CreateCommunitySchema } from '../schemas/validation';
+import type { CommunityResponse, Env, HonoVariables } from '../types';
 
 const app = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -22,7 +22,7 @@ app.use('*', async (c, next) => {
     c.set('userDid', userDid);
 
     await next();
-  } catch (err) {
+  } catch (_err) {
     return c.json({ error: 'Unauthorized', message: 'Invalid or missing JWT' }, 401);
   }
 });
@@ -38,8 +38,7 @@ app.get('/', async (c) => {
     // - Query PDS for user's membership records
     // - Fetch community configs from PDS
     return c.json({ data: [] });
-  } catch (err) {
-    console.error('[GET /api/communities] Error:', err);
+  } catch (_err) {
     return c.json({ error: 'InternalServerError', message: 'Failed to list communities' }, 500);
   }
 });
@@ -78,21 +77,20 @@ app.post('/', async (c) => {
           hashtag = candidateHashtag;
           break;
         }
-        // Collision detected, retry
-        console.log(`[POST /api/communities] Hashtag collision detected: ${candidateHashtag}, retrying...`);
-      } catch (error) {
-        // Error querying PDS, assume unique and proceed
-        console.warn(`[POST /api/communities] PDS query error, assuming unique: ${error}`);
+      } catch (_error) {
         hashtag = candidateHashtag;
         break;
       }
     }
 
     if (!hashtag) {
-      return c.json({
-        error: 'HashtagCollisionError',
-        message: 'Failed to generate unique hashtag after 3 attempts'
-      }, 500);
+      return c.json(
+        {
+          error: 'HashtagCollisionError',
+          message: 'Failed to generate unique hashtag after 3 attempts',
+        },
+        500
+      );
     }
 
     const now = new Date().toISOString();
@@ -118,29 +116,33 @@ app.post('/', async (c) => {
     const stub = c.env.COMMUNITY_FEED.get(id);
 
     // Initialize community configuration in Durable Object
-    await stub.fetch(new Request('http://fake-host/updateConfig', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: validation.data.name,
-        description: validation.data.description,
-        hashtag,
-        stage: 'theme',
-        createdAt: now,
-      }),
-    }));
+    await stub.fetch(
+      new Request('http://fake-host/updateConfig', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: validation.data.name,
+          description: validation.data.description,
+          hashtag,
+          stage: 'theme',
+          createdAt: now,
+        }),
+      })
+    );
 
     // Add creator as owner member
-    await stub.fetch(new Request('http://fake-host/addMember', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        did: userDid,
-        role: 'owner',
-        joinedAt: now,
-        active: true,
-      }),
-    }));
+    await stub.fetch(
+      new Request('http://fake-host/addMember', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          did: userDid,
+          role: 'owner',
+          joinedAt: now,
+          active: true,
+        }),
+      })
+    );
 
     const response: CommunityResponse = {
       id: communityId,
@@ -154,8 +156,7 @@ app.post('/', async (c) => {
     };
 
     return c.json(response, 201);
-  } catch (err) {
-    console.error('[POST /api/communities] Error:', err);
+  } catch (_err) {
     return c.json({ error: 'InternalServerError', message: 'Failed to create community' }, 500);
   }
 });
@@ -172,9 +173,11 @@ app.get('/:id', async (c) => {
     // TODO: Implement PDS-based community retrieval
     // - Fetch community config from PDS
     // - Query Durable Object for stats
-    return c.json({ error: 'NotImplemented', message: 'PDS-based retrieval not yet implemented' }, 501);
-  } catch (err) {
-    console.error('[GET /api/communities/:id] Error:', err);
+    return c.json(
+      { error: 'NotImplemented', message: 'PDS-based retrieval not yet implemented' },
+      501
+    );
+  } catch (_err) {
     return c.json({ error: 'InternalServerError', message: 'Failed to get community' }, 500);
   }
 });
@@ -189,9 +192,11 @@ app.patch('/:id', async (c) => {
     // TODO: Implement PDS-based community update
     // - Verify ownership via PDS membership records
     // - Update community config in PDS
-    return c.json({ error: 'NotImplemented', message: 'PDS-based update not yet implemented' }, 501);
-  } catch (err) {
-    console.error('[PATCH /api/communities/:id] Error:', err);
+    return c.json(
+      { error: 'NotImplemented', message: 'PDS-based update not yet implemented' },
+      501
+    );
+  } catch (_err) {
     return c.json({ error: 'InternalServerError', message: 'Failed to update community' }, 500);
   }
 });
@@ -203,13 +208,12 @@ app.post('/:id/close', async (c) => {
     // TODO: Implement PDS-based community archival
     // - Verify ownership via PDS membership records
     // - Update community config status in PDS
-    return c.json({ error: 'NotImplemented', message: 'PDS-based archival not yet implemented' }, 501);
-  } catch (err) {
-    console.error('[POST /api/communities/:id/close] Error:', err);
     return c.json(
-      { error: 'InternalServerError', message: 'Failed to close community' },
-      500
+      { error: 'NotImplemented', message: 'PDS-based archival not yet implemented' },
+      501
     );
+  } catch (_err) {
+    return c.json({ error: 'InternalServerError', message: 'Failed to close community' }, 500);
   }
 });
 

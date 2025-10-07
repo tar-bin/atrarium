@@ -6,8 +6,8 @@
 // 4. Alice moderates post
 // 5. Feed excludes hidden post
 
-import { describe, it, expect, beforeAll } from 'vitest';
 import { env } from 'cloudflare:test';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 // NOTE: This test validates the quickstart.md scenario
 // It tests direct Durable Object operations (no Queue dependency)
@@ -32,22 +32,24 @@ describe.skip('PDS to Feed Flow (Quickstart Scenario - requires deployed environ
     // ========================================
     // Step 1: Alice creates community
     // ========================================
-    const createConfigResponse = await communityStub.fetch(new Request('http://test/updateConfig', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: 'Design Community',
-        description: 'A community for designers',
-        hashtag: communityHashtag,
-        stage: 'theme',
-        createdAt: new Date().toISOString(),
-      }),
-    }));
+    const createConfigResponse = await communityStub.fetch(
+      new Request('http://test/updateConfig', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: 'Design Community',
+          description: 'A community for designers',
+          hashtag: communityHashtag,
+          stage: 'theme',
+          createdAt: new Date().toISOString(),
+        }),
+      })
+    );
 
     expect(createConfigResponse.ok).toBe(true);
 
     // Verify community config was stored
-    const configData = await createConfigResponse.json() as {
+    const configData = (await createConfigResponse.json()) as {
       success: boolean;
       message?: string;
     };
@@ -56,20 +58,22 @@ describe.skip('PDS to Feed Flow (Quickstart Scenario - requires deployed environ
     // ========================================
     // Step 2: Bob joins community
     // ========================================
-    const addMemberResponse = await communityStub.fetch(new Request('http://test/addMember', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        did: bobDid,
-        role: 'member',
-        joinedAt: new Date().toISOString(),
-        active: true,
-      }),
-    }));
+    const addMemberResponse = await communityStub.fetch(
+      new Request('http://test/addMember', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          did: bobDid,
+          role: 'member',
+          joinedAt: new Date().toISOString(),
+          active: true,
+        }),
+      })
+    );
 
     expect(addMemberResponse.ok).toBe(true);
 
-    const memberData = await addMemberResponse.json() as {
+    const memberData = (await addMemberResponse.json()) as {
       success: boolean;
     };
     expect(memberData.success).toBe(true);
@@ -78,51 +82,57 @@ describe.skip('PDS to Feed Flow (Quickstart Scenario - requires deployed environ
     // Step 3: Bob posts with hashtag
     // ========================================
     const postUri = `at://${bobDid}/app.bsky.feed.post/xyz789`;
-    const indexPostResponse = await communityStub.fetch(new Request('http://test/indexPost', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        uri: postUri,
-        authorDid: bobDid,
-        text: `Test post ${communityHashtag}`,
-        createdAt: new Date().toISOString(),
-        hashtags: [communityHashtag],
-      }),
-    }));
+    const indexPostResponse = await communityStub.fetch(
+      new Request('http://test/indexPost', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uri: postUri,
+          authorDid: bobDid,
+          text: `Test post ${communityHashtag}`,
+          createdAt: new Date().toISOString(),
+          hashtags: [communityHashtag],
+        }),
+      })
+    );
 
     expect(indexPostResponse.ok).toBe(true);
 
     // Verify post appears in feed
-    let feedResponse = await communityStub.fetch(new Request('http://test/getFeedSkeleton?limit=10'));
+    let feedResponse = await communityStub.fetch(
+      new Request('http://test/getFeedSkeleton?limit=10')
+    );
     expect(feedResponse.ok).toBe(true);
 
-    let feedResult = await feedResponse.json() as {
+    let feedResult = (await feedResponse.json()) as {
       feed: Array<{ post: string }>;
     };
 
     expect(feedResult.feed).toBeDefined();
     expect(feedResult.feed.length).toBeGreaterThan(0);
 
-    let foundPost = feedResult.feed.find(item => item.post === postUri);
+    let foundPost = feedResult.feed.find((item) => item.post === postUri);
     expect(foundPost).toBeDefined();
 
     // ========================================
     // Step 4: Alice moderates post
     // ========================================
-    const moderateResponse = await communityStub.fetch(new Request('http://test/moderatePost', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'hide_post',
-        targetUri: postUri,
-        reason: 'Off-topic content',
-        createdAt: new Date().toISOString(),
-      }),
-    }));
+    const moderateResponse = await communityStub.fetch(
+      new Request('http://test/moderatePost', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'hide_post',
+          targetUri: postUri,
+          reason: 'Off-topic content',
+          createdAt: new Date().toISOString(),
+        }),
+      })
+    );
 
     expect(moderateResponse.ok).toBe(true);
 
-    const moderationData = await moderateResponse.json() as {
+    const moderationData = (await moderateResponse.json()) as {
       success: boolean;
     };
     expect(moderationData.success).toBe(true);
@@ -133,12 +143,12 @@ describe.skip('PDS to Feed Flow (Quickstart Scenario - requires deployed environ
     feedResponse = await communityStub.fetch(new Request('http://test/getFeedSkeleton?limit=10'));
     expect(feedResponse.ok).toBe(true);
 
-    feedResult = await feedResponse.json() as {
+    feedResult = (await feedResponse.json()) as {
       feed: Array<{ post: string }>;
     };
 
     // Hidden post should be excluded from feed
-    foundPost = feedResult.feed.find(item => item.post === postUri);
+    foundPost = feedResult.feed.find((item) => item.post === postUri);
     expect(foundPost).toBeUndefined();
   });
 
@@ -147,27 +157,31 @@ describe.skip('PDS to Feed Flow (Quickstart Scenario - requires deployed environ
     const dianaDid = 'did:plc:diana012';
 
     // Add Charlie and Diana as members
-    await communityStub.fetch(new Request('http://test/addMember', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        did: charlieDid,
-        role: 'member',
-        joinedAt: new Date().toISOString(),
-        active: true,
-      }),
-    }));
+    await communityStub.fetch(
+      new Request('http://test/addMember', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          did: charlieDid,
+          role: 'member',
+          joinedAt: new Date().toISOString(),
+          active: true,
+        }),
+      })
+    );
 
-    await communityStub.fetch(new Request('http://test/addMember', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        did: dianaDid,
-        role: 'member',
-        joinedAt: new Date().toISOString(),
-        active: true,
-      }),
-    }));
+    await communityStub.fetch(
+      new Request('http://test/addMember', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          did: dianaDid,
+          role: 'member',
+          joinedAt: new Date().toISOString(),
+          active: true,
+        }),
+      })
+    );
 
     // Create posts from multiple users
     const posts = [
@@ -179,22 +193,26 @@ describe.skip('PDS to Feed Flow (Quickstart Scenario - requires deployed environ
     ];
 
     for (const post of posts) {
-      await communityStub.fetch(new Request('http://test/indexPost', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          uri: `at://${post.did}/app.bsky.feed.post/${post.rkey}`,
-          authorDid: post.did,
-          text: `Test post from ${post.did} ${communityHashtag}`,
-          createdAt: new Date().toISOString(),
-          hashtags: [communityHashtag],
-        }),
-      }));
+      await communityStub.fetch(
+        new Request('http://test/indexPost', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            uri: `at://${post.did}/app.bsky.feed.post/${post.rkey}`,
+            authorDid: post.did,
+            text: `Test post from ${post.did} ${communityHashtag}`,
+            createdAt: new Date().toISOString(),
+            hashtags: [communityHashtag],
+          }),
+        })
+      );
     }
 
     // Verify all posts appear in feed
-    const feedResponse = await communityStub.fetch(new Request('http://test/getFeedSkeleton?limit=50'));
-    const feedResult = await feedResponse.json() as {
+    const feedResponse = await communityStub.fetch(
+      new Request('http://test/getFeedSkeleton?limit=50')
+    );
+    const feedResult = (await feedResponse.json()) as {
       feed: Array<{ post: string }>;
     };
 
@@ -203,7 +221,7 @@ describe.skip('PDS to Feed Flow (Quickstart Scenario - requires deployed environ
     // Verify each user's posts
     for (const post of posts) {
       const uri = `at://${post.did}/app.bsky.feed.post/${post.rkey}`;
-      const found = feedResult.feed.find(item => item.post === uri);
+      const found = feedResult.feed.find((item) => item.post === uri);
       expect(found).toBeDefined();
     }
   });
@@ -212,60 +230,68 @@ describe.skip('PDS to Feed Flow (Quickstart Scenario - requires deployed environ
     const postUri = `at://${bobDid}/app.bsky.feed.post/unhide123`;
 
     // Index post
-    await communityStub.fetch(new Request('http://test/indexPost', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        uri: postUri,
-        authorDid: bobDid,
-        text: `Test unhide ${communityHashtag}`,
-        createdAt: new Date().toISOString(),
-        hashtags: [communityHashtag],
-      }),
-    }));
+    await communityStub.fetch(
+      new Request('http://test/indexPost', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uri: postUri,
+          authorDid: bobDid,
+          text: `Test unhide ${communityHashtag}`,
+          createdAt: new Date().toISOString(),
+          hashtags: [communityHashtag],
+        }),
+      })
+    );
 
     // Hide post
-    await communityStub.fetch(new Request('http://test/moderatePost', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'hide_post',
-        targetUri: postUri,
-        reason: 'Initially hidden',
-        createdAt: new Date().toISOString(),
-      }),
-    }));
+    await communityStub.fetch(
+      new Request('http://test/moderatePost', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'hide_post',
+          targetUri: postUri,
+          reason: 'Initially hidden',
+          createdAt: new Date().toISOString(),
+        }),
+      })
+    );
 
     // Verify post is hidden
-    let feedResponse = await communityStub.fetch(new Request('http://test/getFeedSkeleton?limit=50'));
-    let feedResult = await feedResponse.json() as {
+    let feedResponse = await communityStub.fetch(
+      new Request('http://test/getFeedSkeleton?limit=50')
+    );
+    let feedResult = (await feedResponse.json()) as {
       feed: Array<{ post: string }>;
     };
 
-    let foundPost = feedResult.feed.find(item => item.post === postUri);
+    let foundPost = feedResult.feed.find((item) => item.post === postUri);
     expect(foundPost).toBeUndefined();
 
     // Unhide post
-    const unhideResponse = await communityStub.fetch(new Request('http://test/moderatePost', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'unhide_post',
-        targetUri: postUri,
-        reason: 'Reinstated',
-        createdAt: new Date().toISOString(),
-      }),
-    }));
+    const unhideResponse = await communityStub.fetch(
+      new Request('http://test/moderatePost', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'unhide_post',
+          targetUri: postUri,
+          reason: 'Reinstated',
+          createdAt: new Date().toISOString(),
+        }),
+      })
+    );
 
     expect(unhideResponse.ok).toBe(true);
 
     // Verify post is visible again
     feedResponse = await communityStub.fetch(new Request('http://test/getFeedSkeleton?limit=50'));
-    feedResult = await feedResponse.json() as {
+    feedResult = (await feedResponse.json()) as {
       feed: Array<{ post: string }>;
     };
 
-    foundPost = feedResult.feed.find(item => item.post === postUri);
+    foundPost = feedResult.feed.find((item) => item.post === postUri);
     expect(foundPost).toBeDefined();
   });
 
@@ -273,64 +299,74 @@ describe.skip('PDS to Feed Flow (Quickstart Scenario - requires deployed environ
     const eveDid = 'did:plc:eve345';
 
     // Add Eve as member
-    await communityStub.fetch(new Request('http://test/addMember', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        did: eveDid,
-        role: 'member',
-        joinedAt: new Date().toISOString(),
-        active: true,
-      }),
-    }));
+    await communityStub.fetch(
+      new Request('http://test/addMember', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          did: eveDid,
+          role: 'member',
+          joinedAt: new Date().toISOString(),
+          active: true,
+        }),
+      })
+    );
 
     // Eve posts
     const postUri = `at://${eveDid}/app.bsky.feed.post/eve123`;
-    await communityStub.fetch(new Request('http://test/indexPost', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        uri: postUri,
-        authorDid: eveDid,
-        text: `Eve's post ${communityHashtag}`,
-        createdAt: new Date().toISOString(),
-        hashtags: [communityHashtag],
-      }),
-    }));
+    await communityStub.fetch(
+      new Request('http://test/indexPost', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uri: postUri,
+          authorDid: eveDid,
+          text: `Eve's post ${communityHashtag}`,
+          createdAt: new Date().toISOString(),
+          hashtags: [communityHashtag],
+        }),
+      })
+    );
 
     // Verify post appears
-    let feedResponse = await communityStub.fetch(new Request('http://test/getFeedSkeleton?limit=50'));
-    let feedResult = await feedResponse.json() as {
+    let feedResponse = await communityStub.fetch(
+      new Request('http://test/getFeedSkeleton?limit=50')
+    );
+    let feedResult = (await feedResponse.json()) as {
       feed: Array<{ post: string }>;
     };
 
-    let foundPost = feedResult.feed.find(item => item.post === postUri);
+    let foundPost = feedResult.feed.find((item) => item.post === postUri);
     expect(foundPost).toBeDefined();
 
     // Remove Eve from community
-    const removeResponse = await communityStub.fetch(new Request('http://test/removeMember', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        did: eveDid,
-      }),
-    }));
+    const removeResponse = await communityStub.fetch(
+      new Request('http://test/removeMember', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          did: eveDid,
+        }),
+      })
+    );
 
     expect(removeResponse.ok).toBe(true);
 
     // Eve tries to post again (should fail membership check)
     const newPostUri = `at://${eveDid}/app.bsky.feed.post/eve456`;
-    const indexResponse = await communityStub.fetch(new Request('http://test/indexPost', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        uri: newPostUri,
-        authorDid: eveDid,
-        text: `Eve's second post ${communityHashtag}`,
-        createdAt: new Date().toISOString(),
-        hashtags: [communityHashtag],
-      }),
-    }));
+    const indexResponse = await communityStub.fetch(
+      new Request('http://test/indexPost', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uri: newPostUri,
+          authorDid: eveDid,
+          text: `Eve's second post ${communityHashtag}`,
+          createdAt: new Date().toISOString(),
+          hashtags: [communityHashtag],
+        }),
+      })
+    );
 
     // Indexing should fail (403 Forbidden)
     expect(indexResponse.ok).toBe(false);
@@ -338,11 +374,11 @@ describe.skip('PDS to Feed Flow (Quickstart Scenario - requires deployed environ
 
     // Verify new post does NOT appear in feed
     feedResponse = await communityStub.fetch(new Request('http://test/getFeedSkeleton?limit=50'));
-    feedResult = await feedResponse.json() as {
+    feedResult = (await feedResponse.json()) as {
       feed: Array<{ post: string }>;
     };
 
-    foundPost = feedResult.feed.find(item => item.post === newPostUri);
+    foundPost = feedResult.feed.find((item) => item.post === newPostUri);
     expect(foundPost).toBeUndefined();
   });
 });

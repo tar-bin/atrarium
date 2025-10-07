@@ -40,9 +40,9 @@ function extractHashtags(text: string): string[] {
 
 function parsePostEvent(event: JetstreamEvent): PostEvent | null {
   if (
-    event.kind !== "commit" ||
-    event.commit?.operation !== "create" ||
-    event.commit?.collection !== "app.bsky.feed.post" ||
+    event.kind !== 'commit' ||
+    event.commit?.operation !== 'create' ||
+    event.commit?.collection !== 'app.bsky.feed.post' ||
     !event.commit?.record?.text
   ) {
     return null;
@@ -77,25 +77,22 @@ async function indexPostToCommunity(
     const stub = env.COMMUNITY_FEED.get(id);
 
     // RPC call to CommunityFeedGenerator
-    const response = await stub.fetch(new Request("http://fake-host/indexPost", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(postEvent),
-    }));
+    const response = await stub.fetch(
+      new Request('http://fake-host/indexPost', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(postEvent),
+      })
+    );
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error(`[FirehoseProcessor] Failed to index post to community ${communityId}:`, error);
+      const _error = await response.text();
     }
-  } catch (error) {
-    console.error(`[FirehoseProcessor] Error indexing post to community ${communityId}:`, error);
-  }
+  } catch (_error) {}
 }
 
 export default {
   async queue(batch: MessageBatch<JetstreamEvent>, env: Env): Promise<void> {
-    console.log(`[FirehoseProcessor] Processing batch of ${batch.messages.length} events`);
-
     // Track community -> posts mapping for batching
     const communityPosts = new Map<string, PostEvent[]>();
 
@@ -110,12 +107,12 @@ export default {
       // For each hashtag, extract community ID and group posts
       for (const hashtag of postEvent.hashtags) {
         // Extract community ID from hashtag (#atr_12345678 -> 12345678)
-        const communityId = hashtag.replace("#atr_", "");
+        const communityId = hashtag.replace('#atr_', '');
 
         if (!communityPosts.has(communityId)) {
           communityPosts.set(communityId, []);
         }
-        communityPosts.get(communityId)!.push(postEvent);
+        communityPosts.get(communityId)?.push(postEvent);
       }
     }
 
@@ -130,7 +127,5 @@ export default {
 
     // Wait for all indexing operations to complete
     await Promise.allSettled(indexPromises);
-
-    console.log(`[FirehoseProcessor] Processed ${batch.messages.length} events, indexed ${indexPromises.length} posts`);
   },
 };

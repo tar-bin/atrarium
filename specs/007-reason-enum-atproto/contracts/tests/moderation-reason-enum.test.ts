@@ -8,8 +8,7 @@
  * Related Lexicon: specs/007-reason-enum-atproto/contracts/lexicon/net.atrarium.moderation.action.json
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { MODERATION_REASONS } from '../../src/schemas/lexicon'; // Will be created in implementation
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 describe('POST /api/moderation/hide-post - Reason Enum Validation', () => {
   // TODO: Setup test environment (worker, test database, mock PDS)

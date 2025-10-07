@@ -2,7 +2,7 @@
 // T015 - Verifies PDS read operations for membership records
 // MUST FAIL initially until PDS service implementation (T018-T019)
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { ATProtoService } from '../../../../src/services/atproto';
 import type { Env } from '../../../../src/types';
 
@@ -72,7 +72,7 @@ describe('Contract: PDS Read (MembershipRecord)', () => {
 
     // Assert: All returned memberships are active
     expect(Array.isArray(activeMemberships)).toBe(true);
-    activeMemberships.forEach(membership => {
+    activeMemberships.forEach((membership) => {
       expect(membership.active).toBe(true);
     });
   });
@@ -89,7 +89,9 @@ describe('Contract: PDS Read (MembershipRecord)', () => {
       const membership = memberships[0];
 
       // Community URI should be valid AT-URI
-      expect(membership.community).toMatch(/^at:\/\/did:plc:[a-z0-9]+\/com\.atrarium\.community\.config\/[a-z0-9]+$/);
+      expect(membership.community).toMatch(
+        /^at:\/\/did:plc:[a-z0-9]+\/com\.atrarium\.community\.config\/[a-z0-9]+$/
+      );
 
       // Should be able to fetch the community config
       const communityConfig = await atprotoService.getCommunityConfig(membership.community);
@@ -115,9 +117,7 @@ describe('Contract: PDS Read (MembershipRecord)', () => {
     const invalidDid = 'not-a-valid-did';
 
     // Act & Assert: Should throw validation error
-    await expect(
-      atprotoService.listMemberships(invalidDid)
-    ).rejects.toThrow(/invalid.*did/i);
+    await expect(atprotoService.listMemberships(invalidDid)).rejects.toThrow(/invalid.*did/i);
   });
 
   it('should throw error for non-existent membership URI', async () => {
@@ -125,8 +125,8 @@ describe('Contract: PDS Read (MembershipRecord)', () => {
     const nonExistentUri = 'at://did:plc:nobody999/net.atrarium.community.membership/nonexistent';
 
     // Act & Assert: Should throw not found error
-    await expect(
-      atprotoService.getMembershipRecord(nonExistentUri)
-    ).rejects.toThrow(/not found|does not exist/i);
+    await expect(atprotoService.getMembershipRecord(nonExistentUri)).rejects.toThrow(
+      /not found|does not exist/i
+    );
   });
 });

@@ -73,7 +73,7 @@ export function CreateFeedModal({ isOpen, onClose, onSubmit }: CreateFeedModalPr
         title: 'Copied!',
         description: 'Hashtag copied to clipboard',
       });
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Failed to copy',
         description: 'Could not copy hashtag to clipboard',

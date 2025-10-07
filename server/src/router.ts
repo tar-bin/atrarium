@@ -1,8 +1,8 @@
 // Atrarium oRPC Router Implementation
 // Server-side handlers for the API contract
 
+import { type Context, contract } from '@atrarium/contracts/router';
 import { ORPCError } from '@orpc/server';
-import { contract, type Context } from '@atrarium/contracts/router';
 import type { Env } from './types';
 
 // ============================================================================
@@ -56,28 +56,32 @@ export const router = {
       const id = env.COMMUNITY_FEED.idFromName(communityId);
       const stub = env.COMMUNITY_FEED.get(id);
 
-      await stub.fetch(new Request('http://fake-host/updateConfig', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: input.name,
-          description: input.description,
-          hashtag,
-          stage: 'theme',
-          createdAt: now,
-        }),
-      }));
+      await stub.fetch(
+        new Request('http://fake-host/updateConfig', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: input.name,
+            description: input.description,
+            hashtag,
+            stage: 'theme',
+            createdAt: now,
+          }),
+        })
+      );
 
-      await stub.fetch(new Request('http://fake-host/addMember', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          did: userDid,
-          role: 'owner',
-          joinedAt: now,
-          active: true,
-        }),
-      }));
+      await stub.fetch(
+        new Request('http://fake-host/addMember', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            did: userDid,
+            role: 'owner',
+            joinedAt: now,
+            active: true,
+          }),
+        })
+      );
 
       return {
         id: communityId,

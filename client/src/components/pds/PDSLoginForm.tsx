@@ -56,6 +56,7 @@ export function PDSLoginForm({ pdsUrl, onSuccess }: PDSLoginFormProps) {
 
       // Redirect to the original page or communities page
       const redirectTo = (search as { redirect?: string })?.redirect || '/communities';
+      // biome-ignore lint/suspicious/noExplicitAny: TanStack Router navigate requires flexible type
       navigate({ to: redirectTo as any });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to login to PDS');

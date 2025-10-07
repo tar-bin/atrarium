@@ -9,7 +9,9 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
-export function Sidebar({ onClose = () => {} }: SidebarProps) {
+export function Sidebar({ onClose = () => {
+  // Default empty handler
+} }: SidebarProps) {
   const { session, logout } = usePDS();
   const { contextInfo } = useLayoutContext();
   const routerState = useRouterState();

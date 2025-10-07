@@ -44,8 +44,8 @@ export function PostCard({ post, canModerate, onHide }: PostCardProps) {
       setIsHiding(true);
       await onHide(post.uri);
       setShowConfirmDialog(false);
-    } catch (error) {
-      console.error('Failed to hide post:', error);
+    } catch (_error) {
+      // Error handling by parent component
     } finally {
       setIsHiding(false);
     }

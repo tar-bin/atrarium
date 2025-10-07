@@ -2,7 +2,7 @@
 // Validates that all 3 Lexicon schemas are accessible via HTTP endpoints
 // Status: FAILING (no implementation yet - TDD approach)
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 const BASE_URL = 'http://localhost:8787'; // Cloudflare Workers dev server
 const LEXICON_ENDPOINT = '/xrpc/net.atrarium.lexicon.get';
@@ -59,7 +59,9 @@ describe('Lexicon Endpoint Contract', () => {
     });
 
     it('should return 404 for unknown NSID', async () => {
-      const response = await fetch(`${BASE_URL}${LEXICON_ENDPOINT}?nsid=net.atrarium.unknown.schema`);
+      const response = await fetch(
+        `${BASE_URL}${LEXICON_ENDPOINT}?nsid=net.atrarium.unknown.schema`
+      );
 
       expect(response.status).toBe(404);
 
@@ -69,7 +71,9 @@ describe('Lexicon Endpoint Contract', () => {
     });
 
     it('should include CORS headers', async () => {
-      const response = await fetch(`${BASE_URL}${LEXICON_ENDPOINT}?nsid=net.atrarium.community.config`);
+      const response = await fetch(
+        `${BASE_URL}${LEXICON_ENDPOINT}?nsid=net.atrarium.community.config`
+      );
 
       expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
     });
@@ -78,7 +82,7 @@ describe('Lexicon Endpoint Contract', () => {
       const response = await fetch(`${BASE_URL}${LEXICON_ENDPOINT}`, {
         method: 'OPTIONS',
         headers: {
-          'Origin': 'https://example-pds.com',
+          Origin: 'https://example-pds.com',
           'Access-Control-Request-Method': 'GET',
         },
       });

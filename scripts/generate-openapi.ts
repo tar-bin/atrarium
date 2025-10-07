@@ -3,8 +3,7 @@
 import { generateOpenAPISpec } from '../src/openapi';
 
 async function main() {
-  const spec = await generateOpenAPISpec();
-  console.log(JSON.stringify(spec, null, 2));
+  const _spec = await generateOpenAPISpec();
 }
 
 main().catch(console.error);

@@ -45,42 +45,35 @@ export function PDSProvider({ children }: { children: ReactNode }) {
               localStorage.removeItem(SESSION_STORAGE_KEY);
             }
           })
-          .catch((error) => {
-            console.error('Failed to restore session:', error);
+          .catch((_error) => {
             localStorage.removeItem(SESSION_STORAGE_KEY);
           });
-      } catch (error) {
-        console.error('Failed to parse stored session:', error);
+      } catch (_error) {
         localStorage.removeItem(SESSION_STORAGE_KEY);
       }
     }
   }, []);
 
   const login = async (handle: string, password: string) => {
-    try {
-      const agent = await loginToPDS(handle, password);
-      const did = getSessionDID(agent);
-      const sessionHandle = getSessionHandle(agent);
+    const agent = await loginToPDS(handle, password);
+    const did = getSessionDID(agent);
+    const sessionHandle = getSessionHandle(agent);
 
-      if (!did || !sessionHandle || !agent.session) {
-        throw new Error('Failed to retrieve session information');
-      }
-
-      const newSession: UserSession = {
-        agent,
-        did,
-        handle: sessionHandle,
-        isAuthenticated: true,
-      };
-
-      setSession(newSession);
-
-      // Store full session data for resumeSession
-      localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(agent.session));
-    } catch (error) {
-      console.error('Login failed:', error);
-      throw error;
+    if (!did || !sessionHandle || !agent.session) {
+      throw new Error('Failed to retrieve session information');
     }
+
+    const newSession: UserSession = {
+      agent,
+      did,
+      handle: sessionHandle,
+      isAuthenticated: true,
+    };
+
+    setSession(newSession);
+
+    // Store full session data for resumeSession
+    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(agent.session));
   };
 
   const logout = () => {

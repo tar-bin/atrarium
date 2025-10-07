@@ -2,7 +2,7 @@
 // Validates ETag generation and 304 Not Modified responses
 // Status: FAILING (no implementation yet - TDD approach)
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 const BASE_URL = 'http://localhost:8787';
 const LEXICON_ENDPOINT = '/xrpc/net.atrarium.lexicon.get';
@@ -21,10 +21,14 @@ describe('Lexicon Caching Contract', () => {
     });
 
     it('should generate different ETags for different schemas', async () => {
-      const response1 = await fetch(`${BASE_URL}${LEXICON_ENDPOINT}?nsid=net.atrarium.community.config`);
+      const response1 = await fetch(
+        `${BASE_URL}${LEXICON_ENDPOINT}?nsid=net.atrarium.community.config`
+      );
       const etag1 = response1.headers.get('ETag');
 
-      const response2 = await fetch(`${BASE_URL}${LEXICON_ENDPOINT}?nsid=net.atrarium.community.membership`);
+      const response2 = await fetch(
+        `${BASE_URL}${LEXICON_ENDPOINT}?nsid=net.atrarium.community.membership`
+      );
       const etag2 = response2.headers.get('ETag');
 
       expect(etag1).not.toBe(etag2);
@@ -132,22 +136,26 @@ describe('Lexicon Caching Contract', () => {
   });
 
   describe('Performance', () => {
-    it('should respond in less than 100ms (p95)', async () => {
-      const measurements: number[] = [];
+    it(
+      'should respond in less than 100ms (p95)',
+      async () => {
+        const measurements: number[] = [];
 
-      // Make 20 requests to measure p95
-      for (let i = 0; i < 20; i++) {
-        const start = Date.now();
-        await fetch(`${BASE_URL}${LEXICON_ENDPOINT}?nsid=${TEST_NSID}`);
-        const duration = Date.now() - start;
-        measurements.push(duration);
-      }
+        // Make 20 requests to measure p95
+        for (let i = 0; i < 20; i++) {
+          const start = Date.now();
+          await fetch(`${BASE_URL}${LEXICON_ENDPOINT}?nsid=${TEST_NSID}`);
+          const duration = Date.now() - start;
+          measurements.push(duration);
+        }
 
-      measurements.sort((a, b) => a - b);
-      const p95Index = Math.floor(measurements.length * 0.95);
-      const p95 = measurements[p95Index];
+        measurements.sort((a, b) => a - b);
+        const p95Index = Math.floor(measurements.length * 0.95);
+        const p95 = measurements[p95Index];
 
-      expect(p95).toBeLessThan(100);
-    }, { timeout: 10000 });
+        expect(p95).toBeLessThan(100);
+      },
+      { timeout: 10000 }
+    );
   });
 });

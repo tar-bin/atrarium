@@ -2,9 +2,9 @@
 // AT Protocol Feed Generator endpoints (/.well-known/did.json, describeFeedGenerator, getFeedSkeleton)
 
 import { Hono } from 'hono';
-import type { Env, FeedSkeleton, FeedGeneratorDescription, HonoVariables } from '../types';
-import { generateDIDDocument, extractHostname, parseFeedUri } from '../utils/did';
-import { validateRequest, GetFeedSkeletonParamsSchema } from '../schemas/validation';
+import { GetFeedSkeletonParamsSchema, validateRequest } from '../schemas/validation';
+import type { Env, FeedGeneratorDescription, FeedSkeleton, HonoVariables } from '../types';
+import { extractHostname, generateDIDDocument, parseFeedUri } from '../utils/did';
 
 const app = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -22,8 +22,7 @@ app.get('/.well-known/did.json', async (c) => {
       'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
       'Content-Type': 'application/json',
     });
-  } catch (err) {
-    console.error('[/.well-known/did.json] Error:', err);
+  } catch (_err) {
     return c.json(
       {
         error: 'InternalServerError',
@@ -53,8 +52,7 @@ app.get('/xrpc/app.bsky.feed.describeFeedGenerator', async (c) => {
     };
 
     return c.json(response);
-  } catch (err) {
-    console.error('[describeFeedGenerator] Error:', err);
+  } catch (_err) {
     return c.json(
       {
         error: 'InternalServerError',
@@ -116,12 +114,13 @@ app.get('/xrpc/app.bsky.feed.getFeedSkeleton', async (c) => {
 
     // Call getFeedSkeleton on Durable Object
     const response = await stub.fetch(
-      new Request(`http://fake-host/getFeedSkeleton?limit=${limit}${cursor ? `&cursor=${cursor}` : ''}`)
+      new Request(
+        `http://fake-host/getFeedSkeleton?limit=${limit}${cursor ? `&cursor=${cursor}` : ''}`
+      )
     );
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error('[getFeedSkeleton] Durable Object error:', error);
+      const _error = await response.text();
       return c.json(
         {
           error: 'InternalServerError',
@@ -131,10 +130,9 @@ app.get('/xrpc/app.bsky.feed.getFeedSkeleton', async (c) => {
       );
     }
 
-    const skeleton = await response.json() as FeedSkeleton;
+    const skeleton = (await response.json()) as FeedSkeleton;
     return c.json(skeleton);
-  } catch (err) {
-    console.error('[getFeedSkeleton] Error:', err);
+  } catch (_err) {
     return c.json(
       {
         error: 'InternalServerError',

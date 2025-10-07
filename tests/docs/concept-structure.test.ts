@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { describe, expect, it } from 'vitest';
 
 describe('Concept Documentation Structure', () => {
   const conceptPath = join(process.cwd(), 'docs/guide/concept.md');

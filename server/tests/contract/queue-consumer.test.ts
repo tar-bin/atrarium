@@ -2,8 +2,8 @@
 // T017 - Verifies Queue consumer (FirehoseProcessor) event handling
 // MUST FAIL initially until Queue + Firehose implementation (T022-T027)
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import { env } from 'cloudflare:test';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 describe.skip('Contract: Queue Consumer (FirehoseProcessor)', () => {
   let queueBinding: Queue;
@@ -66,7 +66,7 @@ describe.skip('Contract: Queue Consumer (FirehoseProcessor)', () => {
     }));
 
     // Act: Send batch to Queue (Queue.sendBatch does not exist until T022 - will fail)
-    await queueBinding.sendBatch(events.map(event => ({ body: event })));
+    await queueBinding.sendBatch(events.map((event) => ({ body: event })));
 
     // Assert: All events should be queued
     expect(true).toBe(true); // Placeholder - actual verification in integration test
@@ -97,13 +97,13 @@ describe.skip('Contract: Queue Consumer (FirehoseProcessor)', () => {
 
     // Act: Process events through lightweight filter (includes('#atrarium_'))
     // Note: This logic will be in FirehoseReceiver DO (T025)
-    const filteredEvents = eventsWithHashtag.filter(event =>
+    const filteredEvents = eventsWithHashtag.filter((event) =>
       event.commit.record.text?.includes('#atrarium_')
     );
 
     // Assert: Only events with #atrarium_ hashtag pass filter
     expect(filteredEvents).toHaveLength(1);
-    expect(filteredEvents[0]!.commit.record.text).toContain('#atrarium_a1b2c3d4');
+    expect(filteredEvents[0]?.commit.record.text).toContain('#atrarium_a1b2c3d4');
   });
 
   it('should validate hashtag format with regex', async () => {
@@ -120,14 +120,14 @@ describe.skip('Contract: Queue Consumer (FirehoseProcessor)', () => {
     // Act: Apply heavyweight filter (regex /#atrarium_[0-9a-f]{8}/)
     // Note: This logic will be in FirehoseProcessor Worker (T026)
     const hashtagRegex = /#atrarium_[0-9a-f]{8}/;
-    const results = testCases.map(testCase => ({
+    const results = testCases.map((testCase) => ({
       text: testCase.text,
       matches: hashtagRegex.test(testCase.text),
       expected: testCase.shouldMatch,
     }));
 
     // Assert: Regex correctly validates hashtag format
-    results.forEach(result => {
+    results.forEach((result) => {
       expect(result.matches).toBe(result.expected);
     });
   });

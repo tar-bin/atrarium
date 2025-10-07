@@ -55,7 +55,7 @@ test.describe('Sidebar Navigation', () => {
     await page.getByRole('link', { name: 'Communities' }).click();
 
     // Verify communities link is highlighted (implementation-specific)
-    const communitiesLink = page.getByRole('link', { name: 'Communities' });
+    const _communitiesLink = page.getByRole('link', { name: 'Communities' });
     // Note: Actual assertion depends on how active state is implemented
     // await expect(communitiesLink).toHaveClass(/active/i);
   });
@@ -93,7 +93,7 @@ test.describe.skip('Header Navigation', () => {
 
   test('should show PDS connection status', async ({ page }) => {
     // Check for PDS status indicator
-    const pdsStatus = page.getByTestId('pds-status');
+    const _pdsStatus = page.getByTestId('pds-status');
     // Note: This may show "Not connected" or "Connected" depending on state
   });
 

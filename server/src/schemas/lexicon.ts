@@ -93,12 +93,16 @@ const didSchema = z.string().regex(/^did:(plc|web):[a-z0-9]+$/i, 'Invalid DID fo
 /**
  * AT-URI validation (format: at://did:plc:xxx/collection/rkey)
  */
-const atUriSchema = z.string().regex(/^at:\/\/did:(plc|web):[a-z0-9]+\/[a-z0-9.]+\/[a-z0-9]+$/i, 'Invalid AT-URI format');
+const atUriSchema = z
+  .string()
+  .regex(/^at:\/\/did:(plc|web):[a-z0-9]+\/[a-z0-9.]+\/[a-z0-9]+$/i, 'Invalid AT-URI format');
 
 /**
  * Hashtag validation (format: #atr_[8-hex])
  */
-const hashtagSchema = z.string().regex(/^#atr_[0-9a-f]{8}$/, 'Hashtag must match pattern #atr_[8-hex]');
+const hashtagSchema = z
+  .string()
+  .regex(/^#atr_[0-9a-f]{8}$/, 'Hashtag must match pattern #atr_[8-hex]');
 
 /**
  * ISO 8601 datetime validation
@@ -108,14 +112,15 @@ const iso8601Schema = z.string().datetime({ message: 'Must be valid ISO 8601 dat
 /**
  * FeedMix validation (must sum to 1.0)
  */
-const feedMixSchema = z.object({
-  own: z.number().min(0).max(1),
-  parent: z.number().min(0).max(1),
-  global: z.number().min(0).max(1),
-}).refine(
-  (data) => Math.abs(data.own + data.parent + data.global - 1.0) < 0.001,
-  { message: 'feedMix ratios must sum to 1.0' }
-);
+const feedMixSchema = z
+  .object({
+    own: z.number().min(0).max(1),
+    parent: z.number().min(0).max(1),
+    global: z.number().min(0).max(1),
+  })
+  .refine((data) => Math.abs(data.own + data.parent + data.global - 1.0) < 0.001, {
+    message: 'feedMix ratios must sum to 1.0',
+  });
 
 /**
  * CommunityConfig validation schema

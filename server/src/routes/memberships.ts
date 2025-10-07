@@ -2,8 +2,8 @@
 // Membership management API
 
 import { Hono } from 'hono';
-import type { Env, HonoVariables } from '../types';
 import { AuthService } from '../services/auth';
+import type { Env, HonoVariables } from '../types';
 
 const app = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
 
@@ -18,7 +18,7 @@ app.use('*', async (c, next) => {
     const userDid = await authService.extractUserFromHeader(authHeader);
     c.set('userDid', userDid);
     await next();
-  } catch (err) {
+  } catch (_err) {
     return c.json({ error: 'Unauthorized', message: 'Invalid or missing JWT' }, 401);
   }
 });
@@ -42,7 +42,9 @@ app.post('/:communityId/members', async (c) => {
     const stub = c.env.COMMUNITY_FEED.get(id);
 
     // Check if community exists by trying to get config
-    const configResponse = await stub.fetch(new Request('http://fake-host/getFeedSkeleton?limit=1'));
+    const configResponse = await stub.fetch(
+      new Request('http://fake-host/getFeedSkeleton?limit=1')
+    );
     if (!configResponse.ok && configResponse.status === 404) {
       return c.json({ error: 'NotFound', message: 'Community not found' }, 404);
     }
@@ -62,16 +64,18 @@ app.post('/:communityId/members', async (c) => {
     });
 
     // Add member to Durable Object
-    await stub.fetch(new Request('http://fake-host/addMember', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        did: userDid,
-        role: 'member',
-        joinedAt: now,
-        active: true,
-      }),
-    }));
+    await stub.fetch(
+      new Request('http://fake-host/addMember', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          did: userDid,
+          role: 'member',
+          joinedAt: now,
+          active: true,
+        }),
+      })
+    );
 
     return c.json(
       {
@@ -82,8 +86,7 @@ app.post('/:communityId/members', async (c) => {
       },
       201
     );
-  } catch (err) {
-    console.error('[POST /api/communities/:communityId/members] Error:', err);
+  } catch (_err) {
     return c.json({ error: 'InternalServerError', message: 'Failed to join community' }, 500);
   }
 });
@@ -100,8 +103,7 @@ app.delete('/:communityId/members/me', async (c) => {
     // - Update membership record in PDS (set active: false)
     // - Remove from Durable Object
     return c.json({ error: 'NotImplemented', message: 'PDS-based leave not yet implemented' }, 501);
-  } catch (err) {
-    console.error('[DELETE /api/communities/:communityId/members/me] Error:', err);
+  } catch (_err) {
     return c.json({ error: 'InternalServerError', message: 'Failed to leave community' }, 500);
   }
 });

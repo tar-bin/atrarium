@@ -107,8 +107,7 @@ function CommunitiesPage() {
   const loading = false;
   const error = null;
 
-  const handleCreateCommunity = async (data: { name: string; description: string }) => {
-    console.log('Creating community:', data);
+  const handleCreateCommunity = async (_data: { name: string; description: string }) => {
     // TODO: Implement API call with TanStack Query mutation
     setIsCreateModalOpen(false);
   };

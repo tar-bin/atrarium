@@ -1,44 +1,42 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/ubuntu
 {
-	"name": "Atrarium Development (with PDS)",
+  "name": "Atrarium Development (with PDS)",
 
-	// Use Docker Compose to include PDS service
-	"dockerComposeFile": "docker-compose.yml",
-	"service": "app",
-	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  // Use Docker Compose to include PDS service
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
 
-	"features": {
-		"ghcr.io/devcontainers/features/node:1": {
-			"version": "lts"
-		},
-		"ghcr.io/devcontainers/features/docker-in-docker:2": {
-			"version": "latest"
-		}
-	},
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest"
+    }
+  },
 
-	"customizations": {
-		"vscode": {
-			"extensions": [
-				"Anthropic.claude-code"
-			]
-		}
-	},
+  "customizations": {
+    "vscode": {
+      "extensions": ["Anthropic.claude-code"]
+    }
+  },
 
-	// Forward PDS port for local access
-	"forwardPorts": [3000],
-	"portsAttributes": {
-		"3000": {
-			"label": "Bluesky PDS",
-			"onAutoForward": "notify"
-		}
-	},
+  // Forward PDS port for local access
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "Bluesky PDS",
+      "onAutoForward": "notify"
+    }
+  },
 
-	// Install dependencies after container creation
-	"postCreateCommand": "npm install && npm install -g @anthropic-ai/claude-code",
+  // Install dependencies after container creation
+  "postCreateCommand": "npm install && npm install -g @anthropic-ai/claude-code",
 
-	// Environment variables for development
-	"remoteEnv": {
-		"PDS_URL": "http://pds:3000"
-	}
+  // Environment variables for development
+  "remoteEnv": {
+    "PDS_URL": "http://pds:3000"
+  }
 }
