@@ -41,8 +41,7 @@ Atrarium's value lies in AT Protocol Lexicon schemas (`net.atrarium.*`), not the
 
 **Design Philosophy**:
 - **Protocol-First**: Community semantics defined in Lexicon schemas, implementations are replaceable
-- **Component Independence**: Feed Generator (Cloudflare Workers) and AppView (Bluesky) operate independently via Lexicon contracts
+- **Component Independence**: Feed Generator and AppView operate independently via Lexicon contracts
 - **No Vendor Lock-In**: Any AT Protocol-compatible server can implement these schemas
-- **Economic Rationality**: Current Cloudflare stack chosen for cost efficiency, not architectural necessity
 
 📖 See [Architecture Documentation](https://docs.atrarium.net/en/architecture/system-design.html) for technical details.
