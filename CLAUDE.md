@@ -175,7 +175,7 @@ server/                # Cloudflare Workers backend (pnpm workspace: @atrarium/s
 │   └── helpers/           # Test utilities
 │       ├── setup.ts           # Test database setup
 │       └── test-env.ts        # Test environment config
-├── package.json       # Server dependencies (Hono, Zod v3, @atproto/api)
+├── package.json       # Server dependencies (Hono, Zod v4, @atproto/api)
 ├── wrangler.toml      # Cloudflare Workers configuration
 ├── tsconfig.json      # TypeScript configuration
 └── vitest.*.config.ts # Vitest configurations (main, pds, docs)
@@ -212,7 +212,7 @@ client/               # React web dashboard (pnpm workspace: client)
     │   ├── components/          # Component tests (Vitest + Testing Library)
     │   ├── integration/         # Integration tests (DEFERRED)
     │   └── helpers/             # Test utilities
-    ├── package.json         # Dashboard dependencies (React 19, Zod v3, TanStack, shadcn/ui)
+    ├── package.json         # Dashboard dependencies (React 19, Zod v4, TanStack, shadcn/ui)
     ├── vite.config.ts       # Vite configuration
     ├── vitest.config.ts     # Vitest configuration for component tests
     ├── playwright.config.ts # Playwright E2E test configuration
@@ -227,9 +227,7 @@ CONTRIBUTING.md      # Contribution guidelines
 
 pnpm-workspace.yaml  # pnpm workspace configuration
 package.json         # Root workspace coordinator
-wrangler.toml        # Cloudflare Workers configuration (in server/)
-vitest.config.ts     # Vitest configuration (in server/)
-vitest.pds.config.ts # Vitest configuration for PDS integration tests (in server/)
+start-dev.sh         # Parallel development startup script (server + dashboard)
 ```
 
 **Documentation**:
@@ -306,18 +304,22 @@ wrangler queues create firehose-dlq  # Dead letter queue
 
 ### Development
 ```bash
-# Server development (from root)
-pnpm --filter server dev          # Run Workers locally with Miniflare
+# Server development (can run from root or server/)
+pnpm --filter server dev          # Run Workers locally with Miniflare (localhost:8787)
 pnpm --filter server typecheck    # TypeScript type checking
 pnpm --filter server test         # Run server tests
 pnpm --filter server build        # Build server (dry-run deploy)
 
-# Dashboard development
+# Dashboard development (can run from root or client/)
 pnpm --filter client dev       # Start dashboard dev server (http://localhost:5173)
 pnpm --filter client build     # Build dashboard production bundle
 pnpm --filter client test      # Run dashboard tests
 
-# Run all workspaces
+# Parallel development (server + dashboard)
+./start-dev.sh                # Start both server and client in parallel (if available)
+# Or manually: pnpm --filter server dev & pnpm --filter client dev
+
+# Run all workspaces (from root only)
 pnpm -r build        # Build all workspaces
 pnpm -r test         # Run all tests
 pnpm -r typecheck    # Type check all workspaces
