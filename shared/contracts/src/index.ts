@@ -5,6 +5,6 @@ export * from './router';
 export * from './schemas';
 export * from './types';
 
-// Export Router type alias for client-side usage
-import type { contract } from './router';
-export type Router = typeof contract;
+// Re-export client router type from server implementation
+// This provides proper type safety for createORPCClient
+export type { ClientRouter } from './client-types';

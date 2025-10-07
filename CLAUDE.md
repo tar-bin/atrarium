@@ -72,7 +72,7 @@ For detailed data flow visualization, see [VitePress Concept Documentation](http
   - i18next (EN/JA translations)
   - Cloudflare Pages (hosting)
 - **External**: AT Protocol (@atproto/api ^0.13.35 with AtpAgent, @atproto/identity ^0.4.3), Bluesky Firehose (Jetstream WebSocket), Local PDS (testing)
-- **Frameworks**: Hono ^4.6.14 (routing), Zod ^3.23.8 (validation)
+- **Frameworks**: Hono ^4.6.14 (routing), Zod ^4.1.11 (validation), oRPC ^1.9.3 (type-safe RPC)
 
 ### Core Components (PDS-First Architecture)
 
@@ -104,7 +104,8 @@ Client (Bluesky AppView fetches post content)
 
 **Monorepo Organization** (pnpm workspaces):
 - Root: Workspace coordinator
-- `server/`: Backend implementation (Cloudflare Workers)
+- `shared/contracts/`: oRPC API contracts (@atrarium/contracts - shared types/schemas)
+- `server/`: Backend implementation (Cloudflare Workers - @atrarium/server)
 - `client/dashboard/`: Web dashboard (React)
 - `docs/`: Documentation site (VitePress)
 - `lexicons/`: Protocol definitions (shared across implementations)
@@ -116,6 +117,17 @@ lexicons/              # AT Protocol Lexicon schemas (protocol definition, imple
 ├── net.atrarium.community.membership.json
 ├── net.atrarium.moderation.action.json
 └── README.md          # Lexicon schema documentation
+
+shared/                # Shared code across workspaces
+└── contracts/         # oRPC API contracts (@atrarium/contracts)
+    ├── src/
+    │   ├── router.ts       # oRPC router contract (routes, middleware, schemas)
+    │   ├── schemas.ts      # Zod validation schemas
+    │   ├── types.ts        # TypeScript types (inferred from Zod)
+    │   ├── client-types.ts # Client-compatible RouterClient type
+    │   └── index.ts        # Central export point
+    ├── package.json        # Dependencies: @orpc/server, @orpc/zod, zod
+    └── tsconfig.json
 
 server/                # Cloudflare Workers backend (pnpm workspace: @atrarium/server)
 ├── src/
@@ -526,6 +538,48 @@ JWT-based authentication with DID verification ([src/services/auth.ts](src/servi
 - **Listing**: `storage.list({ prefix: 'post:', reverse: true })` for newest-first
 - **Cleanup**: Scheduled alarm deletes posts older than 7 days
 - **Timestamps**: ISO 8601 strings (consistent with AT Protocol)
+
+### oRPC Type Safety (011-lexicons-server-client)
+End-to-end type-safe API communication using `@atrarium/contracts`:
+
+**Server-side** ([server/src/router.ts](server/src/router.ts)):
+```typescript
+import { contract } from '@atrarium/contracts/router';
+
+export const router = {
+  communities: {
+    list: contract.communities.list.handler(async () => { /* ... */ }),
+    create: contract.communities.create.handler(async ({ input }) => { /* ... */ }),
+  },
+};
+```
+
+**Client-side** ([client/dashboard/src/lib/api.ts](client/dashboard/src/lib/api.ts)):
+```typescript
+import { createORPCClient } from '@orpc/client';
+import { RPCLink } from '@orpc/client/fetch';
+import type { ClientRouter } from '@atrarium/contracts';
+
+const link = new RPCLink({
+  url: baseURL,
+  headers: () => ({ Authorization: `Bearer ${token}` }),
+});
+
+export const apiClient: ClientRouter = createORPCClient(link);
+```
+
+**Key Benefits**:
+- ✅ **Zero code generation**: Types flow from server to client automatically
+- ✅ **Compile-time safety**: TypeScript validates inputs, outputs, and method names
+- ✅ **Single source of truth**: Contract definitions in `shared/contracts/`
+- ✅ **Runtime validation**: Zod schemas enforce type safety at runtime
+- ✅ **Auto-completion**: Full IntelliSense support for API calls
+
+**Architecture**:
+- `shared/contracts/src/router.ts`: Contract definition (routes, schemas, middleware)
+- `shared/contracts/src/client-types.ts`: `RouterClient<typeof router>` for client typing
+- `server/src/router.ts`: Server implementation with `.handler()` methods
+- `client/dashboard/src/lib/api.ts`: Type-safe client using `ClientRouter` type
 
 ## Performance Targets (006-pds-1-db)
 

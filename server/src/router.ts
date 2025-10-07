@@ -99,4 +99,10 @@ export const router = {
   },
 };
 
+// Export server router type
 export type Router = typeof router;
+
+// Export client-compatible type using RouterClient
+// This type can be used with createORPCClient for full type safety
+import type { RouterClient } from '@orpc/server';
+export type ClientRouter = RouterClient<typeof router>;
