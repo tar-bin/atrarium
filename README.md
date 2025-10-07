@@ -4,7 +4,11 @@
 
 > ⚠️ **Status**: Under active development. Not ready for production use.
 
-📖 **[Documentation](https://docs.atrarium.net)** | [日本語](https://docs.atrarium.net/ja/)
+📖 **Documentation**: Component-specific docs are located in respective directories:
+- [Lexicons](/lexicons/README.md) - AT Protocol Lexicon schemas
+- [Server](/server/README.md) - Backend server documentation
+- [Client](/client/README.md) - Web dashboard documentation
+- [Project Concept](/CONCEPT.md) - System design and architecture
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![AT Protocol](https://img.shields.io/badge/AT%20Protocol-Compatible-blue)](https://atproto.com/)

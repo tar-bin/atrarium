@@ -2,4 +2,3 @@ packages:
   - 'shared/contracts'
   - 'server'
   - 'client'
-  - 'docs'
