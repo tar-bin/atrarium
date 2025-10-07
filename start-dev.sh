@@ -16,22 +16,21 @@ show_help() {
 Usage: ./start-dev.sh [OPTION]
 
 Options:
-    all         Start all services (PDS + Dashboard + Backend)
-    dashboard   Start only dashboard dev server
-    backend     Start only backend Workers
+    all         Start all services (PDS + Client + Server)
+    client      Start only client dev server (dashboard)
+    server      Start only server Workers (backend)
     pds         Start only local PDS
     help        Show this help message
 
 Examples:
     ./start-dev.sh all         # Start everything
-    ./start-dev.sh dashboard   # Start dashboard only
-    ./start-dev.sh             # Start dashboard only (default)
+    ./start-dev.sh client      # Start client only
+    ./start-dev.sh             # Start client only (default)
 
 Services:
     📦 PDS:        http://localhost:3000
-    🎨 Dashboard:  http://localhost:5173
-    ⚙️  Backend:    http://localhost:8787
-    📚 API Docs:   http://localhost:8787/api/docs
+    🎨 Client:     http://localhost:5173
+    ⚙️  Server:     http://localhost:8787
 
 EOF
 }
@@ -55,34 +54,32 @@ start_pds() {
     fi
 }
 
-start_dashboard() {
-    echo -e "${BLUE}🎨 Starting dashboard dev server...${NC}"
-    cd dashboard
+start_client() {
+    echo -e "${BLUE}🎨 Starting client dev server...${NC}"
 
     # Check if node_modules exists
-    if [ ! -d "node_modules" ]; then
-        echo -e "${YELLOW}📦 Installing dashboard dependencies...${NC}"
-        npm install
+    if [ ! -d "client/node_modules" ]; then
+        echo -e "${YELLOW}📦 Installing client dependencies...${NC}"
+        pnpm install
     fi
 
-    echo -e "${GREEN}✅ Dashboard will start at http://localhost:5173${NC}"
+    echo -e "${GREEN}✅ Client will start at http://localhost:5173${NC}"
     echo -e "${YELLOW}💡 Press Ctrl+C to stop${NC}"
-    npm run dev
+    pnpm --filter client dev
 }
 
-start_backend() {
-    echo -e "${BLUE}⚙️  Starting backend Workers...${NC}"
+start_server() {
+    echo -e "${BLUE}⚙️  Starting server Workers...${NC}"
 
     # Check if node_modules exists
-    if [ ! -d "node_modules" ]; then
-        echo -e "${YELLOW}📦 Installing backend dependencies...${NC}"
-        npm install
+    if [ ! -d "server/node_modules" ]; then
+        echo -e "${YELLOW}📦 Installing server dependencies...${NC}"
+        pnpm install
     fi
 
-    echo -e "${GREEN}✅ Backend will start at http://localhost:8787${NC}"
-    echo -e "${GREEN}✅ API Documentation: http://localhost:8787/api/docs${NC}"
+    echo -e "${GREEN}✅ Server will start at http://localhost:8787${NC}"
     echo -e "${YELLOW}💡 Press Ctrl+C to stop${NC}"
-    npm run dev
+    pnpm --filter server dev
 }
 
 start_all() {
@@ -95,11 +92,11 @@ start_all() {
     start_pds
     echo ""
 
-    # Start backend in background
-    echo -e "${BLUE}⚙️  Starting backend Workers in background...${NC}"
-    npm run dev > /tmp/atrarium-backend.log 2>&1 &
-    BACKEND_PID=$!
-    echo -e "${GREEN}✅ Backend PID: $BACKEND_PID${NC}"
+    # Start server in background
+    echo -e "${BLUE}⚙️  Starting server Workers in background...${NC}"
+    pnpm --filter server dev > /tmp/atrarium-server.log 2>&1 &
+    SERVER_PID=$!
+    echo -e "${GREEN}✅ Server PID: $SERVER_PID${NC}"
     sleep 2
 
     echo ""
@@ -108,29 +105,28 @@ start_all() {
     echo -e "${GREEN}╚════════════════════════════════════════════════╝${NC}"
     echo ""
     echo -e "${BLUE}📦 PDS:${NC}        http://localhost:3000"
-    echo -e "${BLUE}🎨 Dashboard:${NC}  http://localhost:5173 (will start next)"
-    echo -e "${BLUE}⚙️  Backend:${NC}    http://localhost:8787"
-    echo -e "${BLUE}📚 API Docs:${NC}   http://localhost:8787/api/docs"
+    echo -e "${BLUE}🎨 Client:${NC}     http://localhost:5173 (will start next)"
+    echo -e "${BLUE}⚙️  Server:${NC}     http://localhost:8787"
     echo ""
     echo -e "${YELLOW}📋 Test Accounts:${NC}"
     echo -e "   - alice.test / test123"
     echo -e "   - bob.test / test123"
     echo -e "   - moderator.test / test123"
     echo ""
-    echo -e "${YELLOW}💡 Backend logs: tail -f /tmp/atrarium-backend.log${NC}"
-    echo -e "${YELLOW}💡 Press Ctrl+C to stop dashboard (backend will keep running)${NC}"
+    echo -e "${YELLOW}💡 Server logs: tail -f /tmp/atrarium-server.log${NC}"
+    echo -e "${YELLOW}💡 Press Ctrl+C to stop client (server will keep running)${NC}"
     echo ""
 
-    # Start dashboard in foreground
-    start_dashboard
+    # Start client in foreground
+    start_client
 
-    # Cleanup when dashboard stops
-    echo -e "${YELLOW}Stopping backend...${NC}"
-    kill $BACKEND_PID 2>/dev/null || true
+    # Cleanup when client stops
+    echo -e "${YELLOW}Stopping server...${NC}"
+    kill $SERVER_PID 2>/dev/null || true
 }
 
 # Main
-MODE="${1:-dashboard}"
+MODE="${1:-client}"
 
 case "$MODE" in
     help|--help|-h)
@@ -139,11 +135,11 @@ case "$MODE" in
     all)
         start_all
         ;;
-    dashboard)
-        start_dashboard
+    client)
+        start_client
         ;;
-    backend)
-        start_backend
+    server)
+        start_server
         ;;
     pds)
         start_pds
