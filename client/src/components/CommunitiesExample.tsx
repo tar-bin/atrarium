@@ -1,9 +1,9 @@
 // Example component using oRPC hooks
-import type { CommunityResponse } from '@atrarium/contracts';
+import type { CommunityOutput } from '@atrarium/contracts';
 import { apiClient, useMutation, useQuery } from '../lib/orpc-hooks';
 
 type CommunityListResponse = {
-  data: CommunityResponse[];
+  data: CommunityOutput[];
 };
 
 export function CommunitiesExample() {

@@ -1,0 +1,6 @@
+# Run lint-staged for staged files
+pnpm exec lint-staged
+
+# Run TypeScript type checking across all workspaces
+echo "Running TypeScript type checking..."
+pnpm -r typecheck

@@ -282,7 +282,7 @@ export class CommunityFeedGenerator extends DurableObject {
   // Internal: Verify if user is a member
   private async verifyMembership(did: string): Promise<boolean> {
     const membership = await this.ctx.storage.get<MembershipRecord>(`member:${did}`);
-    return membership?.active;
+    return membership?.active ?? false;
   }
 
   // Internal: Index a post

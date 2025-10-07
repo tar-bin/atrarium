@@ -120,7 +120,7 @@ app.get('/xrpc/app.bsky.feed.getFeedSkeleton', async (c) => {
     );
 
     if (!response.ok) {
-      const _error = await response.text();
+      await response.text(); // Consume response body
       return c.json(
         {
           error: 'InternalServerError',

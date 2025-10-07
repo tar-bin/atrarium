@@ -124,8 +124,8 @@ describe.skip('Contract: Durable Objects Storage', () => {
 
     // Assert: Posts returned in reverse chronological order
     expect(listedPosts).toHaveLength(2);
-    expect(new Date(listedPosts[0]?.createdAt).getTime()).toBeGreaterThan(
-      new Date(listedPosts[1]?.createdAt).getTime()
+    expect(new Date(listedPosts[0]?.createdAt ?? new Date()).getTime()).toBeGreaterThan(
+      new Date(listedPosts[1]?.createdAt ?? new Date()).getTime()
     );
   });
 
@@ -264,7 +264,7 @@ describe.skip('Contract: Durable Objects Storage', () => {
 
     // Assert: Only recent post remains
     expect(remainingPosts).toHaveLength(1);
-    expect(new Date(remainingPosts[0]?.createdAt).getTime()).toBeGreaterThan(
+    expect(new Date(remainingPosts[0]?.createdAt ?? new Date()).getTime()).toBeGreaterThan(
       new Date(sevenDaysAgo).getTime()
     );
   });

@@ -86,9 +86,11 @@ async function indexPostToCommunity(
     );
 
     if (!response.ok) {
-      const _error = await response.text();
+      await response.text(); // Consume response body
     }
-  } catch (_error) {}
+  } catch {
+    // Silently ignore errors in background processing
+  }
 }
 
 export default {
