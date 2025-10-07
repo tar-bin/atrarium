@@ -1,5 +1,5 @@
+import { EyeOff } from 'lucide-react';
 import { useState } from 'react';
-import type { Post } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,8 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { EyeOff } from 'lucide-react';
 import { formatRelativeTime } from '@/lib/date';
+import type { Post } from '@/types';
 
 // Helper function to get avatar from DID
 function getAvatarUrl(did: string): string {
@@ -53,7 +53,10 @@ export function PostCard({ post, canModerate, onHide }: PostCardProps) {
 
   return (
     <>
-      <article data-testid="post-card" className="border-b border-border bg-card p-4 hover:bg-accent/50 transition-colors">
+      <article
+        data-testid="post-card"
+        className="border-b border-border bg-card p-4 hover:bg-accent/50 transition-colors"
+      >
         <div className="flex gap-3">
           {/* Avatar */}
           <img
@@ -80,11 +83,7 @@ export function PostCard({ post, canModerate, onHide }: PostCardProps) {
             {/* Post image */}
             {post.hasMedia && (
               <div className="mb-3 rounded-2xl overflow-hidden border border-border">
-                <img
-                  src={getPostImageUrl(post.uri)}
-                  alt="Post media"
-                  className="w-full"
-                />
+                <img src={getPostImageUrl(post.uri)} alt="Post media" className="w-full" />
               </div>
             )}
 
@@ -101,12 +100,7 @@ export function PostCard({ post, canModerate, onHide }: PostCardProps) {
 
               {/* Moderation actions */}
               {canModerate && post.moderationStatus !== 'hidden' && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={handleHideClick}
-                  className="text-xs h-7"
-                >
+                <Button size="sm" variant="ghost" onClick={handleHideClick} className="text-xs h-7">
                   Hide
                 </Button>
               )}
@@ -121,8 +115,8 @@ export function PostCard({ post, canModerate, onHide }: PostCardProps) {
           <DialogHeader>
             <DialogTitle>Are you sure?</DialogTitle>
             <DialogDescription>
-              This will hide this post from the feed. You can unhide it later from the
-              moderation log.
+              This will hide this post from the feed. You can unhide it later from the moderation
+              log.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

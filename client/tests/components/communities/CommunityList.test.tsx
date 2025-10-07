@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
 import { CommunityList } from '@/components/communities/CommunityList';
 import type { Community } from '@/types';
 
@@ -35,9 +35,7 @@ describe('CommunityList Component', () => {
   });
 
   it('shows loading spinner when loading=true', () => {
-    render(
-      <CommunityList communities={[]} loading={true} error={null} onCreateClick={vi.fn()} />
-    );
+    render(<CommunityList communities={[]} loading={true} error={null} onCreateClick={vi.fn()} />);
 
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
   });

@@ -1,9 +1,9 @@
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { usePDS } from '@/contexts/PDSContext';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Form,
@@ -14,7 +14,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { usePDS } from '@/contexts/PDSContext';
 
 const loginSchema = z.object({
   handle: z
@@ -66,9 +66,7 @@ export function PDSLoginForm({ pdsUrl, onSuccess }: PDSLoginFormProps) {
     <Card className="w-full max-w-md">
       <CardHeader>
         <CardTitle>Login to PDS</CardTitle>
-        <CardDescription>
-          Connect to your Bluesky PDS to post content
-        </CardDescription>
+        <CardDescription>Connect to your Bluesky PDS to post content</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="mb-4 rounded-md bg-muted p-3">

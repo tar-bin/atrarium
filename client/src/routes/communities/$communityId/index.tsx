@@ -1,10 +1,10 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
+import { useState } from 'react';
 import { CommunityDetail } from '@/components/communities/CommunityDetail';
 import { CommunitySettings } from '@/components/communities/CommunitySettings';
 import { CreateFeedModal } from '@/components/feeds/CreateFeedModal';
-import { useState } from 'react';
-import type { Feed } from '@/types';
 import { isAuthenticated } from '@/lib/auth';
+import type { Feed } from '@/types';
 
 export const Route = createFileRoute('/communities/$communityId/')({
   beforeLoad: ({ params }) => {
@@ -146,10 +146,7 @@ function CommunityDetailPage() {
   const currentUserDid = 'did:plc:owner123'; // TODO: Get from PDS context
   const isOwner = currentUserDid === mockCommunity.ownerDid;
 
-  const handleCreateFeed = async (data: {
-    name: string;
-    description: string;
-  }): Promise<Feed> => {
+  const handleCreateFeed = async (data: { name: string; description: string }): Promise<Feed> => {
     console.log('Creating feed:', data);
     // TODO: Implement API call with TanStack Query mutation
     const newFeed: Feed = {

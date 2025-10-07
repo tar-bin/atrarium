@@ -1,10 +1,10 @@
-import type { Feed } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { stripHashtag } from '@/lib/hashtag';
-import { Copy, Hash, TrendingUp, Users } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import { Link } from '@tanstack/react-router';
+import { Copy, Hash, TrendingUp, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { stripHashtag } from '@/lib/hashtag';
+import type { Feed } from '@/types';
 
 interface FeedCardProps {
   feed: Feed;
@@ -56,12 +56,7 @@ export function FeedCard({ feed, onClick }: FeedCardProps) {
         <div className="flex items-center gap-2">
           <Hash className="h-4 w-4 text-muted-foreground" />
           <code className="flex-1 text-sm font-mono">{feed.hashtag}</code>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={handleCopyHashtag}
-            aria-label="Copy hashtag"
-          >
+          <Button size="sm" variant="ghost" onClick={handleCopyHashtag} aria-label="Copy hashtag">
             <Copy className="h-3 w-3" />
           </Button>
         </div>

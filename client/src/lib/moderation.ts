@@ -21,4 +21,4 @@ export const MODERATION_REASONS = [
   'other',
 ] as const;
 
-export type ModerationReason = typeof MODERATION_REASONS[number];
+export type ModerationReason = (typeof MODERATION_REASONS)[number];

@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import { FeedDetail } from '@/components/feeds/FeedDetail';
 import type { Feed, Post } from '@/types';
 
@@ -20,18 +20,14 @@ const mockPosts: Post[] = [];
 
 describe('FeedDetail Component', () => {
   it('displays feed info (name, hashtag, stats)', () => {
-    render(
-      <FeedDetail feed={mockFeed} posts={mockPosts} isAuthenticated={false} agent={null} />
-    );
+    render(<FeedDetail feed={mockFeed} posts={mockPosts} isAuthenticated={false} agent={null} />);
 
     expect(screen.getByText('General')).toBeInTheDocument();
     expect(screen.getByText('#atr_abc12345')).toBeInTheDocument();
   });
 
   it('renders PostList component', () => {
-    render(
-      <FeedDetail feed={mockFeed} posts={mockPosts} isAuthenticated={false} agent={null} />
-    );
+    render(<FeedDetail feed={mockFeed} posts={mockPosts} isAuthenticated={false} agent={null} />);
 
     expect(screen.getByTestId('post-list')).toBeInTheDocument();
   });
@@ -45,9 +41,7 @@ describe('FeedDetail Component', () => {
   });
 
   it('shows "Login to post" message when not authenticated', () => {
-    render(
-      <FeedDetail feed={mockFeed} posts={mockPosts} isAuthenticated={false} agent={null} />
-    );
+    render(<FeedDetail feed={mockFeed} posts={mockPosts} isAuthenticated={false} agent={null} />);
 
     expect(screen.getByText(/login to post/i)).toBeInTheDocument();
   });

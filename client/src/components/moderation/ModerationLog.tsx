@@ -1,4 +1,3 @@
-import type { ModerationAction } from '@/types';
 import {
   Table,
   TableBody,
@@ -8,6 +7,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { formatRelativeTime } from '@/lib/date';
+import type { ModerationAction } from '@/types';
 
 interface ModerationLogProps {
   actions: ModerationAction[];

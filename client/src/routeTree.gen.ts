@@ -8,132 +8,130 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root'
-import { Route as ModerationRouteImport } from './routes/moderation'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as CommunitiesIndexRouteImport } from './routes/communities/index'
-import { Route as CommunitiesCommunityIdIndexRouteImport } from './routes/communities/$communityId/index'
-import { Route as CommunitiesCommunityIdFeedsFeedIdRouteImport } from './routes/communities/$communityId/feeds.$feedId'
+import { Route as rootRouteImport } from './routes/__root';
+import { Route as CommunitiesCommunityIdFeedsFeedIdRouteImport } from './routes/communities/$communityId/feeds.$feedId';
+import { Route as CommunitiesCommunityIdIndexRouteImport } from './routes/communities/$communityId/index';
+import { Route as CommunitiesIndexRouteImport } from './routes/communities/index';
+import { Route as IndexRouteImport } from './routes/index';
+import { Route as ModerationRouteImport } from './routes/moderation';
 
 const ModerationRoute = ModerationRouteImport.update({
   id: '/moderation',
   path: '/moderation',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const CommunitiesIndexRoute = CommunitiesIndexRouteImport.update({
   id: '/communities/',
   path: '/communities/',
   getParentRoute: () => rootRouteImport,
-} as any)
-const CommunitiesCommunityIdIndexRoute =
-  CommunitiesCommunityIdIndexRouteImport.update({
-    id: '/communities/$communityId/',
-    path: '/communities/$communityId/',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const CommunitiesCommunityIdFeedsFeedIdRoute =
-  CommunitiesCommunityIdFeedsFeedIdRouteImport.update({
-    id: '/communities/$communityId/feeds/$feedId',
-    path: '/communities/$communityId/feeds/$feedId',
-    getParentRoute: () => rootRouteImport,
-  } as any)
+} as any);
+const CommunitiesCommunityIdIndexRoute = CommunitiesCommunityIdIndexRouteImport.update({
+  id: '/communities/$communityId/',
+  path: '/communities/$communityId/',
+  getParentRoute: () => rootRouteImport,
+} as any);
+const CommunitiesCommunityIdFeedsFeedIdRoute = CommunitiesCommunityIdFeedsFeedIdRouteImport.update({
+  id: '/communities/$communityId/feeds/$feedId',
+  path: '/communities/$communityId/feeds/$feedId',
+  getParentRoute: () => rootRouteImport,
+} as any);
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/moderation': typeof ModerationRoute
-  '/communities': typeof CommunitiesIndexRoute
-  '/communities/$communityId': typeof CommunitiesCommunityIdIndexRoute
-  '/communities/$communityId/feeds/$feedId': typeof CommunitiesCommunityIdFeedsFeedIdRoute
+  '/': typeof IndexRoute;
+  '/moderation': typeof ModerationRoute;
+  '/communities': typeof CommunitiesIndexRoute;
+  '/communities/$communityId': typeof CommunitiesCommunityIdIndexRoute;
+  '/communities/$communityId/feeds/$feedId': typeof CommunitiesCommunityIdFeedsFeedIdRoute;
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/moderation': typeof ModerationRoute
-  '/communities': typeof CommunitiesIndexRoute
-  '/communities/$communityId': typeof CommunitiesCommunityIdIndexRoute
-  '/communities/$communityId/feeds/$feedId': typeof CommunitiesCommunityIdFeedsFeedIdRoute
+  '/': typeof IndexRoute;
+  '/moderation': typeof ModerationRoute;
+  '/communities': typeof CommunitiesIndexRoute;
+  '/communities/$communityId': typeof CommunitiesCommunityIdIndexRoute;
+  '/communities/$communityId/feeds/$feedId': typeof CommunitiesCommunityIdFeedsFeedIdRoute;
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/moderation': typeof ModerationRoute
-  '/communities/': typeof CommunitiesIndexRoute
-  '/communities/$communityId/': typeof CommunitiesCommunityIdIndexRoute
-  '/communities/$communityId/feeds/$feedId': typeof CommunitiesCommunityIdFeedsFeedIdRoute
+  __root__: typeof rootRouteImport;
+  '/': typeof IndexRoute;
+  '/moderation': typeof ModerationRoute;
+  '/communities/': typeof CommunitiesIndexRoute;
+  '/communities/$communityId/': typeof CommunitiesCommunityIdIndexRoute;
+  '/communities/$communityId/feeds/$feedId': typeof CommunitiesCommunityIdFeedsFeedIdRoute;
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
+  fileRoutesByFullPath: FileRoutesByFullPath;
   fullPaths:
     | '/'
     | '/moderation'
     | '/communities'
     | '/communities/$communityId'
-    | '/communities/$communityId/feeds/$feedId'
-  fileRoutesByTo: FileRoutesByTo
+    | '/communities/$communityId/feeds/$feedId';
+  fileRoutesByTo: FileRoutesByTo;
   to:
     | '/'
     | '/moderation'
     | '/communities'
     | '/communities/$communityId'
-    | '/communities/$communityId/feeds/$feedId'
+    | '/communities/$communityId/feeds/$feedId';
   id:
     | '__root__'
     | '/'
     | '/moderation'
     | '/communities/'
     | '/communities/$communityId/'
-    | '/communities/$communityId/feeds/$feedId'
-  fileRoutesById: FileRoutesById
+    | '/communities/$communityId/feeds/$feedId';
+  fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  ModerationRoute: typeof ModerationRoute
-  CommunitiesIndexRoute: typeof CommunitiesIndexRoute
-  CommunitiesCommunityIdIndexRoute: typeof CommunitiesCommunityIdIndexRoute
-  CommunitiesCommunityIdFeedsFeedIdRoute: typeof CommunitiesCommunityIdFeedsFeedIdRoute
+  IndexRoute: typeof IndexRoute;
+  ModerationRoute: typeof ModerationRoute;
+  CommunitiesIndexRoute: typeof CommunitiesIndexRoute;
+  CommunitiesCommunityIdIndexRoute: typeof CommunitiesCommunityIdIndexRoute;
+  CommunitiesCommunityIdFeedsFeedIdRoute: typeof CommunitiesCommunityIdFeedsFeedIdRoute;
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
     '/moderation': {
-      id: '/moderation'
-      path: '/moderation'
-      fullPath: '/moderation'
-      preLoaderRoute: typeof ModerationRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/moderation';
+      path: '/moderation';
+      fullPath: '/moderation';
+      preLoaderRoute: typeof ModerationRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/';
+      path: '/';
+      fullPath: '/';
+      preLoaderRoute: typeof IndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/communities/': {
-      id: '/communities/'
-      path: '/communities'
-      fullPath: '/communities'
-      preLoaderRoute: typeof CommunitiesIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/communities/';
+      path: '/communities';
+      fullPath: '/communities';
+      preLoaderRoute: typeof CommunitiesIndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/communities/$communityId/': {
-      id: '/communities/$communityId/'
-      path: '/communities/$communityId'
-      fullPath: '/communities/$communityId'
-      preLoaderRoute: typeof CommunitiesCommunityIdIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/communities/$communityId/';
+      path: '/communities/$communityId';
+      fullPath: '/communities/$communityId';
+      preLoaderRoute: typeof CommunitiesCommunityIdIndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/communities/$communityId/feeds/$feedId': {
-      id: '/communities/$communityId/feeds/$feedId'
-      path: '/communities/$communityId/feeds/$feedId'
-      fullPath: '/communities/$communityId/feeds/$feedId'
-      preLoaderRoute: typeof CommunitiesCommunityIdFeedsFeedIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/communities/$communityId/feeds/$feedId';
+      path: '/communities/$communityId/feeds/$feedId';
+      fullPath: '/communities/$communityId/feeds/$feedId';
+      preLoaderRoute: typeof CommunitiesCommunityIdFeedsFeedIdRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
   }
 }
 
@@ -142,9 +140,8 @@ const rootRouteChildren: RootRouteChildren = {
   ModerationRoute: ModerationRoute,
   CommunitiesIndexRoute: CommunitiesIndexRoute,
   CommunitiesCommunityIdIndexRoute: CommunitiesCommunityIdIndexRoute,
-  CommunitiesCommunityIdFeedsFeedIdRoute:
-    CommunitiesCommunityIdFeedsFeedIdRoute,
-}
+  CommunitiesCommunityIdFeedsFeedIdRoute: CommunitiesCommunityIdFeedsFeedIdRoute,
+};
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
+  ._addFileTypes<FileRouteTypes>();

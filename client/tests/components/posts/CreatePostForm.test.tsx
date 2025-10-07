@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
 import { CreatePostForm } from '@/components/posts/CreatePostForm';
 
 describe('CreatePostForm Component', () => {
@@ -10,9 +10,7 @@ describe('CreatePostForm Component', () => {
   it('validates text field (max 300 characters including hashtag)', async () => {
     const user = userEvent.setup();
 
-    render(
-      <CreatePostForm agent={mockAgent} feedHashtag={feedHashtag} onSuccess={vi.fn()} />
-    );
+    render(<CreatePostForm agent={mockAgent} feedHashtag={feedHashtag} onSuccess={vi.fn()} />);
 
     const textInput = screen.getByRole('textbox');
     await user.type(textInput, 'A'.repeat(301 - feedHashtag.length + 1)); // Exceed limit
@@ -26,9 +24,7 @@ describe('CreatePostForm Component', () => {
   });
 
   it('shows character counter', () => {
-    render(
-      <CreatePostForm agent={mockAgent} feedHashtag={feedHashtag} onSuccess={vi.fn()} />
-    );
+    render(<CreatePostForm agent={mockAgent} feedHashtag={feedHashtag} onSuccess={vi.fn()} />);
 
     expect(screen.getByText(/0.*\/.*300/)).toBeInTheDocument();
   });
@@ -36,9 +32,7 @@ describe('CreatePostForm Component', () => {
   it('previews final text with appended hashtag', async () => {
     const user = userEvent.setup();
 
-    render(
-      <CreatePostForm agent={mockAgent} feedHashtag={feedHashtag} onSuccess={vi.fn()} />
-    );
+    render(<CreatePostForm agent={mockAgent} feedHashtag={feedHashtag} onSuccess={vi.fn()} />);
 
     const textInput = screen.getByRole('textbox');
     await user.type(textInput, 'Hello world');
@@ -77,9 +71,7 @@ describe('CreatePostForm Component', () => {
       postToPDS: vi.fn().mockRejectedValue(new Error('Network error')),
     }));
 
-    render(
-      <CreatePostForm agent={mockAgent} feedHashtag={feedHashtag} onSuccess={vi.fn()} />
-    );
+    render(<CreatePostForm agent={mockAgent} feedHashtag={feedHashtag} onSuccess={vi.fn()} />);
 
     const textInput = screen.getByRole('textbox');
     await user.type(textInput, 'Test');
@@ -99,9 +91,7 @@ describe('CreatePostForm Component', () => {
       postToPDS: vi.fn().mockResolvedValue('at://did:plc:user/app.bsky.feed.post/xyz'),
     }));
 
-    render(
-      <CreatePostForm agent={mockAgent} feedHashtag={feedHashtag} onSuccess={vi.fn()} />
-    );
+    render(<CreatePostForm agent={mockAgent} feedHashtag={feedHashtag} onSuccess={vi.fn()} />);
 
     const textInput = screen.getByRole('textbox') as HTMLTextAreaElement;
     await user.type(textInput, 'Test post');

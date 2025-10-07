@@ -1,8 +1,8 @@
-import type { Community } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Users, FileText, Crown, Shield } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
+import { Crown, FileText, Shield, Users } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import type { Community } from '@/types';
 
 interface CommunityCardProps {
   community: Community;

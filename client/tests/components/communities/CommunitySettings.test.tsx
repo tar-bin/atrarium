@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
 import { CommunitySettings } from '@/components/communities/CommunitySettings';
 import type { Community } from '@/types';
 
@@ -77,9 +77,7 @@ describe('CommunitySettings Component', () => {
     await user.click(updateButton);
 
     await waitFor(() => {
-      expect(onUpdateMock).toHaveBeenCalledWith(
-        expect.objectContaining({ name: 'Updated Name' })
-      );
+      expect(onUpdateMock).toHaveBeenCalledWith(expect.objectContaining({ name: 'Updated Name' }));
     });
   });
 

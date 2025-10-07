@@ -1,8 +1,9 @@
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Copy } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import type { Feed } from '@/types';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -20,10 +21,9 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { Copy } from 'lucide-react';
-import { stripHashtag } from '@/lib/hashtag';
 import { useToast } from '@/hooks/use-toast';
+import { stripHashtag } from '@/lib/hashtag';
+import type { Feed } from '@/types';
 
 const createFeedSchema = z.object({
   name: z.string().min(1, 'Name is required').max(50, 'Name must be at most 50 characters'),

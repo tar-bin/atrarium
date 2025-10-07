@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, type ReactNode, useCallback, useContext, useState } from 'react';
 
 interface LayoutContextValue {
   contextInfo: {
@@ -24,7 +24,9 @@ export function LayoutProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <LayoutContext.Provider value={{ contextInfo, setContextInfo: updateContextInfo, clearContextInfo }}>
+    <LayoutContext.Provider
+      value={{ contextInfo, setContextInfo: updateContextInfo, clearContextInfo }}
+    >
       {children}
     </LayoutContext.Provider>
   );

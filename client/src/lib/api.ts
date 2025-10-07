@@ -1,7 +1,8 @@
 // oRPC API client for Atrarium backend
+
+import type { ClientRouter } from '@atrarium/contracts';
 import { createORPCClient } from '@orpc/client';
 import { RPCLink } from '@orpc/client/fetch';
-import type { ClientRouter } from '@atrarium/contracts';
 
 const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
 

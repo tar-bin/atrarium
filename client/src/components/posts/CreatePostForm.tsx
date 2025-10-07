@@ -1,9 +1,9 @@
+import type { BskyAgent } from '@atproto/api';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import type { BskyAgent } from '@atproto/api';
-import { postToPDS } from '@/lib/pds';
+import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
@@ -13,7 +13,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
+import { postToPDS } from '@/lib/pds';
 
 const MAX_POST_LENGTH = 300;
 
@@ -93,9 +93,7 @@ export function CreatePostForm({ agent, feedHashtag, onSuccess }: CreatePostForm
               </FormControl>
               <FormMessage />
               <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span
-                  className={isOverLimit ? 'text-destructive' : ''}
-                >
+                <span className={isOverLimit ? 'text-destructive' : ''}>
                   {charCount} / {MAX_POST_LENGTH}
                 </span>
               </div>

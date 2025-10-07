@@ -16,10 +16,7 @@ export function createPDSAgent(): BskyAgent {
  * @returns Authenticated BskyAgent with session
  * @throws Error if login fails
  */
-export async function loginToPDS(
-  handle: string,
-  password: string
-): Promise<BskyAgent> {
+export async function loginToPDS(handle: string, password: string): Promise<BskyAgent> {
   const agent = createPDSAgent();
 
   try {

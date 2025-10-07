@@ -1,17 +1,12 @@
-import { useState } from 'react';
-import type { Feed, Post } from '@/types';
 import type { BskyAgent } from '@atproto/api';
-import { PostList } from '@/components/posts/PostList';
-import { CreatePostForm } from '@/components/posts/CreatePostForm';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Hash, TrendingUp, Users, LogIn, Plus } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
+import { Hash, LogIn, Plus, TrendingUp, Users } from 'lucide-react';
+import { useState } from 'react';
+import { CreatePostForm } from '@/components/posts/CreatePostForm';
+import { PostList } from '@/components/posts/PostList';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import type { Feed, Post } from '@/types';
 
 interface FeedDetailProps {
   feed: Feed;
@@ -44,7 +39,10 @@ export function FeedDetail({ feed, posts, isAuthenticated, agent }: FeedDetailPr
         <div className="mx-auto max-w-[600px] px-6 py-2">
           <div className="flex items-center justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <h1 className="text-base font-semibold truncate" title={feed.description || feed.name}>
+              <h1
+                className="text-base font-semibold truncate"
+                title={feed.description || feed.name}
+              >
                 {feed.name}
               </h1>
               {feed.description && (
@@ -77,14 +75,14 @@ export function FeedDetail({ feed, posts, isAuthenticated, agent }: FeedDetailPr
       <div className="mx-auto max-w-[600px] pt-[16px]">
         {/* Post List */}
         <div data-testid="post-list">
-        <PostList
-          posts={posts}
-          loading={false}
-          error={null}
-          currentUserDid={null}
-          canModerate={false}
-          onHidePost={handleHidePost}
-        />
+          <PostList
+            posts={posts}
+            loading={false}
+            error={null}
+            currentUserDid={null}
+            canModerate={false}
+            onHidePost={handleHidePost}
+          />
         </div>
       </div>
 

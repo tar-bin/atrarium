@@ -3,8 +3,8 @@
  * T004 - Tests enum dropdown rendering and interaction
  */
 
-import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 import { ModerationReasonSelect } from '@/components/moderation/ModerationReasonSelect';
 import type { ModerationReason } from '@/lib/moderation';
 
@@ -19,9 +19,7 @@ vi.mock('react-i18next', () => ({
 describe.skip('ModerationReasonSelect Component', () => {
   it('should render dropdown with 17 options', () => {
     const onChange = vi.fn();
-    const { getByRole } = render(
-      <ModerationReasonSelect value={undefined} onChange={onChange} />
-    );
+    const { getByRole } = render(<ModerationReasonSelect value={undefined} onChange={onChange} />);
 
     // TODO: Verify dropdown renders
     // const dropdown = getByRole('combobox');

@@ -1,8 +1,8 @@
+import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
+import { LogIn, LogOut, UserCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Link, useRouterState, useNavigate } from '@tanstack/react-router';
-import { usePDS } from '@/contexts/PDSContext';
 import { useLayoutContext } from '@/contexts/LayoutContext';
-import { X, UserCircle, LogOut, LogIn } from 'lucide-react';
+import { usePDS } from '@/contexts/PDSContext';
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -22,10 +22,7 @@ export function Sidebar({ onClose = () => {} }: SidebarProps) {
   ];
 
   return (
-    <aside
-      className="flex h-screen w-64 flex-col border-r bg-slate-50 p-4"
-      role="navigation"
-    >
+    <aside className="flex h-screen w-64 flex-col border-r bg-slate-50 p-4" role="navigation">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-xl font-bold">Atrarium</h2>
@@ -48,9 +45,7 @@ export function Sidebar({ onClose = () => {} }: SidebarProps) {
             to={item.href}
             aria-current={currentPath === item.href ? 'page' : undefined}
             className={`block rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-              currentPath === item.href
-                ? 'bg-primary text-primary-foreground'
-                : 'hover:bg-muted'
+              currentPath === item.href ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
             }`}
           >
             {item.label}
@@ -97,12 +92,7 @@ export function Sidebar({ onClose = () => {} }: SidebarProps) {
                 <p className="truncate text-xs text-muted-foreground">{session.did}</p>
               </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={logout}
-              className="w-full"
-            >
+            <Button variant="outline" size="sm" onClick={logout} className="w-full">
               <LogOut className="mr-2 h-4 w-4" />
               Logout
             </Button>

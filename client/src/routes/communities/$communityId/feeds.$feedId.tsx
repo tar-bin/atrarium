@@ -1,10 +1,10 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
-import { FeedDetail } from '@/components/feeds/FeedDetail';
-import type { Feed, Post } from '@/types';
-import { isAuthenticated } from '@/lib/auth';
-import { usePDS } from '@/contexts/PDSContext';
-import { useLayoutContext } from '@/contexts/LayoutContext';
 import { useEffect } from 'react';
+import { FeedDetail } from '@/components/feeds/FeedDetail';
+import { useLayoutContext } from '@/contexts/LayoutContext';
+import { usePDS } from '@/contexts/PDSContext';
+import { isAuthenticated } from '@/lib/auth';
+import type { Feed, Post } from '@/types';
 
 export const Route = createFileRoute('/communities/$communityId/feeds/$feedId')({
   beforeLoad: ({ params }) => {
@@ -52,7 +52,7 @@ function FeedDetailPage() {
           uri: 'at://did:plc:sakura.bsky.social/app.bsky.feed.post/3lbxh7k2wy42c',
           feedId: 'feed-anime-general',
           authorDid: 'did:plc:sakura.bsky.social',
-          text: 'Just finished Frieren episode 28 and I\'m not crying, YOU\'RE crying 😭\n\nThe way they handled Himmel\'s flashback... this show is a masterpiece in storytelling. Every episode makes me appreciate the quiet moments more.\n\n#atr_a1b2c3d4',
+          text: "Just finished Frieren episode 28 and I'm not crying, YOU'RE crying 😭\n\nThe way they handled Himmel's flashback... this show is a masterpiece in storytelling. Every episode makes me appreciate the quiet moments more.\n\n#atr_a1b2c3d4",
           hasMedia: true,
           langs: ['en'],
           moderationStatus: 'approved',
@@ -128,7 +128,7 @@ function FeedDetailPage() {
           uri: 'at://did:plc:alex.bsky.social/app.bsky.feed.post/3lby9x4nqp82m',
           feedId: 'feed-tech-ai',
           authorDid: 'did:plc:alex.bsky.social',
-          text: '🚀 Just deployed our first production model using Anthropic\'s Claude API!\n\nLatency: 1.2s avg\nAccuracy: 94.3%\nCost: 40% less than GPT-4\n\nThe structured outputs feature is a game changer. No more JSON parsing nightmares 🙏\n\n#atr_i9j0k1l2',
+          text: "🚀 Just deployed our first production model using Anthropic's Claude API!\n\nLatency: 1.2s avg\nAccuracy: 94.3%\nCost: 40% less than GPT-4\n\nThe structured outputs feature is a game changer. No more JSON parsing nightmares 🙏\n\n#atr_i9j0k1l2",
           hasMedia: true,
           langs: ['en'],
           moderationStatus: 'approved',
@@ -176,7 +176,7 @@ function FeedDetailPage() {
           uri: 'at://did:plc:chen.bsky.social/app.bsky.feed.post/3lbuz2m7kp93w',
           feedId: 'feed-tech-ai',
           authorDid: 'did:plc:chen.bsky.social',
-          text: 'PSA: If you\'re doing image classification in 2025 and NOT using Vision Transformers (ViT), you\'re leaving performance on the table.\n\nWe migrated from ResNet-50 to ViT-B/16:\n• Accuracy: +7.2%\n• Training time: -40%\n• Model size: -15%\n\nPretrained models FTW! 🎯\n\n#atr_i9j0k1l2',
+          text: "PSA: If you're doing image classification in 2025 and NOT using Vision Transformers (ViT), you're leaving performance on the table.\n\nWe migrated from ResNet-50 to ViT-B/16:\n• Accuracy: +7.2%\n• Training time: -40%\n• Model size: -15%\n\nPretrained models FTW! 🎯\n\n#atr_i9j0k1l2",
           hasMedia: false,
           langs: ['en'],
           moderationStatus: 'approved',
@@ -204,7 +204,7 @@ function FeedDetailPage() {
           uri: 'at://did:plc:jake.bsky.social/app.bsky.feed.post/3lbz2k7pqm91x',
           feedId: 'feed-game-unity',
           authorDid: 'did:plc:jake.bsky.social',
-          text: '🎮 Pro tip for Unity devs:\n\nInstead of Instantiate() spam for projectiles, use Object Pooling!\n\nBefore: 50fps with GC spikes\nAfter: Stable 144fps\n\nCode snippet in replies. You\'re welcome 😎\n\n#atr_q7r8s9t0',
+          text: "🎮 Pro tip for Unity devs:\n\nInstead of Instantiate() spam for projectiles, use Object Pooling!\n\nBefore: 50fps with GC spikes\nAfter: Stable 144fps\n\nCode snippet in replies. You're welcome 😎\n\n#atr_q7r8s9t0",
           hasMedia: true,
           langs: ['en'],
           moderationStatus: 'approved',
@@ -216,7 +216,7 @@ function FeedDetailPage() {
           uri: 'at://did:plc:emma.bsky.social/app.bsky.feed.post/3lby1m8nrt42k',
           feedId: 'feed-game-unity',
           authorDid: 'did:plc:emma.bsky.social',
-          text: 'After 3 weeks of fighting Unity\'s CharacterController, I finally got smooth movement working! 🎉\n\nKey lessons:\n• Always use FixedUpdate for physics\n• Ground detection needs a small offset\n• Slope handling is HARD\n\nGame dev is pain but also joy 😅\n\n#atr_q7r8s9t0',
+          text: "After 3 weeks of fighting Unity's CharacterController, I finally got smooth movement working! 🎉\n\nKey lessons:\n• Always use FixedUpdate for physics\n• Ground detection needs a small offset\n• Slope handling is HARD\n\nGame dev is pain but also joy 😅\n\n#atr_q7r8s9t0",
           hasMedia: true,
           langs: ['en'],
           moderationStatus: 'approved',
@@ -228,7 +228,7 @@ function FeedDetailPage() {
           uri: 'at://did:plc:liam.bsky.social/app.bsky.feed.post/3lbx9k3mqw73n',
           feedId: 'feed-game-unity',
           authorDid: 'did:plc:liam.bsky.social',
-          text: 'Just discovered Unity\'s new ECS (Entity Component System) and WOW 🤯\n\n100,000 enemies on screen at 60fps!\n\nDOTS + Job System + Burst Compiler = performance magic\n\nWhy didn\'t I learn this sooner??\n\n#atr_q7r8s9t0',
+          text: "Just discovered Unity's new ECS (Entity Component System) and WOW 🤯\n\n100,000 enemies on screen at 60fps!\n\nDOTS + Job System + Burst Compiler = performance magic\n\nWhy didn't I learn this sooner??\n\n#atr_q7r8s9t0",
           hasMedia: true,
           langs: ['en'],
           moderationStatus: 'approved',

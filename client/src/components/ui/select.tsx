@@ -1,9 +1,9 @@
 // Select component (shadcn/ui pattern with React 19 + Radix UI)
 // Based on https://ui.shadcn.com/docs/components/select
 
-import * as React from 'react';
 import * as SelectPrimitive from '@radix-ui/react-select';
 import { Check, ChevronDown, ChevronUp } from 'lucide-react';
+import * as React from 'react';
 import { cn } from '@/lib/utils';
 
 const Select = SelectPrimitive.Root;

@@ -9,8 +9,10 @@
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
-    "lint": "pnpm -r lint",
-    "format": "pnpm -r format",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
     "migrate-docs": "tsx scripts/migrate-vitepress-docs.ts"
   },
   "keywords": [
@@ -22,6 +24,7 @@
   "author": "https://github.com/tar-bin",
   "license": "MIT",
   "devDependencies": {
+    "@biomejs/biome": "^2.2.5",
     "tsx": "^4.20.6"
   }
 }

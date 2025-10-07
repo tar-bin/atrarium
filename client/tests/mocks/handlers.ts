@@ -1,4 +1,4 @@
-import { http, HttpResponse } from 'msw';
+import { HttpResponse, http } from 'msw';
 import type { Community, Feed, Post } from '../../src/types';
 
 const API_URL = 'http://localhost:8787';

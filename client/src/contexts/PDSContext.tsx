@@ -1,6 +1,6 @@
-import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { loginToPDS, getSessionDID, getSessionHandle, resumeSession } from '@/lib/pds';
+import { createContext, useContext, useEffect, useState } from 'react';
+import { getSessionDID, getSessionHandle, loginToPDS, resumeSession } from '@/lib/pds';
 import type { UserSession } from '@/types';
 
 interface PDSContextValue {

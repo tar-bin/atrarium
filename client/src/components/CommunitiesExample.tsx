@@ -1,15 +1,12 @@
 // Example component using oRPC hooks
-import { useQuery, useMutation, apiClient } from '../lib/orpc-hooks';
+import { apiClient, useMutation, useQuery } from '../lib/orpc-hooks';
 
 export function CommunitiesExample() {
   // Type-safe query using apiClient
-  const { data, isLoading } = useQuery(
-    ['communities'],
-    async () => {
-      // Call oRPC endpoint through apiClient
-      return (apiClient as any).communities.list();
-    }
-  );
+  const { data, isLoading } = useQuery(['communities'], async () => {
+    // Call oRPC endpoint through apiClient
+    return (apiClient as any).communities.list();
+  });
 
   // Type-safe mutation using apiClient
   const createCommunity = useMutation(

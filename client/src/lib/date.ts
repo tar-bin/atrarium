@@ -1,5 +1,5 @@
-import { formatDistanceToNow, format } from 'date-fns';
-import { ja, enUS } from 'date-fns/locale';
+import { format, formatDistanceToNow } from 'date-fns';
+import { enUS, ja } from 'date-fns/locale';
 
 /**
  * Format Unix timestamp as relative time (e.g., "2 hours ago")
@@ -10,10 +10,7 @@ import { ja, enUS } from 'date-fns/locale';
  * formatRelativeTime(1704067200, 'en') // "2 hours ago"
  * formatRelativeTime(1704067200, 'ja') // "2時間前"
  */
-export function formatRelativeTime(
-  unixTimestamp: number,
-  locale: 'en' | 'ja' = 'en'
-): string {
+export function formatRelativeTime(unixTimestamp: number, locale: 'en' | 'ja' = 'en'): string {
   const date = new Date(unixTimestamp * 1000); // Convert seconds to milliseconds
   const localeObj = locale === 'ja' ? ja : enUS;
 
@@ -32,10 +29,7 @@ export function formatRelativeTime(
  * formatAbsoluteTime(1704067200, 'en') // "Jan 1, 2025, 12:00 AM"
  * formatAbsoluteTime(1704067200, 'ja') // "2025年1月1日 0:00"
  */
-export function formatAbsoluteTime(
-  unixTimestamp: number,
-  locale: 'en' | 'ja' = 'en'
-): string {
+export function formatAbsoluteTime(unixTimestamp: number, locale: 'en' | 'ja' = 'en'): string {
   const date = new Date(unixTimestamp * 1000); // Convert seconds to milliseconds
   const localeObj = locale === 'ja' ? ja : enUS;
 
@@ -53,10 +47,7 @@ export function formatAbsoluteTime(
  * formatShortDate(1704067200, 'en') // "Jan 1, 2025"
  * formatShortDate(1704067200, 'ja') // "2025年1月1日"
  */
-export function formatShortDate(
-  unixTimestamp: number,
-  locale: 'en' | 'ja' = 'en'
-): string {
+export function formatShortDate(unixTimestamp: number, locale: 'en' | 'ja' = 'en'): string {
   const date = new Date(unixTimestamp * 1000); // Convert seconds to milliseconds
   const localeObj = locale === 'ja' ? ja : enUS;
 

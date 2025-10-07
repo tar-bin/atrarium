@@ -1,6 +1,6 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import path from 'path'
+import react from '@vitejs/plugin-react';
+import path from 'path';
+import { defineConfig } from 'vite';
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -13,8 +13,8 @@ export default defineConfig({
   server: {
     watch: {
       usePolling: true, // Enable polling for file changes in Docker/DevContainer
-      interval: 1000,   // Check for changes every second
+      interval: 1000, // Check for changes every second
     },
     host: true, // Listen on all addresses (0.0.0.0) for DevContainer
   },
-})
+});

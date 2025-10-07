@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 // TODO: Feeds are created within communities, not from a global /feeds page
 // Update these tests to navigate to a community page first

@@ -1,9 +1,9 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
+import { useState } from 'react';
 import { CommunityList } from '@/components/communities/CommunityList';
 import { CreateCommunityModal } from '@/components/communities/CreateCommunityModal';
-import { useState } from 'react';
-import type { Community } from '@/types';
 import { isAuthenticated } from '@/lib/auth';
+import type { Community } from '@/types';
 
 export const Route = createFileRoute('/communities/')({
   beforeLoad: () => {

@@ -1,6 +1,9 @@
 // oRPC React Query hooks for type-safe API calls
 // oRPC v1.9.3 uses @tanstack/react-query directly
-import { useQuery as useTanstackQuery, useMutation as useTanstackMutation } from '@tanstack/react-query';
+import {
+  useMutation as useTanstackMutation,
+  useQuery as useTanstackQuery,
+} from '@tanstack/react-query';
 import { apiClient } from './api';
 
 // Helper to create type-safe query hooks

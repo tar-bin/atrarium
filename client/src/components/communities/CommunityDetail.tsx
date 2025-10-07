@@ -1,8 +1,8 @@
-import type { Community, Feed } from '@/types';
+import { FileText, Users } from 'lucide-react';
 import { FeedList } from '@/components/feeds/FeedList';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, FileText } from 'lucide-react';
+import type { Community, Feed } from '@/types';
 
 interface CommunityDetailProps {
   community: Community;

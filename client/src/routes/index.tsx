@@ -1,6 +1,6 @@
 import { createFileRoute, Navigate } from '@tanstack/react-router';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PDSLoginForm } from '@/components/pds/PDSLoginForm';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { usePDS } from '@/contexts/PDSContext';
 
 export const Route = createFileRoute('/')({
@@ -22,9 +22,7 @@ function HomePage() {
         <Card>
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">Welcome to Atrarium</CardTitle>
-            <CardDescription>
-              Login to manage your communities and feeds
-            </CardDescription>
+            <CardDescription>Login to manage your communities and feeds</CardDescription>
           </CardHeader>
           <CardContent>
             <PDSLoginForm pdsUrl={pdsUrl} />

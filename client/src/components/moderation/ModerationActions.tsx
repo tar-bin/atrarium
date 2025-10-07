@@ -1,6 +1,5 @@
+import { Ban, Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
-import type { ModerationStatus } from '@/types';
-import type { ModerationReason } from '@/lib/moderation';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -10,7 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { EyeOff, Eye, Ban } from 'lucide-react';
+import type { ModerationReason } from '@/lib/moderation';
+import type { ModerationStatus } from '@/types';
 import { ModerationReasonSelect } from './ModerationReasonSelect';
 
 interface ModerationActionsProps {
@@ -29,9 +29,7 @@ export function ModerationActions({
   onBlockUser,
 }: ModerationActionsProps) {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [pendingAction, setPendingAction] = useState<
-    'hide' | 'unhide' | 'block' | null
-  >(null);
+  const [pendingAction, setPendingAction] = useState<'hide' | 'unhide' | 'block' | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [reason, setReason] = useState<ModerationReason | undefined>();
 
@@ -97,33 +95,21 @@ export function ModerationActions({
     <>
       <div className="flex gap-2">
         {targetType === 'post' && currentStatus === 'approved' && onHide && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => handleActionClick('hide')}
-          >
+          <Button size="sm" variant="outline" onClick={() => handleActionClick('hide')}>
             <EyeOff className="mr-1 h-4 w-4" />
             Hide
           </Button>
         )}
 
         {targetType === 'post' && currentStatus === 'hidden' && onUnhide && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => handleActionClick('unhide')}
-          >
+          <Button size="sm" variant="outline" onClick={() => handleActionClick('unhide')}>
             <Eye className="mr-1 h-4 w-4" />
             Unhide
           </Button>
         )}
 
         {targetType === 'user' && onBlockUser && (
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={() => handleActionClick('block')}
-          >
+          <Button size="sm" variant="destructive" onClick={() => handleActionClick('block')}>
             <Ban className="mr-1 h-4 w-4" />
             Block User
           </Button>

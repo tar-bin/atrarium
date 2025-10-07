@@ -1,15 +1,17 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import type { Community } from '@/types';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -20,15 +22,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import type { Community } from '@/types';
 
 const updateCommunitySchema = z.object({
   name: z.string().min(1, 'Name is required').max(50, 'Name must be at most 50 characters'),
@@ -148,10 +142,7 @@ export function CommunitySettings({
             <p className="mb-4 text-sm text-muted-foreground">
               Closing a community is permanent and cannot be undone.
             </p>
-            <Button
-              variant="destructive"
-              onClick={() => setShowCloseDialog(true)}
-            >
+            <Button variant="destructive" onClick={() => setShowCloseDialog(true)}>
               Close Community
             </Button>
           </div>
@@ -164,8 +155,8 @@ export function CommunitySettings({
           <DialogHeader>
             <DialogTitle>Are you sure?</DialogTitle>
             <DialogDescription>
-              This action cannot be undone. This will permanently archive the community and all
-              its feeds.
+              This action cannot be undone. This will permanently archive the community and all its
+              feeds.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

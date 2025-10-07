@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
 import { CreateFeedModal } from '@/components/feeds/CreateFeedModal';
 
 describe('CreateFeedModal Component', () => {
@@ -18,9 +18,7 @@ describe('CreateFeedModal Component', () => {
   });
 
   it('calls onSubmit with form data', async () => {
-    const onSubmitMock = vi
-      .fn()
-      .mockResolvedValue({ id: 'feed-1', hashtag: '#atr_xyz12345' });
+    const onSubmitMock = vi.fn().mockResolvedValue({ id: 'feed-1', hashtag: '#atr_xyz12345' });
     const user = userEvent.setup();
 
     render(<CreateFeedModal isOpen={true} onClose={vi.fn()} onSubmit={onSubmitMock} />);
@@ -32,16 +30,12 @@ describe('CreateFeedModal Component', () => {
     await user.click(submitButton);
 
     await waitFor(() => {
-      expect(onSubmitMock).toHaveBeenCalledWith(
-        expect.objectContaining({ name: 'New Feed' })
-      );
+      expect(onSubmitMock).toHaveBeenCalledWith(expect.objectContaining({ name: 'New Feed' }));
     });
   });
 
   it('shows generated hashtag with copy button on success', async () => {
-    const onSubmitMock = vi
-      .fn()
-      .mockResolvedValue({ id: 'feed-1', hashtag: '#atr_xyz12345' });
+    const onSubmitMock = vi.fn().mockResolvedValue({ id: 'feed-1', hashtag: '#atr_xyz12345' });
     const user = userEvent.setup();
 
     render(<CreateFeedModal isOpen={true} onClose={vi.fn()} onSubmit={onSubmitMock} />);
@@ -60,9 +54,7 @@ describe('CreateFeedModal Component', () => {
 
   it('"Done" button closes modal', async () => {
     const onCloseMock = vi.fn();
-    const onSubmitMock = vi
-      .fn()
-      .mockResolvedValue({ id: 'feed-1', hashtag: '#atr_xyz12345' });
+    const onSubmitMock = vi.fn().mockResolvedValue({ id: 'feed-1', hashtag: '#atr_xyz12345' });
     const user = userEvent.setup();
 
     render(<CreateFeedModal isOpen={true} onClose={onCloseMock} onSubmit={onSubmitMock} />);

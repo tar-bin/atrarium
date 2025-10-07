@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { mockLogin } from '../helpers/auth';
 
 test.describe('Create Community Modal', () => {
