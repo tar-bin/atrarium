@@ -18,13 +18,12 @@ Atrarium enables small & open communities (10-200 people) to operate sustainably
 
 📖 See [Concept Documentation](https://docs.atrarium.net/en/guide/concept.html) for detailed analysis and cost comparisons.
 
-## Key Features
+## Core Features
 
-- 🌱 **Serverless Architecture**: Built on Cloudflare Workers + Durable Objects
-- 🔓 **Decentralized Identity**: User data stored in Personal Data Servers (PDS) via AT Protocol
+- 🔌 **AT Protocol Lexicon Schemas**: Community semantics defined in `net.atrarium.*` schemas
+- 🔓 **Decentralized Identity**: User data stored in Personal Data Servers (PDS)
 - 🎯 **Membership-Based Feeds**: Community-specific feeds with role-based access control
-- 📱 **Bluesky Compatible**: Works with official Bluesky apps (iOS, Android, web)
-- 🔌 **Protocol-First Design**: Community semantics defined in AT Protocol Lexicon schemas
+- 📱 **AT Protocol Compatible**: Works with any AT Protocol-compatible client (e.g., Bluesky apps)
 
 ## Unique Positioning
 
