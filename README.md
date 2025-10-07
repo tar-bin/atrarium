@@ -46,15 +46,3 @@ Atrarium's value lies in AT Protocol Lexicon schemas (`net.atrarium.*`), not the
 - **Economic Rationality**: Current Cloudflare stack chosen for cost efficiency, not architectural necessity
 
 📖 See [Architecture Documentation](https://docs.atrarium.net/en/architecture/system-design.html) for technical details.
-
-## Getting Started
-
-```bash
-git clone https://github.com/tar-bin/atrarium.git
-cd atrarium
-pnpm install     # Install dependencies
-pnpm -r dev      # Start development servers
-pnpm -r test     # Run tests
-```
-
-📖 See [Setup Guide](https://docs.atrarium.net/en/guide/setup.html) for detailed instructions.
