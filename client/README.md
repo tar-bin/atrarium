@@ -409,18 +409,15 @@ Verify `VITE_API_URL` points to running Workers instance:
 - Wait 1-2 seconds for Firehose indexing
 - Verify FirehoseProcessor is running (check Workers logs)
 
+## Design System
+
+For UI component guidelines and button variants, see [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md).
+
 ## Links
 
 **Documentation**:
 - [Main README](../README.md) - Project overview (PDS-first architecture)
-- [VitePress Docs](https://docs.atrarium.net) - Full documentation (EN/JA)
-- [Database Architecture](../docs/en/architecture/database.md) - PDS-first data storage
-- [Backend Development Guide](../CLAUDE.md) - Cloudflare Workers development
-
-**Specifications**:
-- [Quickstart Guide](../specs/005-pds-web-atrarim/quickstart.md) - Step-by-step setup
-- [Component Contracts](../specs/005-pds-web-atrarim/contracts/components.yaml) - Component specifications
-- [PDS-First Architecture Spec](../specs/006-pds-1-db/) - Feature 006 design documents
+- [CLAUDE.md](../CLAUDE.md) - Development guidelines and project conventions
 
 **AT Protocol**:
 - [AT Protocol Documentation](https://atproto.com/docs) - Official AT Protocol docs

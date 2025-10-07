@@ -346,6 +346,9 @@ pnpm --filter server test:pds
 ```
 
 ### Testing
+
+**For detailed testing guide (local vs deployed, troubleshooting), see [TESTING.md](TESTING.md).**
+
 ```bash
 # Run all workspace tests
 pnpm -r test

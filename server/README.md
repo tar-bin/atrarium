@@ -387,13 +387,11 @@ Ensure `wrangler.toml` has correct Durable Object and Queue bindings.
 
 **Project Documentation**:
 - [Main README](../README.md) - Project overview
-- [VitePress Docs](https://docs.atrarium.net) - Full documentation (EN/JA)
 - [CLAUDE.md](../CLAUDE.md) - Development guidelines
 
 **Component READMEs**:
 - [lexicons/](../lexicons/README.md) - AT Protocol Lexicon schemas
 - [client/](../client/README.md) - React web dashboard
-- [docs/](../docs/README.md) - VitePress documentation site
 
 **AT Protocol**:
 - [AT Protocol Documentation](https://atproto.com/docs)
