@@ -8,10 +8,10 @@
     "deploy": "pnpm --filter server deploy",
     "build": "pnpm -r build",
     "test": "pnpm -r test",
-    "test:docs": "pnpm --filter docs test",
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint",
-    "format": "pnpm -r format"
+    "format": "pnpm -r format",
+    "migrate-docs": "tsx scripts/migrate-vitepress-docs.ts"
   },
   "keywords": [
     "atproto",
@@ -20,5 +20,8 @@
     "cloudflare-workers"
   ],
   "author": "https://github.com/tar-bin",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "tsx": "^4.20.6"
+  }
 }
