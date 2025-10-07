@@ -1,24 +1,24 @@
 <!--
-SYNC IMPACT REPORT (2025-10-06)
-Version: 0.0.0 → 1.0.0 (Initial creation)
-Rationale: MAJOR - First constitution defining project governance principles
-Modified Principles: None (new creation)
-Added Sections: All sections (Principles 1-6, Governance, Compliance)
+SYNC IMPACT REPORT (2025-10-07)
+Version: 1.0.0 → 1.1.0 (MINOR - New principle added)
+Rationale: MINOR - Added Principle 7 (Code Quality and Pre-Commit Validation) to enforce automated quality checks before commits
+Modified Principles: None (existing principles unchanged)
+Added Sections: Principle 7: Code Quality and Pre-Commit Validation
 Removed Sections: None
 Templates Requiring Updates:
-  - ⚠ .specify/templates/plan-template.md (constitution check section to be added)
-  - ⚠ .specify/templates/spec-template.md (scope/requirements validation against principles)
-  - ⚠ .specify/templates/tasks-template.md (principle-driven task categorization)
+  - ✅ .specify/templates/plan-template.md (Constitution Check section already includes quality gates)
+  - ✅ .specify/templates/tasks-template.md (Phase 3.1 Setup already includes linting configuration)
+  - ⚠ .specify/templates/spec-template.md (may need code quality requirements section)
 Follow-up TODOs:
-  - Add constitution compliance checks to planning workflows
-  - Update feature templates to reference constitution principles
+  - Consider adding pre-commit hook setup to project initialization tasks
+  - Document Biome configuration standards in development guidelines
 -->
 
 # Atrarium Project Constitution
 
-**Version**: 1.0.0
+**Version**: 1.1.0
 **Ratification Date**: 2025-10-06
-**Last Amended**: 2025-10-06
+**Last Amended**: 2025-10-07
 **Project**: Atrarium - Small ecosystems on AT Protocol
 
 ---
@@ -121,6 +121,21 @@ All features, implementations, and technical decisions MUST comply with these pr
 
 ---
 
+## Principle 7: Code Quality and Pre-Commit Validation
+
+**Name**: Code Quality and Pre-Commit Validation
+
+**Rules**:
+- All code MUST pass linter checks (Biome) before commit
+- All code MUST pass formatter checks (Biome) before commit
+- All code MUST pass type checks (TypeScript) before commit
+- Pre-commit validation MUST be automated (no manual checks)
+- CI/CD pipelines MUST enforce quality gates at all stages
+
+**Rationale**: Automated code quality checks prevent technical debt accumulation, reduce code review burden, and maintain consistent code style across contributors. Pre-commit validation catches issues early, reducing the cost of fixes and preventing broken commits from entering the repository.
+
+---
+
 ## Governance
 
 ### Amendment Procedure
@@ -164,3 +179,5 @@ Constitution compliance is checked at:
 
 **Ratified by**: tar-bin (project maintainer)
 **Date**: 2025-10-06
+**Last Amendment by**: tar-bin (project maintainer)
+**Amendment Date**: 2025-10-07
