@@ -1,5 +1,5 @@
 packages:
   - 'shared/contracts'
   - 'server'
-  - 'client/dashboard'
+  - 'client'
   - 'docs'

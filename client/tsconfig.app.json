@@ -5,7 +5,6 @@
     "useDefineForClassFields": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "types": ["vite/client"],
     "skipLibCheck": true,
 
     /* Bundler mode */
@@ -31,8 +30,7 @@
     }
   },
   "include": ["src"],
-  "exclude": ["../src", "../node_modules"],
   "references": [
-    { "path": "../../shared/contracts" }
+    { "path": "../shared/contracts" }
   ]
 }

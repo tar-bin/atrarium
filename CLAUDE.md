@@ -106,7 +106,7 @@ Client (Bluesky AppView fetches post content)
 - Root: Workspace coordinator
 - `shared/contracts/`: oRPC API contracts (@atrarium/contracts - shared types/schemas)
 - `server/`: Backend implementation (Cloudflare Workers - @atrarium/server)
-- `client/dashboard/`: Web dashboard (React)
+- `client/`: Web dashboard (React)
 - `docs/`: Documentation site (VitePress)
 - `lexicons/`: Protocol definitions (shared across implementations)
 
@@ -181,8 +181,7 @@ server/                # Cloudflare Workers backend (pnpm workspace: @atrarium/s
 ├── tsconfig.json      # TypeScript configuration
 └── vitest.*.config.ts # Vitest configurations (main, pds, docs)
 
-client/               # Frontend implementations
-└── dashboard/        # React web dashboard (pnpm workspace: dashboard)
+client/               # React web dashboard (pnpm workspace: client)
     ├── src/
     │   ├── components/          # React components
     │   │   ├── communities/        # Community management components
@@ -329,9 +328,9 @@ pnpm --filter server test         # Run server tests
 pnpm --filter server build        # Build server (dry-run deploy)
 
 # Dashboard development
-pnpm --filter dashboard dev       # Start dashboard dev server (http://localhost:5173)
-pnpm --filter dashboard build     # Build dashboard production bundle
-pnpm --filter dashboard test      # Run dashboard tests
+pnpm --filter client dev       # Start dashboard dev server (http://localhost:5173)
+pnpm --filter client build     # Build dashboard production bundle
+pnpm --filter client test      # Run dashboard tests
 
 # Documentation site
 pnpm --filter atrarium-docs docs:dev     # Start VitePress dev server (http://localhost:5173)
@@ -375,7 +374,7 @@ pnpm --filter server test:watch     # Watch mode
 pnpm --filter server test:pds       # PDS integration tests
 
 # Dashboard tests
-pnpm --filter dashboard test        # Run dashboard tests
+pnpm --filter client test        # Run dashboard tests
 
 # Documentation tests
 pnpm test:docs                      # Run VitePress validation tests (from root)
@@ -402,13 +401,13 @@ wrangler secret put JWT_SECRET             # Set secrets (also: BLUESKY_HANDLE, 
 
 # Dashboard (Cloudflare Pages)
 # Recommended deployment via GitHub integration:
-# - Build command: cd client/dashboard && pnpm install && pnpm run build
-# - Build output: client/dashboard/dist
+# - Build command: cd client && pnpm install && pnpm run build
+# - Build output: client/dist
 # - Environment variables: VITE_API_URL, VITE_PDS_URL
 
 # Manual deployment (if needed)
-pnpm --filter dashboard build
-wrangler pages deploy client/dashboard/dist --project-name=atrarium-dashboard
+pnpm --filter client build
+wrangler pages deploy client/dist --project-name=atrarium-dashboard
 ```
 
 ### Durable Objects Management (006-pds-1-db)
@@ -554,7 +553,7 @@ export const router = {
 };
 ```
 
-**Client-side** ([client/dashboard/src/lib/api.ts](client/dashboard/src/lib/api.ts)):
+**Client-side** ([client/src/lib/api.ts](client/src/lib/api.ts)):
 ```typescript
 import { createORPCClient } from '@orpc/client';
 import { RPCLink } from '@orpc/client/fetch';
@@ -579,7 +578,7 @@ export const apiClient: ClientRouter = createORPCClient(link);
 - `shared/contracts/src/router.ts`: Contract definition (routes, schemas, middleware)
 - `shared/contracts/src/client-types.ts`: `RouterClient<typeof router>` for client typing
 - `server/src/router.ts`: Server implementation with `.handler()` methods
-- `client/dashboard/src/lib/api.ts`: Type-safe client using `ClientRouter` type
+- `client/src/lib/api.ts`: Type-safe client using `ClientRouter` type
 
 ## Performance Targets (006-pds-1-db)
 
