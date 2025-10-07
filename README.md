@@ -44,3 +44,14 @@ Atrarium's value lies in AT Protocol Lexicon schemas (`net.atrarium.*`), not the
 - **No Vendor Lock-In**: Any AT Protocol-compatible server can implement these schemas
 
 📖 See [Architecture Documentation](https://docs.atrarium.net/en/architecture/system-design.html) for technical details.
+
+## Project Structure
+
+This project is a monorepo containing multiple components:
+
+- **[lexicons/](lexicons/README.md)** - AT Protocol Lexicon schemas (`net.atrarium.*`)
+- **[server/](server/README.md)** - Cloudflare Workers backend (Feed Generator API, Durable Objects)
+- **[client/](client/README.md)** - React web dashboard (community management UI)
+- **[docs/](docs/README.md)** - VitePress documentation site
+
+For detailed setup and usage instructions, see the respective README files in each directory.
