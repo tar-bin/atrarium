@@ -20,7 +20,7 @@ Atrarium enables small & open communities (10-200 people) to operate sustainably
 
 **Solution**: Serverless architecture on AT Protocol eliminates server management while maintaining decentralized identity and data ownership.
 
-📖 See [Concept Documentation](https://docs.atrarium.net/en/guide/concept.html) for detailed analysis and cost comparisons.
+📖 See [CONCEPT.md](/CONCEPT.md) for detailed analysis and cost comparisons.
 
 ## Core Features
 
@@ -47,7 +47,7 @@ Atrarium's value lies in AT Protocol Lexicon schemas (`net.atrarium.*`), not the
 - **Component Independence**: Feed Generator and AppView operate independently via Lexicon contracts
 - **No Vendor Lock-In**: Any AT Protocol-compatible server can implement these schemas
 
-📖 See [Architecture Documentation](https://docs.atrarium.net/en/architecture/system-design.html) for technical details.
+📖 See [CONCEPT.md](/CONCEPT.md) and [server/ARCHITECTURE.md](/server/ARCHITECTURE.md) for technical details.
 
 ## Project Structure
 
@@ -56,6 +56,5 @@ This project is a monorepo containing multiple components:
 - **[lexicons/](lexicons/README.md)** - AT Protocol Lexicon schemas (`net.atrarium.*`)
 - **[server/](server/README.md)** - Cloudflare Workers backend (Feed Generator API, Durable Objects)
 - **[client/](client/README.md)** - React web dashboard (community management UI)
-- **[docs/](docs/README.md)** - VitePress documentation site
 
 For detailed setup and usage instructions, see the respective README files in each directory.

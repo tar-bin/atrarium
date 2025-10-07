@@ -56,7 +56,7 @@ See [constitution.md](.specify/memory/constitution.md) for detailed rules and ra
 
 ## Architecture
 
-For detailed data flow visualization, see [VitePress Concept Documentation](https://docs.atrarium.net/en/guide/concept.html#how-it-works).
+For detailed data flow visualization, see [CONCEPT.md](CONCEPT.md).
 
 ### Tech Stack
 - **Backend**: Cloudflare Workers + Durable Objects (TypeScript 5.7, Node.js via nodejs_compat)
@@ -103,11 +103,10 @@ Client (Bluesky AppView fetches post content)
 ## Project Structure
 
 **Monorepo Organization** (pnpm workspaces):
-- Root: Workspace coordinator
+- Root: Workspace coordinator with component-specific documentation
 - `shared/contracts/`: oRPC API contracts (@atrarium/contracts - shared types/schemas)
 - `server/`: Backend implementation (Cloudflare Workers - @atrarium/server)
 - `client/`: Web dashboard (React)
-- `docs/`: Documentation site (VitePress)
 - `lexicons/`: Protocol definitions (shared across implementations)
 
 **Implemented Structure**:
@@ -220,49 +219,35 @@ client/               # React web dashboard (pnpm workspace: client)
     ├── tsconfig.json        # TypeScript configuration
     └── README.md            # Dashboard setup guide
 
-docs/                 # VitePress documentation site (pnpm workspace: atrarium-docs)
-├── en/                   # English documentation (10 pages)
-│   ├── guide/               # Getting started guides
-│   ├── architecture/        # System design docs
-│   └── reference/           # API reference
-├── ja/                   # Japanese documentation (10 pages, mirrors en/)
-├── .vitepress/
-│   ├── config.ts            # VitePress configuration (i18n, theme)
-│   ├── locales/             # Locale-specific navigation
-│   │   ├── en.ts
-│   │   └── ja.ts
-│   └── theme/               # Custom theme (Atrarium brand colors)
-├── tests/               # Documentation tests (in root tests/docs/)
-├── package.json          # VitePress dependencies
-├── README.md             # Documentation site setup guide
-├── CONTRIBUTING.md       # Documentation contribution guide
-└── DEPLOYMENT.md         # Cloudflare Pages deployment checklist
-
-tests/docs/          # Documentation validation tests (separate from server tests)
-├── navigation.test.ts  # Navigation structure validation
-├── i18n.test.ts        # i18n parity check (en ↔ ja)
-├── links.test.ts       # Link validation (no 404s)
-└── build.test.ts       # VitePress build validation
+# Root documentation files (previously in docs/)
+CONCEPT.md           # System design and architecture
+QUICKSTART.md        # Getting started guide
+SETUP.md             # Development setup instructions
+CONTRIBUTING.md      # Contribution guidelines
 
 pnpm-workspace.yaml  # pnpm workspace configuration
 package.json         # Root workspace coordinator
 wrangler.toml        # Cloudflare Workers configuration (in server/)
 vitest.config.ts     # Vitest configuration (in server/)
-vitest.docs.config.ts # Vitest configuration for documentation tests (root)
-vitest.pds.config.ts  # Vitest configuration for PDS integration tests (in server/)
+vitest.pds.config.ts # Vitest configuration for PDS integration tests (in server/)
 ```
 
 **Documentation**:
-- **[Documentation Site](https://docs.atrarium.net)** - VitePress documentation (EN/JA) - **primary reference**
 - [README.md](README.md) - Project summary (English) - **source of truth for project info**
 - [README.ja.md](README.ja.md) - Japanese translation (maintain sync with README.md)
+- [CONCEPT.md](CONCEPT.md) - System design and architecture
+- [QUICKSTART.md](QUICKSTART.md) - Getting started guide
+- [SETUP.md](SETUP.md) - Development setup instructions
+- Component-specific documentation:
+  - [lexicons/README.md](lexicons/README.md) - AT Protocol Lexicon schemas
+  - [server/](server/) - Backend documentation (API.md, ARCHITECTURE.md, DEPLOYMENT.md, etc.)
+  - [client/README.md](client/README.md) - Web dashboard documentation
 
 **Documentation Policy**:
 - **English (README.md)** is the primary/canonical version for project information
-- **VitePress docs** (`docs/`) provide comprehensive guides, architecture details, and API references
-- **Other languages (README.ja.md, docs/ja/)** are translations that should be kept in sync
+- Component-specific docs are located in respective directories (lexicons/, server/, client/)
+- README.ja.md should be kept in sync with README.md for Japanese speakers
 - When updating project information, always update README.md first, then sync translations
-- VitePress docs follow i18n contract: every `en/*.md` must have corresponding `ja/*.md`
 
 ## Data Storage (PDS-First Architecture - 006-pds-1-db)
 
@@ -332,11 +317,6 @@ pnpm --filter client dev       # Start dashboard dev server (http://localhost:51
 pnpm --filter client build     # Build dashboard production bundle
 pnpm --filter client test      # Run dashboard tests
 
-# Documentation site
-pnpm --filter atrarium-docs docs:dev     # Start VitePress dev server (http://localhost:5173)
-pnpm --filter atrarium-docs docs:build   # Build static site
-pnpm --filter atrarium-docs docs:preview # Preview production build
-
 # Run all workspaces
 pnpm -r build        # Build all workspaces
 pnpm -r test         # Run all tests
@@ -376,9 +356,6 @@ pnpm --filter server test:pds       # PDS integration tests
 # Dashboard tests
 pnpm --filter client test        # Run dashboard tests
 
-# Documentation tests
-pnpm test:docs                      # Run VitePress validation tests (from root)
-
 # Run specific test file (in server)
 pnpm --filter server exec vitest run tests/contract/feed-generator/get-feed-skeleton.test.ts
 
@@ -391,13 +368,6 @@ pnpm --filter server exec vitest run tests/contract/feed-generator/get-feed-skel
 # Server deployment
 pnpm --filter server deploy                # Deploy Workers to production
 wrangler secret put JWT_SECRET             # Set secrets (also: BLUESKY_HANDLE, BLUESKY_APP_PASSWORD)
-
-# VitePress documentation site (Cloudflare Pages)
-# Automatic deployment via GitHub integration:
-# - Push to master → auto-deploys to https://docs.atrarium.net
-# - Build command: cd docs && pnpm install && pnpm run docs:build
-# - Build output: docs/.vitepress/dist
-# - Custom domain: docs.atrarium.net (configured in Cloudflare Pages)
 
 # Dashboard (Cloudflare Pages)
 # Recommended deployment via GitHub integration:
@@ -488,8 +458,8 @@ The client fetches actual post content from Bluesky's AppView using these URIs.
 - [x] **Hashtag system** (system-generated `#atrarium_[0-9a-f]{8}`, unique per community)
 - [x] **Moderation system** (hide posts, block users, role-based access)
 - [x] **Authentication** (JWT with DID verification)
-- [x] **Test suite** (contract + integration + unit + docs tests)
-- [x] **VitePress documentation** (20 pages, EN/JA, deployed to Cloudflare Pages)
+- [x] **Test suite** (contract + integration + unit tests)
+- [x] **Component documentation** (consolidated from VitePress, organized by component)
 - [x] **React dashboard** (Phase 0-1: full web UI with PDS integration)
 - [x] **Local PDS integration** (DevContainer with Bluesky PDS for testing)
 - [x] **Domain migration** (atrarium.net acquired, all references updated)
@@ -654,38 +624,34 @@ Tests use `@cloudflare/vitest-pool-workers` to simulate Cloudflare Workers envir
 - **Contract Tests**: API endpoint validation ([tests/contract/](tests/contract/))
 - **Integration Tests**: End-to-end workflows ([tests/integration/](tests/integration/))
 - **Unit Tests**: Isolated logic validation ([tests/unit/](tests/unit/)) - **003-id**
-- **Documentation Tests**: VitePress validation ([tests/docs/](tests/docs/)) using [vitest.docs.config.ts](vitest.docs.config.ts)
 - **PDS Integration**: Real Bluesky PDS testing in DevContainer ([tests/integration/pds-posting.test.ts](tests/integration/pds-posting.test.ts)) - **003-id**
 
 ```bash
 # Run all tests
-npm test
+pnpm --filter server test
 
 # Run specific test
-npx vitest run tests/contract/feed-generator/get-feed-skeleton.test.ts
+pnpm --filter server exec vitest run tests/contract/feed-generator/get-feed-skeleton.test.ts
 
 # Run hashtag-related tests (003-id)
-npx vitest run tests/contract/dashboard/post-to-feed-with-hashtag.test.ts
-npx vitest run tests/integration/hashtag-indexing-flow.test.ts
+pnpm --filter server exec vitest run tests/contract/dashboard/post-to-feed-with-hashtag.test.ts
+pnpm --filter server exec vitest run tests/integration/hashtag-indexing-flow.test.ts
 
 # Run moderation tests (003-id)
-npx vitest run tests/contract/dashboard/moderation.test.ts
-npx vitest run tests/integration/moderation-flow.test.ts
+pnpm --filter server exec vitest run tests/contract/dashboard/moderation.test.ts
+pnpm --filter server exec vitest run tests/integration/moderation-flow.test.ts
 
 # Run PDS integration test (requires DevContainer)
-npx vitest run tests/integration/pds-posting.test.ts
-
-# Run documentation tests
-npm run test:docs
+pnpm --filter server test:pds
 
 # Debug tests
-npm run test:watch
+pnpm --filter server test:watch
 ```
 
 ### Local Development (006-pds-1-db)
 ```bash
 # Run Workers locally (with Miniflare)
-npm run dev
+pnpm --filter server dev
 
 # The dev server includes:
 # - Durable Objects (in-memory simulation)
