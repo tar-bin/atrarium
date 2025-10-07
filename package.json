@@ -2,18 +2,16 @@
   "name": "atrarium",
   "version": "0.1.0",
   "description": "Community management system built on AT Protocol (Bluesky)",
-  "main": "src/index.ts",
+  "private": true,
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
-    "test": "vitest",
-    "test:local": "vitest run tests/unit/",
-    "test:watch": "vitest --watch",
-    "test:docs": "vitest run --config vitest.docs.config.ts",
-    "typecheck": "tsc --noEmit",
-    "lint": "eslint src tests --ext .ts",
-    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
-    "codegen": "npx @atproto/lex-cli gen-api src/schemas/generated/ lexicons/*.json"
+    "dev": "pnpm --filter server dev",
+    "deploy": "pnpm --filter server deploy",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "test:docs": "pnpm --filter docs test",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "format": "pnpm -r format"
   },
   "keywords": [
     "atproto",
@@ -22,34 +20,5 @@
     "cloudflare-workers"
   ],
   "author": "https://github.com/tar-bin",
-  "license": "MIT",
-  "dependencies": {
-    "@atproto/api": "^0.13.35",
-    "@atproto/identity": "^0.4.3",
-    "@atproto/xrpc-server": "^0.7.4",
-    "@orpc/openapi": "^1.9.3",
-    "@orpc/server": "^1.9.3",
-    "@orpc/zod": "^1.9.3",
-    "clsx": "^2.1.1",
-    "hono": "^4.6.14",
-    "jose": "^5.9.6",
-    "swagger-ui-dist": "^5.29.3",
-    "tailwind-merge": "^3.3.1",
-    "zod": "^3.23.8"
-  },
-  "devDependencies": {
-    "@atproto/lex-cli": "^0.9.5",
-    "@cloudflare/vitest-pool-workers": "^0.5.30",
-    "@cloudflare/workers-types": "^4.20241127.0",
-    "@tanstack/react-query-devtools": "^5.90.2",
-    "@tanstack/router-cli": "^1.132.33",
-    "@types/glob": "^8.1.0",
-    "@types/node": "^22.10.2",
-    "eslint": "^9.16.0",
-    "glob": "^11.0.3",
-    "prettier": "^3.4.2",
-    "typescript": "^5.7.2",
-    "vitest": "^2.1.8",
-    "wrangler": "^3.94.0"
-  }
+  "license": "MIT"
 }

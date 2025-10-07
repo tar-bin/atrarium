@@ -41,6 +41,9 @@ build/Release
 node_modules/
 jspm_packages/
 
+# pnpm
+pnpm-lock.yaml
+
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/
 
@@ -181,6 +184,16 @@ temp/
 
 # Cloudflare Workers
 .wrangler/
+server/.wrangler/
 .mf/
 worker/
 /test-results/
+
+# Workspace directories
+server/node_modules/
+server/dist/
+client/dashboard/node_modules/
+client/dashboard/dist/
+docs/node_modules/
+docs/.vitepress/dist/
+docs/.vitepress/cache/

@@ -19,12 +19,14 @@
     "forceConsistentCasingInFileNames": true,
     "allowSyntheticDefaultImports": true,
     "isolatedModules": true,
-    "outDir": "./dist",
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    "outDir": "./dist"
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", ".wrangler", "tests", "src/schemas/generated"]
+  "references": [
+    { "path": "./server" },
+    { "path": "./client/dashboard" },
+    { "path": "./docs" }
+  ],
+  "files": [],
+  "include": [],
+  "exclude": ["node_modules"]
 }
