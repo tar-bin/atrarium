@@ -3,11 +3,11 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { useToast } from '../../hooks/use-toast';
 import { apiClient } from '../../lib/api';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Textarea } from '../ui/textarea';
-import { useToast } from '../ui/use-toast';
 
 interface PostCreatorProps {
   communityId: string;

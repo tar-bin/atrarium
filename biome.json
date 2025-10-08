@@ -124,6 +124,16 @@
           }
         }
       }
+    },
+    {
+      "includes": ["**/client-types.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "off"
+          }
+        }
+      }
     }
   ]
 }
