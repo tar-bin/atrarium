@@ -1,6 +1,6 @@
 # Atrarium
 
-**Small ecosystems on AT Protocol**
+**Community Management System on AT Protocol**
 
 > ⚠️ **Status**: Under active development. Not ready for production use.
 
