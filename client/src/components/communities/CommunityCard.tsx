@@ -39,6 +39,15 @@ export function CommunityCard({ community, onClick, userRole }: CommunityCardPro
               {community.stage.charAt(0).toUpperCase() + community.stage.slice(1)}
             </Badge>
           </div>
+          {/* Access Type Badge */}
+          {community.accessType && (
+            <Badge
+              variant={community.accessType === 'open' ? 'secondary' : 'outline'}
+              className="mt-2"
+            >
+              {community.accessType === 'open' ? 'Open' : 'Invite-only'}
+            </Badge>
+          )}
         </CardHeader>
         <CardContent>
           <div className="flex gap-4 text-sm text-muted-foreground">

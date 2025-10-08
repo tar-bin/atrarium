@@ -9,9 +9,11 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
-export function Sidebar({ onClose = () => {
-  // Default empty handler
-} }: SidebarProps) {
+export function Sidebar({
+  onClose = () => {
+    // Default empty handler
+  },
+}: SidebarProps) {
   const { session, logout } = usePDS();
   const { contextInfo } = useLayoutContext();
   const routerState = useRouterState();
@@ -24,7 +26,7 @@ export function Sidebar({ onClose = () => {
   ];
 
   return (
-    <aside className="flex h-screen w-64 flex-col border-r bg-slate-50 p-4" role="navigation">
+    <nav className="flex h-screen w-64 flex-col border-r bg-slate-50 p-4">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-xl font-bold">Atrarium</h2>
@@ -111,6 +113,6 @@ export function Sidebar({ onClose = () => {
           </Button>
         )}
       </div>
-    </aside>
+    </nav>
   );
 }
