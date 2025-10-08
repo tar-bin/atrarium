@@ -112,7 +112,29 @@ Client (Bluesky AppView fetches post content)
 - `client/`: Web dashboard (React)
 - `lexicons/`: Protocol definitions (shared across implementations)
 
-**Implemented Structure**:
+**Key Directories**:
+- `lexicons/` - AT Protocol Lexicon schemas (protocol definition, implementation-agnostic)
+- `shared/contracts/` - oRPC API contracts (type-safe RPC between client/server)
+  - `src/router.ts` - Contract definition (routes, schemas, middleware)
+  - `src/schemas.ts` - Zod validation schemas
+  - `src/types.ts` - TypeScript types (inferred from Zod)
+  - `src/client-types.ts` - Client-compatible RouterClient type
+- `server/` - Cloudflare Workers backend (@atrarium/server)
+  - `src/durable-objects/` - Per-community feed storage (CommunityFeedGenerator, FirehoseReceiver)
+  - `src/routes/` - API endpoints (feed-generator, communities, memberships, moderation)
+  - `src/workers/` - Queue consumers (FirehoseProcessor)
+  - `src/services/` - Business logic (AT Protocol client, auth)
+  - `src/schemas/` - Validation schemas (Zod, Lexicon types)
+  - `tests/` - Contract, integration, unit tests (Vitest + @cloudflare/vitest-pool-workers)
+- `client/` - React dashboard (TanStack Router + Query + Table)
+  - `src/components/` - React components (communities, feeds, posts, moderation, layout, UI)
+  - `src/routes/` - TanStack Router file-based routes
+  - `src/contexts/` - React Context providers (PDS session management)
+  - `src/lib/` - Utilities (API client, PDS integration, TanStack Query client)
+  - `src/i18n/` - i18next translations (EN/JA)
+  - `tests/` - Component tests (Vitest + Testing Library), E2E tests (Playwright)
+
+**Detailed Structure** (for reference):
 ```
 lexicons/              # AT Protocol Lexicon schemas (protocol definition, implementation-agnostic)
 ├── net.atrarium.community.config.json
@@ -285,6 +307,27 @@ start-dev.sh         # Parallel development startup script (server + dashboard)
 
 ## Development Commands
 
+### Quick Reference
+
+**Root-level commands** (run from any directory):
+```bash
+pnpm install                    # Install all workspace dependencies
+pnpm -r build                   # Build all workspaces
+pnpm -r test                    # Run all tests
+pnpm -r typecheck               # Type check all workspaces
+pnpm lint                       # Check linting issues
+pnpm lint:fix                   # Auto-fix linting issues
+pnpm format                     # Auto-format code
+pnpm format:check               # Check formatting
+```
+
+**Workspace-specific commands**:
+```bash
+pnpm --filter server <command>              # Run server command
+pnpm --filter client <command>              # Run client command
+pnpm --filter @atrarium/contracts <command> # Run contracts command
+```
+
 ### Setup
 ```bash
 # Install all workspace dependencies (uses pnpm workspaces)
@@ -346,6 +389,31 @@ pnpm --filter server test:pds
 
 # PDS is available at http://localhost:3000 (or http://pds:3000 from container)
 # Environment variable: PDS_URL=http://pds:3000
+```
+
+### Code Quality and Pre-commit Validation
+
+**Automated quality gates** (enforced by pre-commit hooks):
+- **Biome linting/formatting**: Auto-fixes staged files via lint-staged
+- **TypeScript type checking**: Validates types across all workspaces (`pnpm -r typecheck`)
+- **Configuration**: [.husky/pre-commit](.husky/pre-commit), [biome.json](biome.json), [package.json](package.json)
+- **Bypassing validation**: Prohibited per Constitution Principle 9 (emergency bypasses require maintainer approval)
+
+**Biome configuration** ([biome.json](biome.json)):
+- Line width: 100 characters
+- Indent: 2 spaces
+- Quote style: Single quotes (JS), double quotes (JSX)
+- Semicolons: Always
+- Trailing commas: ES5
+- Line ending: LF
+
+**Manual validation**:
+```bash
+pnpm lint              # Check linting issues
+pnpm lint:fix          # Auto-fix linting issues
+pnpm format            # Auto-format code
+pnpm format:check      # Check formatting only
+pnpm -r typecheck      # Type check all workspaces
 ```
 
 ### Testing
@@ -631,30 +699,8 @@ Tests use `@cloudflare/vitest-pool-workers` to simulate Cloudflare Workers envir
 - **Environment**: Durable Objects and Queue bindings configured in [wrangler.toml](wrangler.toml)
 - **Contract Tests**: API endpoint validation ([tests/contract/](tests/contract/))
 - **Integration Tests**: End-to-end workflows ([tests/integration/](tests/integration/))
-- **Unit Tests**: Isolated logic validation ([tests/unit/](tests/unit/)) - **003-id**
-- **PDS Integration**: Real Bluesky PDS testing in DevContainer ([tests/integration/pds-posting.test.ts](tests/integration/pds-posting.test.ts)) - **003-id**
-
-```bash
-# Run all tests
-pnpm --filter server test
-
-# Run specific test
-pnpm --filter server exec vitest run tests/contract/feed-generator/get-feed-skeleton.test.ts
-
-# Run hashtag-related tests (003-id)
-pnpm --filter server exec vitest run tests/contract/dashboard/post-to-feed-with-hashtag.test.ts
-pnpm --filter server exec vitest run tests/integration/hashtag-indexing-flow.test.ts
-
-# Run moderation tests (003-id)
-pnpm --filter server exec vitest run tests/contract/dashboard/moderation.test.ts
-pnpm --filter server exec vitest run tests/integration/moderation-flow.test.ts
-
-# Run PDS integration test (requires DevContainer)
-pnpm --filter server test:pds
-
-# Debug tests
-pnpm --filter server test:watch
-```
+- **Unit Tests**: Isolated logic validation ([tests/unit/](tests/unit/))
+- **PDS Integration**: Real Bluesky PDS testing in DevContainer ([tests/integration/pds-posting.test.ts](tests/integration/pds-posting.test.ts))
 
 ### Local Development (006-pds-1-db)
 ```bash
