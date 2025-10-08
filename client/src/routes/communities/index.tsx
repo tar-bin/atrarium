@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { useState } from 'react';
-import { CommunityList } from '@/components/communities/CommunityList';
+import { CommunityBrowser } from '@/components/communities/CommunityBrowser';
 import { CreateCommunityModal } from '@/components/communities/CreateCommunityModal';
 import { isAuthenticated } from '@/lib/auth';
 import type { Community } from '@/types';
@@ -22,7 +22,7 @@ function CommunitiesPage() {
 
   // TODO: Replace with TanStack Query in Phase 3.6
   // Using mock data based on seeds/dev-data.sql
-  const mockCommunities: Community[] = [
+  const _mockCommunities: Community[] = [
     {
       id: 'comm-anime-lovers',
       name: 'Anime Lovers',
@@ -104,8 +104,8 @@ function CommunitiesPage() {
       archivedAt: null,
     },
   ];
-  const loading = false;
-  const error = null;
+  const _loading = false;
+  const _error = null;
 
   const handleCreateCommunity = async (_data: { name: string; description: string }) => {
     // TODO: Implement API call with TanStack Query mutation
@@ -114,12 +114,17 @@ function CommunitiesPage() {
 
   return (
     <div>
-      <CommunityList
-        communities={mockCommunities}
-        loading={loading}
-        error={error}
-        onCreateClick={() => setIsCreateModalOpen(true)}
-      />
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Communities</h1>
+        <button
+          onClick={() => setIsCreateModalOpen(true)}
+          className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+        >
+          Create Community
+        </button>
+      </div>
+
+      <CommunityBrowser />
 
       <CreateCommunityModal
         isOpen={isCreateModalOpen}

@@ -35,9 +35,13 @@ export function FeedList({ feeds, loading, error }: FeedListProps) {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {feeds.map((feed) => (
-        <FeedCard key={feed.id} feed={feed} onClick={() => {
-          // Click handler will be implemented by parent
-        }} />
+        <FeedCard
+          key={feed.id}
+          feed={feed}
+          onClick={() => {
+            // Click handler will be implemented by parent
+          }}
+        />
       ))}
     </div>
   );

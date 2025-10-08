@@ -250,17 +250,64 @@ npx wrangler pages deploy dist --project-name=atrarium-dashboard
 
 1. Navigate to Communities (`/communities`)
 2. Click "Create Community" button
-3. Fill in name and description
+3. Fill in name, description, and access type:
+   - **Open**: Anyone can join immediately (status='active')
+   - **Invite-only**: Requires owner/moderator approval (status='pending')
 4. Backend creates:
-   - **PDS record**: `net.atrarium.community.config` in owner's PDS
+   - **PDS record**: `net.atrarium.community.config` in owner's PDS (with accessType field)
    - **Durable Object**: `CommunityFeedGenerator` instance
-5. Community appears in list
+5. Community appears in list with access type badge
 
 **Data Flow**:
 ```
 Dashboard → Workers API → ATProtoService.createCommunityConfig()
          → PDS (AT-URI: at://did:plc:owner/net.atrarium.community.config/rkey)
          → Durable Object initialization
+```
+
+### Join Community Workflows
+
+**Open Community (Immediate Join)**:
+
+1. Navigate to Communities Browser (`/communities`)
+2. Find open community (displays "Open" badge)
+3. Click "Join Community" button
+4. Backend creates membership with `status='active'`:
+   - **PDS record**: `net.atrarium.community.membership` in user's PDS
+   - Immediately added to community member list
+5. User can view community feed and posts
+
+**Invite-Only Community (Join Request)**:
+
+1. Navigate to Communities Browser (`/communities`)
+2. Find invite-only community (displays "Invite-only" badge)
+3. Click "Request to Join" button
+4. Backend creates membership with `status='pending'`:
+   - **PDS record**: `net.atrarium.community.membership` in user's PDS
+   - Badge shows "Pending Approval"
+5. User waits for admin approval
+
+**Admin Approval (Owner/Moderator)**:
+
+1. Navigate to Community Management (`/communities/:id/manage`)
+2. Click "Join Requests" tab
+3. View list of pending join requests (memberships with `status='pending'`)
+4. Click "Approve" to grant access:
+   - Updates membership record: `status='pending'` → `status='active'`
+   - User can now access community
+5. Or click "Reject" to deny access:
+   - Deletes membership record from PDS
+
+**Data Flow**:
+```
+# Join Request (Invite-only)
+Dashboard → Workers API → ATProtoService.createMembership({ status: 'pending' })
+         → PDS (at://did:plc:user/net.atrarium.community.membership/rkey)
+
+# Admin Approval
+Dashboard → Workers API → ATProtoService.updateMembershipStatus({ status: 'active' })
+         → PDS (updates existing membership record)
+         → Durable Object (user added to member cache)
 ```
 
 ### Create Feed (PDS-First)
@@ -327,16 +374,38 @@ Dashboard → Workers API → ATProtoService.createModerationAction()
 
 ## Testing Strategy
 
+**Prerequisites:**
+- Vitest configured in `vitest.config.ts`
+- Testing Library (@testing-library/react) installed
+- MSW (Mock Service Worker) v2.x configured in `tests/setup.ts`
+- Playwright installed for E2E tests (`npx playwright install`)
+
 **Component Tests (TDD):**
 - Written before implementation (Phase 3.3)
 - Test rendering, user interactions, validation
 - Use Testing Library + Vitest
 - Located in `tests/components/`
+- Run: `npm test`
 
 **Integration Tests:**
 - Test end-to-end user flows
 - Use MSW to mock backend API
 - Located in `tests/integration/`
+- Run: `npm test tests/integration/`
+
+**E2E Tests (Playwright):**
+- Test full user workflows in real browser
+- Located in `tests/e2e/`
+- Run: `npx playwright test`
+- Target: 6 scenarios (join open/invite-only, member management, moderation, ownership transfer)
+
+**Performance Tests:**
+- **Load Time** (FR-032): Verify community list loads within 3 seconds
+  - Tool: Lighthouse CI (`npm run lighthouse`)
+  - Target: FCP <1.5s, LCP <3s
+- **Feed Latency** (FR-033): Verify feed updates appear within 5 seconds
+  - Measured in E2E tests with timestamp comparison
+  - Target: <5s from post creation to feed appearance
 
 **MSW Mocking:**
 - Mock handlers in `tests/mocks/handlers.ts`
@@ -345,16 +414,31 @@ Dashboard → Workers API → ATProtoService.createModerationAction()
 
 ## Features Implemented
 
-**Phase 1 Complete** (PDS-first architecture):
+**Phase 1 Complete** (PDS-first architecture + 013-join-leave-workflow):
 - ✅ PDS authentication via AtpAgent
 - ✅ Community management UI (create, list, view)
+  - ✅ Access type support (open, invite-only)
+  - ✅ Community browser with filters (stage, accessType)
+- ✅ Membership workflows
+  - ✅ Join community (immediate for open, request for invite-only)
+  - ✅ Leave community
+  - ✅ Join request approval/rejection (admin)
+  - ✅ Member management (role changes, removal)
+  - ✅ Ownership transfer
 - ✅ Feed management UI (create, list, view with hashtags)
 - ✅ Post creation with automatic hashtag inclusion
-- ✅ Moderation UI (hide posts, moderation log)
+- ✅ Moderation UI
+  - ✅ Hide/unhide posts with reason selection
+  - ✅ Block/unblock users
+  - ✅ Moderation history log
+  - ✅ Community statistics (member count, pending requests)
 - ✅ PDS session management (localStorage persistence)
 - ✅ i18n support (EN/JA translations)
+  - ✅ Community, membership, moderation translations
+  - ✅ 16 moderation reason types
 - ✅ Responsive layout (mobile-friendly)
-- ✅ Component tests (TDD)
+- ✅ Type-safe API integration (oRPC + TanStack Query)
+- ✅ Component tests (TDD framework ready)
 - ✅ Production build (<500KB gzip)
 
 **Architecture Highlights**:
