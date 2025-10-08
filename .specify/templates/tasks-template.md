@@ -48,47 +48,48 @@
 - [ ] T003 [P] Configure Biome linting and formatting (Constitution Principle 7)
 - [ ] T004 [P] Configure TypeScript type checking (Constitution Principle 7)
 - [ ] T005 [P] Set up pre-commit validation hooks (Constitution Principle 7)
+- [ ] T006 [P] Validate PDS-only storage architecture (Constitution Principle 8 - no databases beyond Durable Objects cache)
 
 ## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
 **CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
-- [ ] T006 [P] Contract test POST /api/users in tests/contract/test_users_post.py
-- [ ] T007 [P] Contract test GET /api/users/{id} in tests/contract/test_users_get.py
-- [ ] T008 [P] Integration test user registration in tests/integration/test_registration.py
-- [ ] T009 [P] Integration test auth flow in tests/integration/test_auth.py
+- [ ] T007 [P] Contract test POST /api/users in tests/contract/test_users_post.py
+- [ ] T008 [P] Contract test GET /api/users/{id} in tests/contract/test_users_get.py
+- [ ] T009 [P] Integration test user registration in tests/integration/test_registration.py
+- [ ] T010 [P] Integration test auth flow in tests/integration/test_auth.py
 
 ## Phase 3.3: Core Implementation (ONLY after tests are failing)
-- [ ] T010 [P] User model in src/models/user.py
-- [ ] T011 [P] UserService CRUD in src/services/user_service.py
-- [ ] T012 [P] CLI --create-user in src/cli/user_commands.py
-- [ ] T013 POST /api/users endpoint
-- [ ] T014 GET /api/users/{id} endpoint
-- [ ] T015 Input validation
-- [ ] T016 Error handling and logging
+- [ ] T011 [P] User model in src/models/user.py
+- [ ] T012 [P] UserService CRUD in src/services/user_service.py
+- [ ] T013 [P] CLI --create-user in src/cli/user_commands.py
+- [ ] T014 POST /api/users endpoint
+- [ ] T015 GET /api/users/{id} endpoint
+- [ ] T016 Input validation
+- [ ] T017 Error handling and logging
 
 ## Phase 3.4: Integration
-- [ ] T017 Connect UserService to DB
-- [ ] T018 Auth middleware
-- [ ] T019 Request/response logging
-- [ ] T020 CORS and security headers
+- [ ] T018 Connect UserService to PDS (Principle 8 - verify no separate DB used)
+- [ ] T019 Auth middleware
+- [ ] T020 Request/response logging
+- [ ] T021 CORS and security headers
 
 ## Phase 3.5: Polish
-- [ ] T021 [P] Unit tests for validation in tests/unit/test_validation.py
-- [ ] T022 Performance tests (<200ms)
-- [ ] T023 [P] Update docs/api.md
-- [ ] T024 Remove duplication
-- [ ] T025 Run manual-testing.md
-- [ ] T026 Run Biome checks and fix all linting/formatting issues (Principle 7)
+- [ ] T022 [P] Unit tests for validation in tests/unit/test_validation.py
+- [ ] T023 Performance tests (<200ms)
+- [ ] T024 [P] Update docs/api.md
+- [ ] T025 Remove duplication
+- [ ] T026 Run manual-testing.md
+- [ ] T027 Run Biome checks and fix all linting/formatting issues (Principle 7)
 
 ## Dependencies
-- Setup (T001-T005) before all other tasks
-- Tests (T006-T009) before implementation (T010-T016)
-- T010 blocks T011, T017
-- T018 blocks T020
-- Implementation before polish (T021-T026)
+- Setup (T001-T006) before all other tasks
+- Tests (T007-T010) before implementation (T011-T017)
+- T011 blocks T012, T018
+- T019 blocks T021
+- Implementation before polish (T022-T027)
 
 ## Parallel Example
 ```
-# Launch T006-T009 together:
+# Launch T007-T010 together:
 Task: "Contract test POST /api/users in tests/contract/test_users_post.py"
 Task: "Contract test GET /api/users/{id} in tests/contract/test_users_get.py"
 Task: "Integration test registration in tests/integration/test_registration.py"
@@ -98,6 +99,7 @@ Task: "Integration test auth in tests/integration/test_auth.py"
 ## Notes
 - [P] tasks = different files, no dependencies
 - Verify tests fail before implementing
+- Constitution Principle 8: All persistent storage must use PDS + Lexicon schemas (no separate databases)
 - Commit after each task
 - Avoid: vague tasks, same file conflicts
 

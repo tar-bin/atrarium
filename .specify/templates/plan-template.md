@@ -69,6 +69,13 @@
 - ✅ TypeScript type checks configured and enforced
 - ✅ Pre-commit validation automated (CI/CD quality gates)
 
+**AT Protocol + PDS + Lexicon Constraints** (Principle 8):
+- ✅ Feature implementable using AT Protocol + PDS + Lexicon schemas only
+- ✅ No separate databases (SQL/NoSQL/KV) introduced beyond Durable Objects cache
+- ✅ All persistent state resides in PDS using `net.atrarium.*` Lexicon records
+- ✅ Durable Objects Storage used only as 7-day ephemeral cache (if applicable)
+- ✅ No feature requires additional database infrastructure
+
 **Conclusion**: ✅ PASS - Feature complies with all constitution principles
 (or ❌ FAIL with explicit justification and remediation plan)
 

@@ -2,6 +2,7 @@
  * GENERATED CODE - DO NOT MODIFY
  */
 import { type FetchHandler, type FetchHandlerOptions, XrpcClient } from '@atproto/xrpc';
+import { CID } from 'multiformats/cid';
 import { schemas } from './lexicons.js';
 import type * as NetAtrariumCommunityConfig from './types/net/atrarium/community/config.js';
 import type * as NetAtrariumCommunityMembership from './types/net/atrarium/community/membership.js';

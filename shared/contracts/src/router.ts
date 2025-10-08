@@ -3,10 +3,31 @@
 
 import { os } from '@orpc/server';
 import {
+  ApproveJoinRequestInputSchema,
+  BlockUserInputSchema,
   CommunityListOutputSchema,
   CommunityOutputSchema,
   CreateCommunitySchema,
+  FeedListOutputSchema,
+  FeedOutputSchema,
   GetCommunityInputSchema,
+  GetFeedInputSchema,
+  GetMembershipInputSchema,
+  HidePostInputSchema,
+  JoinCommunityInputSchema,
+  JoinRequestListOutputSchema,
+  LeaveCommunityInputSchema,
+  ListFeedsInputSchema,
+  ListJoinRequestsInputSchema,
+  ListMembershipsInputSchema,
+  MembershipListOutputSchema,
+  MembershipOutputSchema,
+  ModerationActionListOutputSchema,
+  ModerationActionOutputSchema,
+  RejectJoinRequestInputSchema,
+  UnblockUserInputSchema,
+  UnhidePostInputSchema,
+  UpdateMembershipInputSchema,
 } from './schemas';
 
 // ============================================================================
@@ -61,11 +82,158 @@ export const communitiesContract = {
 };
 
 // ============================================================================
+// Memberships Router Contract
+// ============================================================================
+
+export const membershipsContract = {
+  list: authed
+    .route({
+      method: 'GET',
+      path: '/api/memberships',
+    })
+    .input(ListMembershipsInputSchema)
+    .output(MembershipListOutputSchema),
+
+  get: authed
+    .route({
+      method: 'GET',
+      path: '/api/memberships/:uri',
+    })
+    .input(GetMembershipInputSchema)
+    .output(MembershipOutputSchema),
+
+  join: authed
+    .route({
+      method: 'POST',
+      path: '/api/memberships/join',
+    })
+    .input(JoinCommunityInputSchema)
+    .output(MembershipOutputSchema),
+
+  leave: authed
+    .route({
+      method: 'POST',
+      path: '/api/memberships/leave',
+    })
+    .input(LeaveCommunityInputSchema)
+    .output(MembershipOutputSchema),
+
+  update: authed
+    .route({
+      method: 'PATCH',
+      path: '/api/memberships/:uri',
+    })
+    .input(UpdateMembershipInputSchema)
+    .output(MembershipOutputSchema),
+};
+
+// ============================================================================
+// Join Requests Router Contract
+// ============================================================================
+
+export const joinRequestsContract = {
+  list: authed
+    .route({
+      method: 'GET',
+      path: '/api/join-requests',
+    })
+    .input(ListJoinRequestsInputSchema)
+    .output(JoinRequestListOutputSchema),
+
+  approve: authed
+    .route({
+      method: 'POST',
+      path: '/api/join-requests/approve',
+    })
+    .input(ApproveJoinRequestInputSchema)
+    .output(MembershipOutputSchema),
+
+  reject: authed
+    .route({
+      method: 'POST',
+      path: '/api/join-requests/reject',
+    })
+    .input(RejectJoinRequestInputSchema)
+    .output(MembershipOutputSchema),
+};
+
+// ============================================================================
+// Moderation Router Contract
+// ============================================================================
+
+export const moderationContract = {
+  hidePost: authed
+    .route({
+      method: 'POST',
+      path: '/api/moderation/hide-post',
+    })
+    .input(HidePostInputSchema)
+    .output(ModerationActionOutputSchema),
+
+  unhidePost: authed
+    .route({
+      method: 'POST',
+      path: '/api/moderation/unhide-post',
+    })
+    .input(UnhidePostInputSchema)
+    .output(ModerationActionOutputSchema),
+
+  blockUser: authed
+    .route({
+      method: 'POST',
+      path: '/api/moderation/block-user',
+    })
+    .input(BlockUserInputSchema)
+    .output(ModerationActionOutputSchema),
+
+  unblockUser: authed
+    .route({
+      method: 'POST',
+      path: '/api/moderation/unblock-user',
+    })
+    .input(UnblockUserInputSchema)
+    .output(ModerationActionOutputSchema),
+
+  list: authed
+    .route({
+      method: 'GET',
+      path: '/api/moderation/actions',
+    })
+    .output(ModerationActionListOutputSchema),
+};
+
+// ============================================================================
+// Feeds Router Contract
+// ============================================================================
+
+export const feedsContract = {
+  list: authed
+    .route({
+      method: 'GET',
+      path: '/api/feeds',
+    })
+    .input(ListFeedsInputSchema)
+    .output(FeedListOutputSchema),
+
+  get: authed
+    .route({
+      method: 'GET',
+      path: '/api/feeds/:communityUri',
+    })
+    .input(GetFeedInputSchema)
+    .output(FeedOutputSchema),
+};
+
+// ============================================================================
 // Root Router Contract
 // ============================================================================
 
 export const contract = {
   communities: communitiesContract,
+  memberships: membershipsContract,
+  joinRequests: joinRequestsContract,
+  moderation: moderationContract,
+  feeds: feedsContract,
 };
 
 export type Contract = typeof contract;

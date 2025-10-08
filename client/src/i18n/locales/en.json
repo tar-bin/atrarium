@@ -22,7 +22,31 @@
     "name": "Community Name",
     "description": "Description",
     "members": "Members",
-    "posts": "Posts"
+    "posts": "Posts",
+    "accessType": {
+      "open": "Open",
+      "inviteOnly": "Invite-only"
+    },
+    "status": {
+      "active": "Active",
+      "pending": "Pending Approval"
+    },
+    "role": {
+      "owner": "Owner",
+      "moderator": "Moderator",
+      "member": "Member"
+    },
+    "join": "Join Community",
+    "leave": "Leave Community",
+    "requestJoin": "Request to Join",
+    "management": "Management",
+    "notFound": "Community not found",
+    "filter": {
+      "all": "All",
+      "theme": "Theme",
+      "community": "Community",
+      "graduated": "Graduated"
+    }
   },
   "feed": {
     "list": "Feeds",
@@ -40,7 +64,53 @@
     "title": "Moderation Log",
     "hidePost": "Hide Post",
     "unhidePost": "Unhide Post",
-    "blockUser": "Block User"
+    "blockUser": "Block User",
+    "unblockUser": "Unblock User",
+    "selectReason": "Select reason",
+    "reason": "Reason",
+    "actions": "Actions",
+    "history": "Moderation History",
+    "members": {
+      "title": "Member Management",
+      "changeRole": "Change Role",
+      "removeMember": "Remove Member"
+    },
+    "joinRequests": {
+      "title": "Join Requests",
+      "approve": "Approve",
+      "reject": "Reject",
+      "noPending": "No pending join requests"
+    },
+    "stats": {
+      "title": "Community Statistics",
+      "memberCount": "Total Members",
+      "pendingRequestCount": "Pending Requests"
+    },
+    "ownershipTransfer": {
+      "title": "Transfer Ownership",
+      "description": "Transfer ownership of this community to another member. This action cannot be undone.",
+      "selectMember": "Select new owner",
+      "confirm": "Transfer Ownership",
+      "success": "Ownership transferred successfully"
+    },
+    "reasons": {
+      "spam": "Spam",
+      "low_quality": "Low Quality",
+      "duplicate": "Duplicate",
+      "off_topic": "Off Topic",
+      "wrong_community": "Wrong Community",
+      "guidelines_violation": "Guidelines Violation",
+      "terms_violation": "Terms Violation",
+      "copyright": "Copyright Infringement",
+      "harassment": "Harassment",
+      "hate_speech": "Hate Speech",
+      "nsfw": "NSFW Content",
+      "illegal": "Illegal Content",
+      "misinformation": "Misinformation",
+      "impersonation": "Impersonation",
+      "privacy_violation": "Privacy Violation",
+      "other": "Other"
+    }
   },
   "pds": {
     "login": "Login to PDS",

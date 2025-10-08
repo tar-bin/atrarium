@@ -32,6 +32,12 @@
             "description": "Community development stage",
             "enum": ["theme", "community", "graduated"]
           },
+          "accessType": {
+            "type": "string",
+            "description": "Community access control: 'open' allows immediate join, 'invite-only' requires admin approval",
+            "enum": ["open", "invite-only"],
+            "default": "open"
+          },
           "moderators": {
             "type": "array",
             "description": "List of moderator DIDs (includes owner)",

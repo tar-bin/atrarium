@@ -1,5 +1,10 @@
+/**
+ * GENERATED CODE - DO NOT MODIFY
+ */
+import { BlobRef, type ValidationResult } from '@atproto/lexicon';
+import { CID } from 'multiformats/cid';
 import { validate as _validate } from '../../../../lexicons';
-import { is$typed as _is$typed } from '../../../../util';
+import { is$typed as _is$typed, type $Typed, type OmitKey } from '../../../../util';
 
 const is$typed = _is$typed,
   validate = _validate;
@@ -11,6 +16,8 @@ export interface Record {
   community: string;
   /** Membership role within the community */
   role: 'owner' | 'moderator' | 'member';
+  /** Membership status: 'active' for approved members, 'pending' for join requests awaiting approval */
+  status: 'active' | 'pending';
   /** Membership start timestamp (ISO 8601) */
   joinedAt: string;
   /** Whether membership is currently active (false = left community) */

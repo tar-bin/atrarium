@@ -1,4 +1,8 @@
+// Atrarium MVP - Moderation Routes
+// Moderation API (T039-T043)
+
 import { Hono } from 'hono';
+import { ATProtoService } from '../services/atproto';
 import { AuthService } from '../services/auth';
 import type { Env, HonoVariables } from '../types';
 import { MODERATION_REASONS, type ModerationReason } from '../types';
@@ -21,8 +25,6 @@ app.use('*', async (c, next) => {
   }
 });
 
-// Helper removed - moderation role check now in Durable Object
-
 // ============================================================================
 // Helper: Validate moderation reason (007-reason-enum-atproto)
 // Enum-based validation (eliminates PII/confidential data risk)
@@ -44,13 +46,43 @@ function validateModerationReason(reason?: string): { valid: boolean; error?: st
 }
 
 // ============================================================================
-// POST /api/moderation/hide-post
-// Hide a post (PDS-first architecture)
+// Helper: Check if user is admin (owner or moderator)
 // ============================================================================
 
-app.post('/hide-post', async (c) => {
+async function checkAdminPermission(
+  atproto: ATProtoService,
+  userDid: string,
+  communityUri: string
+): Promise<{ isAdmin: boolean; role?: string; error?: string }> {
   try {
-    // const userDid = c.get('userDid') as string;
+    const memberships = await atproto.listMemberships(userDid, {
+      communityUri,
+      activeOnly: true,
+    });
+
+    if (memberships.length === 0) {
+      return { isAdmin: false, error: 'User is not a member' };
+    }
+
+    const role = memberships[0]!.role;
+    if (role !== 'owner' && role !== 'moderator') {
+      return { isAdmin: false, error: 'Admin access required' };
+    }
+
+    return { isAdmin: true, role };
+  } catch (err) {
+    return { isAdmin: false, error: (err as Error).message };
+  }
+}
+
+// ============================================================================
+// POST /api/moderation/hide
+// Hide a post (T039 - admin only)
+// ============================================================================
+
+app.post('/hide', async (c) => {
+  try {
+    const userDid = c.get('userDid') as string;
     const body = await c.req.json();
     const { postUri, communityId, reason } = body;
 
@@ -67,33 +99,38 @@ app.post('/hide-post', async (c) => {
       return c.json({ error: 'InvalidReason', message: validation.error }, 400);
     }
 
-    // Get Durable Object stub for community
-    if (!c.env.COMMUNITY_FEED) {
-      throw new Error('COMMUNITY_FEED Durable Object binding not found');
-    }
+    const atproto = new ATProtoService(c.env);
 
-    const id = c.env.COMMUNITY_FEED.idFromName(communityId);
-    const stub = c.env.COMMUNITY_FEED.get(id);
+    const communityUri = `at://did:plc:system/net.atrarium.community.config/${communityId}`;
+
+    // Check admin permission
+    const permissionCheck = await checkAdminPermission(atproto, userDid, communityUri);
+    if (!permissionCheck.isAdmin) {
+      return c.json({ error: 'Forbidden', message: permissionCheck.error }, 403);
+    }
 
     const now = new Date().toISOString();
 
-    // Create ModerationAction in PDS (T035)
-    const { ATProtoService } = await import('../services/atproto');
-    const atproto = new ATProtoService(c.env);
-
-    await atproto.createModerationAction({
-      $type: 'net.atrarium.moderation.action',
-      action: 'hide_post',
-      target: {
-        uri: postUri,
-        cid: '', // CID not required for hide action
+    // Create ModerationAction in PDS
+    await atproto.createModerationAction(
+      {
+        $type: 'net.atrarium.moderation.action',
+        action: 'hide_post',
+        target: {
+          uri: postUri,
+          cid: '', // CID not required for hide action
+        },
+        community: communityUri,
+        reason: reason || '',
+        createdAt: now,
       },
-      community: `at://did:plc:system/net.atrarium.community.config/${communityId}`,
-      reason: reason || '',
-      createdAt: now,
-    });
+      userDid
+    );
 
     // Apply moderation to Durable Object
+    const id = c.env.COMMUNITY_FEED.idFromName(communityId);
+    const stub = c.env.COMMUNITY_FEED.get(id);
+
     await stub.fetch(
       new Request('http://fake-host/moderatePost', {
         method: 'POST',
@@ -107,19 +144,24 @@ app.post('/hide-post', async (c) => {
       })
     );
 
-    return c.json({ success: true }, 200);
+    return c.json({
+      success: true,
+      message: 'Post hidden successfully',
+      postUri,
+    });
   } catch (err) {
     return c.json({ error: 'InternalServerError', message: (err as Error).message }, 500);
   }
 });
 
 // ============================================================================
-// POST /api/moderation/unhide-post
-// Unhide a post (PDS-first architecture)
+// POST /api/moderation/unhide
+// Unhide a post (T040 - admin only)
 // ============================================================================
 
-app.post('/unhide-post', async (c) => {
+app.post('/unhide', async (c) => {
   try {
+    const userDid = c.get('userDid') as string;
     const body = await c.req.json();
     const { postUri, communityId, reason } = body;
 
@@ -130,96 +172,254 @@ app.post('/unhide-post', async (c) => {
       );
     }
 
-    // Validate moderation reason (enum-only, 007-reason-enum-atproto)
+    // Validate moderation reason (enum-only)
     const validation = validateModerationReason(reason);
     if (!validation.valid) {
       return c.json({ error: 'InvalidReason', message: validation.error }, 400);
     }
 
-    // TODO: Similar to hide-post (create PDS record + update Durable Object)
-    return c.json(
-      { error: 'NotImplemented', message: 'PDS-based unhide not yet implemented' },
-      501
+    const atproto = new ATProtoService(c.env);
+
+    const communityUri = `at://did:plc:system/net.atrarium.community.config/${communityId}`;
+
+    // Check admin permission
+    const permissionCheck = await checkAdminPermission(atproto, userDid, communityUri);
+    if (!permissionCheck.isAdmin) {
+      return c.json({ error: 'Forbidden', message: permissionCheck.error }, 403);
+    }
+
+    const now = new Date().toISOString();
+
+    // Create ModerationAction in PDS
+    await atproto.createModerationAction(
+      {
+        $type: 'net.atrarium.moderation.action',
+        action: 'unhide_post',
+        target: {
+          uri: postUri,
+          cid: '',
+        },
+        community: communityUri,
+        reason: reason || '',
+        createdAt: now,
+      },
+      userDid
     );
+
+    // Apply moderation to Durable Object
+    const id = c.env.COMMUNITY_FEED.idFromName(communityId);
+    const stub = c.env.COMMUNITY_FEED.get(id);
+
+    await stub.fetch(
+      new Request('http://fake-host/moderatePost', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'unhide_post',
+          targetUri: postUri,
+          reason,
+          createdAt: now,
+        }),
+      })
+    );
+
+    return c.json({
+      success: true,
+      message: 'Post unhidden successfully',
+      postUri,
+    });
   } catch (err) {
     return c.json({ error: 'InternalServerError', message: (err as Error).message }, 500);
   }
 });
 
 // ============================================================================
-// POST /api/moderation/block-user
-// Block a user from a feed or community
+// POST /api/moderation/block
+// Block a user in community (T041 - admin only)
 // ============================================================================
 
-app.post('/block-user', async (c) => {
+app.post('/block', async (c) => {
   try {
+    const userDid = c.get('userDid') as string;
     const body = await c.req.json();
-    const { userDid, communityId, reason } = body;
+    const { targetDid, communityId, reason } = body;
 
-    if (!userDid || !communityId) {
+    if (!targetDid || !communityId) {
       return c.json(
-        { error: 'InvalidRequest', message: 'userDid and communityId are required' },
+        { error: 'InvalidRequest', message: 'targetDid and communityId are required' },
         400
       );
     }
 
-    // Validate moderation reason (prevent PII/confidential data in public records)
+    // Validate moderation reason
     const validation = validateModerationReason(reason);
     if (!validation.valid) {
       return c.json({ error: 'InvalidReason', message: validation.error }, 400);
     }
 
-    // TODO: Implement PDS-based user blocking
-    return c.json({ error: 'NotImplemented', message: 'PDS-based block not yet implemented' }, 501);
+    const atproto = new ATProtoService(c.env);
+
+    const communityUri = `at://did:plc:system/net.atrarium.community.config/${communityId}`;
+
+    // Check admin permission
+    const permissionCheck = await checkAdminPermission(atproto, userDid, communityUri);
+    if (!permissionCheck.isAdmin) {
+      return c.json({ error: 'Forbidden', message: permissionCheck.error }, 403);
+    }
+
+    const now = new Date().toISOString();
+
+    // Create ModerationAction in PDS
+    await atproto.createModerationAction(
+      {
+        $type: 'net.atrarium.moderation.action',
+        action: 'block_user',
+        target: {
+          did: targetDid,
+        },
+        community: communityUri,
+        reason: reason || '',
+        createdAt: now,
+      },
+      userDid
+    );
+
+    // Apply block to Durable Object
+    const id = c.env.COMMUNITY_FEED.idFromName(communityId);
+    const stub = c.env.COMMUNITY_FEED.get(id);
+
+    await stub.fetch(
+      new Request('http://fake-host/blockUser', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetDid,
+          reason,
+          createdAt: now,
+        }),
+      })
+    );
+
+    return c.json({
+      success: true,
+      message: 'User blocked successfully',
+      targetDid,
+    });
   } catch (err) {
     return c.json({ error: 'InternalServerError', message: (err as Error).message }, 500);
   }
 });
 
 // ============================================================================
-// POST /api/moderation/unblock-user
-// Unblock a user from a feed (PDS-first architecture)
+// POST /api/moderation/unblock
+// Unblock a user in community (T042 - admin only)
 // ============================================================================
 
-app.post('/unblock-user', async (c) => {
+app.post('/unblock', async (c) => {
   try {
+    const userDid = c.get('userDid') as string;
     const body = await c.req.json();
-    const { userDid, communityId, reason } = body;
+    const { targetDid, communityId, reason } = body;
 
-    if (!userDid || !communityId) {
+    if (!targetDid || !communityId) {
       return c.json(
-        { error: 'InvalidRequest', message: 'userDid and communityId are required' },
+        { error: 'InvalidRequest', message: 'targetDid and communityId are required' },
         400
       );
     }
 
-    // Validate moderation reason (enum-only, 007-reason-enum-atproto)
+    // Validate moderation reason (enum-only)
     const validation = validateModerationReason(reason);
     if (!validation.valid) {
       return c.json({ error: 'InvalidReason', message: validation.error }, 400);
     }
 
-    // TODO: Implement PDS-based user unblocking
-    return c.json(
-      { error: 'NotImplemented', message: 'PDS-based unblock not yet implemented' },
-      501
+    const atproto = new ATProtoService(c.env);
+
+    const communityUri = `at://did:plc:system/net.atrarium.community.config/${communityId}`;
+
+    // Check admin permission
+    const permissionCheck = await checkAdminPermission(atproto, userDid, communityUri);
+    if (!permissionCheck.isAdmin) {
+      return c.json({ error: 'Forbidden', message: permissionCheck.error }, 403);
+    }
+
+    const now = new Date().toISOString();
+
+    // Create ModerationAction in PDS
+    await atproto.createModerationAction(
+      {
+        $type: 'net.atrarium.moderation.action',
+        action: 'unblock_user',
+        target: {
+          did: targetDid,
+        },
+        community: communityUri,
+        reason: reason || '',
+        createdAt: now,
+      },
+      userDid
     );
+
+    // Apply unblock to Durable Object
+    const id = c.env.COMMUNITY_FEED.idFromName(communityId);
+    const stub = c.env.COMMUNITY_FEED.get(id);
+
+    await stub.fetch(
+      new Request('http://fake-host/unblockUser', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetDid,
+          reason,
+          createdAt: now,
+        }),
+      })
+    );
+
+    return c.json({
+      success: true,
+      message: 'User unblocked successfully',
+      targetDid,
+    });
   } catch (err) {
     return c.json({ error: 'InternalServerError', message: (err as Error).message }, 500);
   }
 });
 
 // ============================================================================
-// GET /api/moderation/logs
-// Get moderation logs for a feed or community (PDS-first architecture)
+// GET /api/moderation/:communityId/history
+// Get moderation history (T043 - admin only)
 // ============================================================================
 
-app.get('/logs', async (c) => {
+app.get('/:communityId/history', async (c) => {
   try {
-    // TODO: Implement PDS-based moderation log retrieval
-    // - Query PDS for moderation action records
-    // - Filter by community/feed
-    return c.json({ data: [], cursor: undefined });
+    const userDid = c.get('userDid') as string;
+    const communityId = c.req.param('communityId');
+
+    const atproto = new ATProtoService(c.env);
+
+    const communityUri = `at://did:plc:system/net.atrarium.community.config/${communityId}`;
+
+    // Check admin permission
+    const permissionCheck = await checkAdminPermission(atproto, userDid, communityUri);
+    if (!permissionCheck.isAdmin) {
+      return c.json({ error: 'Forbidden', message: permissionCheck.error }, 403);
+    }
+
+    // List moderation actions from PDS
+    const actions = await atproto.listModerationActions(communityUri, userDid);
+
+    return c.json({
+      actions: actions.map((a) => ({
+        uri: a.uri,
+        action: a.action,
+        target: a.target,
+        community: a.community,
+        reason: a.reason,
+        createdAt: a.createdAt,
+      })),
+    });
   } catch (err) {
     return c.json({ error: 'InternalServerError', message: (err as Error).message }, 500);
   }

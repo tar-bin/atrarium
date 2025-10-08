@@ -38,6 +38,7 @@ export interface Community {
   name: string;
   description: string | null;
   stage: CommunityStage;
+  accessType?: 'open' | 'invite-only'; // NEW (013-join-leave-workflow)
   parentId: string | null;
   ownerDid: string;
   feedMixOwn: number; // 0.0-1.0

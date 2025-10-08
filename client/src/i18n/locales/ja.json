@@ -22,7 +22,31 @@
     "name": "コミュニティ名",
     "description": "説明",
     "members": "メンバー",
-    "posts": "投稿"
+    "posts": "投稿",
+    "accessType": {
+      "open": "オープン",
+      "inviteOnly": "招待制"
+    },
+    "status": {
+      "active": "参加中",
+      "pending": "承認待ち"
+    },
+    "role": {
+      "owner": "オーナー",
+      "moderator": "モデレーター",
+      "member": "メンバー"
+    },
+    "join": "コミュニティに参加",
+    "leave": "コミュニティを退出",
+    "requestJoin": "参加リクエスト",
+    "management": "管理",
+    "notFound": "コミュニティが見つかりません",
+    "filter": {
+      "all": "すべて",
+      "theme": "テーマ",
+      "community": "コミュニティ",
+      "graduated": "卒業済み"
+    }
   },
   "feed": {
     "list": "フィード",
@@ -40,7 +64,53 @@
     "title": "モデレーションログ",
     "hidePost": "投稿を非表示",
     "unhidePost": "投稿を表示",
-    "blockUser": "ユーザーをブロック"
+    "blockUser": "ユーザーをブロック",
+    "unblockUser": "ユーザーのブロックを解除",
+    "selectReason": "理由を選択",
+    "reason": "理由",
+    "actions": "アクション",
+    "history": "モデレーション履歴",
+    "members": {
+      "title": "メンバー管理",
+      "changeRole": "役割を変更",
+      "removeMember": "メンバーを削除"
+    },
+    "joinRequests": {
+      "title": "参加リクエスト",
+      "approve": "承認",
+      "reject": "拒否",
+      "noPending": "承認待ちのリクエストはありません"
+    },
+    "stats": {
+      "title": "コミュニティ統計",
+      "memberCount": "総メンバー数",
+      "pendingRequestCount": "承認待ち"
+    },
+    "ownershipTransfer": {
+      "title": "オーナー権限の譲渡",
+      "description": "このコミュニティのオーナー権限を別のメンバーに譲渡します。この操作は取り消せません。",
+      "selectMember": "新しいオーナーを選択",
+      "confirm": "オーナー権限を譲渡",
+      "success": "オーナー権限が正常に譲渡されました"
+    },
+    "reasons": {
+      "spam": "スパム",
+      "low_quality": "低品質",
+      "duplicate": "重複",
+      "off_topic": "トピック外れ",
+      "wrong_community": "コミュニティ違い",
+      "guidelines_violation": "ガイドライン違反",
+      "terms_violation": "利用規約違反",
+      "copyright": "著作権侵害",
+      "harassment": "嫌がらせ",
+      "hate_speech": "ヘイトスピーチ",
+      "nsfw": "NSFW コンテンツ",
+      "illegal": "違法コンテンツ",
+      "misinformation": "誤情報",
+      "impersonation": "なりすまし",
+      "privacy_violation": "プライバシー侵害",
+      "other": "その他"
+    }
   },
   "pds": {
     "login": "PDSにログイン",

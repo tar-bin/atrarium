@@ -1,22 +1,23 @@
 <!--
 SYNC IMPACT REPORT (2025-10-07)
-Version: 1.0.0 → 1.1.0 (MINOR - New principle added)
-Rationale: MINOR - Added Principle 7 (Code Quality and Pre-Commit Validation) to enforce automated quality checks before commits
+Version: 1.1.0 → 1.2.0 (MINOR - New principle added)
+Rationale: MINOR - Added Principle 8 (AT Protocol + PDS + Lexicon Constraints) to enforce strict architectural boundaries and prevent database proliferation
 Modified Principles: None (existing principles unchanged)
-Added Sections: Principle 7: Code Quality and Pre-Commit Validation
+Added Sections: Principle 8: AT Protocol + PDS + Lexicon Constraints
 Removed Sections: None
 Templates Requiring Updates:
-  - ✅ .specify/templates/plan-template.md (Constitution Check section already includes quality gates)
-  - ✅ .specify/templates/tasks-template.md (Phase 3.1 Setup already includes linting configuration)
-  - ⚠ .specify/templates/spec-template.md (may need code quality requirements section)
+  - ✅ .specify/templates/plan-template.md (Constitution Check section updated to include Principle 8 validation)
+  - ✅ .specify/templates/spec-template.md (Requirements section guidance updated to flag database dependencies)
+  - ✅ .specify/templates/tasks-template.md (Architecture tasks updated to validate PDS-only storage)
 Follow-up TODOs:
-  - Consider adding pre-commit hook setup to project initialization tasks
-  - Document Biome configuration standards in development guidelines
+  - Review existing features to ensure no hidden database dependencies exist
+  - Document PDS + Lexicon feasibility testing procedures
+  - Add explicit DB-free validation to CI/CD pipelines
 -->
 
 # Atrarium Project Constitution
 
-**Version**: 1.1.0
+**Version**: 1.2.0
 **Ratification Date**: 2025-10-06
 **Last Amended**: 2025-10-07
 **Project**: Atrarium - Small ecosystems on AT Protocol
@@ -133,6 +134,22 @@ All features, implementations, and technical decisions MUST comply with these pr
 - CI/CD pipelines MUST enforce quality gates at all stages
 
 **Rationale**: Automated code quality checks prevent technical debt accumulation, reduce code review burden, and maintain consistent code style across contributors. Pre-commit validation catches issues early, reducing the cost of fixes and preventing broken commits from entering the repository.
+
+---
+
+## Principle 8: AT Protocol + PDS + Lexicon Constraints
+
+**Name**: AT Protocol + PDS + Lexicon Constraints
+
+**Rules**:
+- All features MUST be implementable using AT Protocol + PDS + Lexicon schemas only
+- No separate databases (SQL/NoSQL/KV) MAY be introduced beyond Durable Objects ephemeral cache
+- If a feature requires additional database infrastructure, the design MUST be rejected and redesigned
+- All persistent state MUST reside in PDS using `net.atrarium.*` Lexicon records
+- Durable Objects Storage is permissible only as 7-day ephemeral cache for performance optimization
+- Any feature specification flagged as "requires database" indicates architectural failure
+
+**Rationale**: Introducing databases beyond PDS violates the PDS-First Architecture principle and creates operational burden, cost overhead, and data ownership fragmentation. This constraint forces designs to align with AT Protocol's decentralized philosophy and ensures Atrarium remains infrastructure-light. If AT Protocol + PDS + Lexicon cannot satisfy a requirement, the requirement itself should be questioned or deferred until protocol evolution enables it.
 
 ---
 

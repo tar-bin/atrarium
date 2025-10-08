@@ -8,9 +8,9 @@ Atrarium is a community management system built on AT Protocol (Bluesky), design
 
 ### Project Constitution
 
-**All features MUST comply with the [Project Constitution](.specify/memory/constitution.md) v1.1.0.**
+**All features MUST comply with the [Project Constitution](.specify/memory/constitution.md) v1.2.0.**
 
-Seven core principles govern all technical decisions:
+Eight core principles govern all technical decisions:
 1. **Protocol-First Architecture**: Lexicon schemas are API contract, implementations are replaceable
 2. **Simplicity and Minimal Complexity**: No new projects/databases/services without necessity
 3. **Economic Efficiency**: <$5/month for communities with <200 members
@@ -18,6 +18,7 @@ Seven core principles govern all technical decisions:
 5. **PDS-First Architecture**: PDS as source of truth, Durable Objects as 7-day cache
 6. **Operational Burden Reduction**: <1 hour/week maintenance
 7. **Code Quality and Pre-Commit Validation**: Biome linting/formatting, TypeScript type checks before commit
+8. **AT Protocol + PDS + Lexicon Constraints**: All features must be implementable using AT Protocol + PDS + Lexicon only (no separate databases)
 
 See [constitution.md](.specify/memory/constitution.md) for detailed rules and rationale.
 

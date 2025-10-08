@@ -7,7 +7,7 @@ import {
   ValidationError,
   type ValidationResult,
 } from '@atproto/lexicon';
-import { is$typed, maybe$typed } from './util.js';
+import { type $Typed, is$typed, maybe$typed } from './util.js';
 
 export const schemaDict = {
   NetAtrariumCommunityConfig: {
@@ -45,6 +45,13 @@ export const schemaDict = {
               type: 'string',
               description: 'Community development stage',
               enum: ['theme', 'community', 'graduated'],
+            },
+            accessType: {
+              type: 'string',
+              description:
+                "Community access control: 'open' allows immediate join, 'invite-only' requires admin approval",
+              enum: ['open', 'invite-only'],
+              default: 'open',
             },
             moderators: {
               type: 'array',
@@ -138,6 +145,13 @@ export const schemaDict = {
               type: 'string',
               description: 'Membership role within the community',
               enum: ['owner', 'moderator', 'member'],
+            },
+            status: {
+              type: 'string',
+              description:
+                "Membership status: 'active' for approved members, 'pending' for join requests awaiting approval",
+              enum: ['active', 'pending'],
+              default: 'active',
             },
             joinedAt: {
               type: 'string',

@@ -1,8 +1,10 @@
 // Atrarium MVP - Feed Generator API Routes
-// AT Protocol Feed Generator endpoints (/.well-known/did.json, describeFeedGenerator, getFeedSkeleton)
+// AT Protocol Feed Generator endpoints (/.well-known/did.json, describeFeedGenerator, getFeedSkeleton, stats)
 
 import { Hono } from 'hono';
 import { GetFeedSkeletonParamsSchema, validateRequest } from '../schemas/validation';
+import { ATProtoService } from '../services/atproto';
+import { AuthService } from '../services/auth';
 import type { Env, FeedGeneratorDescription, FeedSkeleton, HonoVariables } from '../types';
 import { extractHostname, generateDIDDocument, parseFeedUri } from '../utils/did';
 
@@ -140,6 +142,90 @@ app.get('/xrpc/app.bsky.feed.getFeedSkeleton', async (c) => {
       },
       500
     );
+  }
+});
+
+// ============================================================================
+// GET /api/feeds/:communityId
+// Get community feed (T044 - proxy to CommunityFeedGenerator DO)
+// ============================================================================
+
+app.get('/api/feeds/:communityId', async (c) => {
+  try {
+    const communityId = c.req.param('communityId');
+    const limit = Number.parseInt(c.req.query('limit') || '20', 10);
+    const cursor = c.req.query('cursor');
+
+    // Validate limit (1-100)
+    if (limit < 1 || limit > 100) {
+      return c.json({ error: 'InvalidRequest', message: 'limit must be between 1 and 100' }, 400);
+    }
+
+    // Proxy request to CommunityFeedGenerator Durable Object
+    if (!c.env.COMMUNITY_FEED) {
+      throw new Error('COMMUNITY_FEED Durable Object binding not found');
+    }
+
+    const id = c.env.COMMUNITY_FEED.idFromName(communityId);
+    const stub = c.env.COMMUNITY_FEED.get(id);
+
+    // Call getFeedSkeleton on Durable Object
+    const response = await stub.fetch(
+      new Request(
+        `http://fake-host/getFeedSkeleton?limit=${limit}${cursor ? `&cursor=${cursor}` : ''}`
+      )
+    );
+
+    if (!response.ok) {
+      await response.text(); // Consume response body
+      return c.json(
+        {
+          error: 'InternalServerError',
+          message: 'Failed to generate feed skeleton',
+        },
+        500
+      );
+    }
+
+    const skeleton = (await response.json()) as FeedSkeleton;
+    return c.json(skeleton);
+  } catch (err) {
+    return c.json({ error: 'InternalServerError', message: (err as Error).message }, 500);
+  }
+});
+
+// ============================================================================
+// GET /api/feeds/:communityId/stats
+// Get community statistics (T045 - memberCount and pendingRequestCount only)
+// ============================================================================
+
+app.get('/api/feeds/:communityId/stats', async (c) => {
+  try {
+    // Auth middleware for stats endpoint
+    const authHeader = c.req.header('Authorization') || null;
+    if (!authHeader) {
+      return c.json({ error: 'Unauthorized', message: 'Authorization header required' }, 401);
+    }
+
+    const authService = new AuthService(c.env);
+    const userDid = await authService.extractUserFromHeader(authHeader);
+    c.set('userDid', userDid);
+
+    const communityId = c.req.param('communityId');
+    const atproto = new ATProtoService(c.env);
+
+    const communityUri = `at://did:plc:system/net.atrarium.community.config/${communityId}`;
+
+    // Get community statistics from PDS (T028)
+    const stats = await atproto.getCommunityStats(communityUri);
+
+    return c.json({
+      communityId,
+      memberCount: stats.memberCount,
+      pendingRequestCount: stats.pendingRequestCount,
+    });
+  } catch (err) {
+    return c.json({ error: 'InternalServerError', message: (err as Error).message }, 500);
   }
 });
 

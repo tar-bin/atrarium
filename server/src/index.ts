@@ -165,8 +165,9 @@ app.route('/api/auth', authRoutes);
 // app.route('/api/communities', communityRoutes); // Migrated to oRPC
 // app.route('/api/communities', themeFeedRoutes); // TODO: Migrate to PDS-first
 // app.route('/api/posts', postRoutes); // TODO: Migrate to PDS-first
-app.route('/api/communities', membershipRoutes);
-app.route('/api/moderation', moderationRoutes);
+app.route('/api/memberships', membershipRoutes); // T029-T038
+app.route('/api/moderation', moderationRoutes); // T039-T043
+// Note: Feed stats endpoints (T044-T045) are in feedGeneratorRoutes
 
 // Health check
 app.get('/health', (c) => {

@@ -1,5 +1,5 @@
 /* eslint-disable */
-// biome-ignore lint: auto-generated file by TanStack Router
+
 // @ts-nocheck
 
 // noinspection JSUnusedGlobalSymbols
@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root';
 import { Route as CommunitiesCommunityIdFeedsFeedIdRouteImport } from './routes/communities/$communityId/feeds.$feedId';
 import { Route as CommunitiesCommunityIdIndexRouteImport } from './routes/communities/$communityId/index';
+import { Route as CommunitiesCommunityIdManageRouteImport } from './routes/communities/$communityId/manage';
 import { Route as CommunitiesIndexRouteImport } from './routes/communities/index';
 import { Route as IndexRouteImport } from './routes/index';
 import { Route as ModerationRouteImport } from './routes/moderation';
@@ -35,6 +36,11 @@ const CommunitiesCommunityIdIndexRoute = CommunitiesCommunityIdIndexRouteImport.
   path: '/communities/$communityId/',
   getParentRoute: () => rootRouteImport,
 } as any);
+const CommunitiesCommunityIdManageRoute = CommunitiesCommunityIdManageRouteImport.update({
+  id: '/communities/$communityId/manage',
+  path: '/communities/$communityId/manage',
+  getParentRoute: () => rootRouteImport,
+} as any);
 const CommunitiesCommunityIdFeedsFeedIdRoute = CommunitiesCommunityIdFeedsFeedIdRouteImport.update({
   id: '/communities/$communityId/feeds/$feedId',
   path: '/communities/$communityId/feeds/$feedId',
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute;
   '/moderation': typeof ModerationRoute;
   '/communities': typeof CommunitiesIndexRoute;
+  '/communities/$communityId/manage': typeof CommunitiesCommunityIdManageRoute;
   '/communities/$communityId': typeof CommunitiesCommunityIdIndexRoute;
   '/communities/$communityId/feeds/$feedId': typeof CommunitiesCommunityIdFeedsFeedIdRoute;
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute;
   '/moderation': typeof ModerationRoute;
   '/communities': typeof CommunitiesIndexRoute;
+  '/communities/$communityId/manage': typeof CommunitiesCommunityIdManageRoute;
   '/communities/$communityId': typeof CommunitiesCommunityIdIndexRoute;
   '/communities/$communityId/feeds/$feedId': typeof CommunitiesCommunityIdFeedsFeedIdRoute;
 }
@@ -60,6 +68,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute;
   '/moderation': typeof ModerationRoute;
   '/communities/': typeof CommunitiesIndexRoute;
+  '/communities/$communityId/manage': typeof CommunitiesCommunityIdManageRoute;
   '/communities/$communityId/': typeof CommunitiesCommunityIdIndexRoute;
   '/communities/$communityId/feeds/$feedId': typeof CommunitiesCommunityIdFeedsFeedIdRoute;
 }
@@ -69,6 +78,7 @@ export interface FileRouteTypes {
     | '/'
     | '/moderation'
     | '/communities'
+    | '/communities/$communityId/manage'
     | '/communities/$communityId'
     | '/communities/$communityId/feeds/$feedId';
   fileRoutesByTo: FileRoutesByTo;
@@ -76,6 +86,7 @@ export interface FileRouteTypes {
     | '/'
     | '/moderation'
     | '/communities'
+    | '/communities/$communityId/manage'
     | '/communities/$communityId'
     | '/communities/$communityId/feeds/$feedId';
   id:
@@ -83,6 +94,7 @@ export interface FileRouteTypes {
     | '/'
     | '/moderation'
     | '/communities/'
+    | '/communities/$communityId/manage'
     | '/communities/$communityId/'
     | '/communities/$communityId/feeds/$feedId';
   fileRoutesById: FileRoutesById;
@@ -91,6 +103,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute;
   ModerationRoute: typeof ModerationRoute;
   CommunitiesIndexRoute: typeof CommunitiesIndexRoute;
+  CommunitiesCommunityIdManageRoute: typeof CommunitiesCommunityIdManageRoute;
   CommunitiesCommunityIdIndexRoute: typeof CommunitiesCommunityIdIndexRoute;
   CommunitiesCommunityIdFeedsFeedIdRoute: typeof CommunitiesCommunityIdFeedsFeedIdRoute;
 }
@@ -125,6 +138,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CommunitiesCommunityIdIndexRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    '/communities/$communityId/manage': {
+      id: '/communities/$communityId/manage';
+      path: '/communities/$communityId/manage';
+      fullPath: '/communities/$communityId/manage';
+      preLoaderRoute: typeof CommunitiesCommunityIdManageRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/communities/$communityId/feeds/$feedId': {
       id: '/communities/$communityId/feeds/$feedId';
       path: '/communities/$communityId/feeds/$feedId';
@@ -139,6 +159,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ModerationRoute: ModerationRoute,
   CommunitiesIndexRoute: CommunitiesIndexRoute,
+  CommunitiesCommunityIdManageRoute: CommunitiesCommunityIdManageRoute,
   CommunitiesCommunityIdIndexRoute: CommunitiesCommunityIdIndexRoute,
   CommunitiesCommunityIdFeedsFeedIdRoute: CommunitiesCommunityIdFeedsFeedIdRoute,
 };

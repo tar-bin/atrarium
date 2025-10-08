@@ -15,11 +15,12 @@ export interface CommunityConfig {
   $type: 'net.atrarium.community.config';
   name: string;
   description?: string;
-  hashtag: string; // Format: #atr_[8-hex]
+  hashtag: string; // Format: #atrarium_[8-hex]
   stage: 'theme' | 'community' | 'graduated';
-  moderators: string[]; // Array of moderator DIDs
-  blocklist: string[]; // Array of blocked user DIDs
-  feedMix: {
+  accessType: 'open' | 'invite-only'; // NEW (T005)
+  moderators?: string[]; // Array of moderator DIDs
+  blocklist?: string[]; // Array of blocked user DIDs
+  feedMix?: {
     own: number;
     parent: number;
     global: number;
@@ -37,6 +38,7 @@ export interface MembershipRecord {
   $type: 'net.atrarium.community.membership';
   community: string; // AT-URI of CommunityConfig
   role: 'owner' | 'moderator' | 'member';
+  status: 'active' | 'pending'; // NEW (T004)
   joinedAt: string; // ISO 8601 datetime
   active: boolean;
   invitedBy?: string; // DID of inviter
@@ -131,9 +133,10 @@ export const communityConfigSchema = z.object({
   description: z.string().max(1000, 'description must not exceed 1000 graphemes').optional(),
   hashtag: hashtagSchema,
   stage: z.enum(['theme', 'community', 'graduated']),
-  moderators: z.array(didSchema).max(50, 'moderators array maxLength is 50').default([]),
-  blocklist: z.array(didSchema).max(1000, 'blocklist array maxLength is 1000').default([]),
-  feedMix: feedMixSchema,
+  accessType: z.enum(['open', 'invite-only']).default('open'), // NEW (T005)
+  moderators: z.array(didSchema).max(50, 'moderators array maxLength is 50').optional(),
+  blocklist: z.array(didSchema).max(1000, 'blocklist array maxLength is 1000').optional(),
+  feedMix: feedMixSchema.optional(),
   parentCommunity: atUriSchema.optional(),
   createdAt: iso8601Schema,
   updatedAt: iso8601Schema.optional(),
@@ -146,6 +149,7 @@ export const membershipRecordSchema = z.object({
   $type: z.literal('net.atrarium.community.membership'),
   community: atUriSchema,
   role: z.enum(['owner', 'moderator', 'member']),
+  status: z.enum(['active', 'pending']).default('active'), // NEW (T004)
   joinedAt: iso8601Schema,
   active: z.boolean().default(true),
   invitedBy: didSchema.optional(),

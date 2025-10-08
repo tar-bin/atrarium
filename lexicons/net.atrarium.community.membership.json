@@ -20,6 +20,12 @@
             "description": "Membership role within the community",
             "enum": ["owner", "moderator", "member"]
           },
+          "status": {
+            "type": "string",
+            "description": "Membership status: 'active' for approved members, 'pending' for join requests awaiting approval",
+            "enum": ["active", "pending"],
+            "default": "active"
+          },
           "joinedAt": {
             "type": "string",
             "format": "datetime",
