@@ -2,6 +2,8 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { CommunityDetail } from '@/components/communities/CommunityDetail';
 import { CommunityFeed } from '@/components/feeds/CommunityFeed';
+import { PostCreator } from '@/components/posts/PostCreator';
+import { PostList } from '@/components/posts/PostList';
 import { useCommunity } from '@/lib/hooks';
 
 export const Route = createFileRoute('/communities/$communityId/')({
@@ -47,9 +49,20 @@ function CommunityDetailPage() {
           />
         </div>
 
-        {/* Right Column: Community Feed */}
-        <div className="lg:col-span-2">
-          <CommunityFeed communityId={communityId} />
+        {/* Right Column: Posts Timeline (014-bluesky) */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Post Creator (if user is member) */}
+          {/* TODO: Add membership check - for now, show to all */}
+          <PostCreator communityId={communityId} />
+
+          {/* Post List */}
+          <PostList communityId={communityId} />
+
+          {/* Legacy Community Feed (deprecated) */}
+          <div className="mt-8">
+            <h2 className="text-xl font-semibold mb-4">Legacy Feed (Deprecated)</h2>
+            <CommunityFeed communityId={communityId} />
+          </div>
         </div>
       </div>
     </div>

@@ -12,7 +12,9 @@ interface JetstreamEvent {
   kind: string;
   commit?: {
     record?: {
+      $type?: string; // NEW (014-bluesky): Lexicon type
       text?: string;
+      communityId?: string; // NEW (014-bluesky): net.atrarium.community.post field
       createdAt?: string;
       [key: string]: unknown;
     };
@@ -27,7 +29,8 @@ interface PostEvent {
   authorDid: string;
   text: string;
   createdAt: string;
-  hashtags: string[];
+  hashtags: string[]; // Legacy: extracted from text
+  communityId?: string; // NEW (014-bluesky): from net.atrarium.community.post
 }
 
 // Heavyweight filter: Extract all #atrarium_[8-hex] hashtags
@@ -39,24 +42,51 @@ function extractHashtags(text: string): string[] {
 }
 
 function parsePostEvent(event: JetstreamEvent): PostEvent | null {
-  if (
-    event.kind !== 'commit' ||
-    event.commit?.operation !== 'create' ||
-    event.commit?.collection !== 'app.bsky.feed.post' ||
-    !event.commit?.record?.text
-  ) {
+  if (event.kind !== 'commit' || event.commit?.operation !== 'create') {
     return null;
   }
 
-  const text = event.commit.record.text;
+  const collection = event.commit?.collection;
+  const record = event.commit?.record;
+
+  // Support both app.bsky.feed.post (legacy) and net.atrarium.community.post (custom)
+  if (collection !== 'app.bsky.feed.post' && collection !== 'net.atrarium.community.post') {
+    return null;
+  }
+
+  if (!record?.text) {
+    return null;
+  }
+
+  const text = record.text;
+  const uri = `at://${event.did}/${collection}/${event.commit.rkey}`;
+  const createdAt = record.createdAt || new Date().toISOString();
+
+  // For net.atrarium.community.post: use native communityId field
+  if (collection === 'net.atrarium.community.post' && record.communityId) {
+    const communityId = record.communityId as string;
+
+    // Validate communityId format (8-char hex)
+    if (!/^[0-9a-f]{8}$/.test(communityId)) {
+      return null; // Invalid communityId format
+    }
+
+    return {
+      uri,
+      authorDid: event.did,
+      text,
+      createdAt,
+      hashtags: [], // No hashtags for custom Lexicon
+      communityId,
+    };
+  }
+
+  // For app.bsky.feed.post: extract hashtags from text (legacy)
   const hashtags = extractHashtags(text);
 
   if (hashtags.length === 0) {
     return null; // No valid hashtags
   }
-
-  const uri = `at://${event.did}/${event.commit.collection}/${event.commit.rkey}`;
-  const createdAt = event.commit.record.createdAt || new Date().toISOString();
 
   return {
     uri,
@@ -106,15 +136,24 @@ export default {
         continue;
       }
 
-      // For each hashtag, extract community ID and group posts
-      for (const hashtag of postEvent.hashtags) {
-        // Extract community ID from hashtag (#atr_12345678 -> 12345678)
-        const communityId = hashtag.replace('#atr_', '');
-
-        if (!communityPosts.has(communityId)) {
-          communityPosts.set(communityId, []);
+      // NEW (014-bluesky): Support native communityId field
+      if (postEvent.communityId) {
+        // Custom Lexicon: use native communityId
+        if (!communityPosts.has(postEvent.communityId)) {
+          communityPosts.set(postEvent.communityId, []);
         }
-        communityPosts.get(communityId)?.push(postEvent);
+        communityPosts.get(postEvent.communityId)?.push(postEvent);
+      } else {
+        // Legacy: extract community ID from hashtags
+        for (const hashtag of postEvent.hashtags) {
+          // Extract community ID from hashtag (#atrarium_12345678 -> 12345678)
+          const communityId = hashtag.replace('#atrarium_', '');
+
+          if (!communityPosts.has(communityId)) {
+            communityPosts.set(communityId, []);
+          }
+          communityPosts.get(communityId)?.push(postEvent);
+        }
       }
     }
 

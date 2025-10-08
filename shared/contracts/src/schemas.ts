@@ -250,3 +250,69 @@ export const FeedOutputSchema = z.object({
 export const FeedListOutputSchema = z.object({
   data: z.array(FeedOutputSchema),
 });
+
+// ============================================================================
+// Post Schemas (014-bluesky: Custom Lexicon Posts)
+// ============================================================================
+
+// Input: Create post in community
+export const CreatePostInputSchema = z.object({
+  communityId: z
+    .string()
+    .length(8)
+    .regex(/^[0-9a-f]{8}$/, 'Community ID must be 8-character hex'),
+  text: z.string().min(1).max(300), // maxGraphemes: 300 in Lexicon
+});
+
+// Input: Get posts for community timeline
+export const GetPostsInputSchema = z.object({
+  communityId: z
+    .string()
+    .length(8)
+    .regex(/^[0-9a-f]{8}$/, 'Community ID must be 8-character hex'),
+  limit: z.number().int().min(1).max(100).optional().default(50),
+  cursor: z.string().optional(), // Pagination cursor (timestamp:rkey)
+});
+
+// Input: Get single post by URI
+export const GetPostInputSchema = z.object({
+  uri: z
+    .string()
+    .startsWith('at://')
+    .regex(
+      /^at:\/\/did:(plc|web):[a-zA-Z0-9._-]+\/net\.atrarium\.community\.post\/[a-zA-Z0-9]+$/,
+      'URI must be a valid net.atrarium.community.post AT-URI'
+    ),
+});
+
+// Output: Author profile (app.bsky.actor.profile)
+export const AuthorProfileSchema = z.object({
+  did: z.string(),
+  handle: z.string(),
+  displayName: z.string().nullable(),
+  avatar: z.string().url().nullable(),
+});
+
+// Output: Single post
+export const PostOutputSchema = z.object({
+  uri: z.string(), // AT-URI
+  rkey: z.string(), // Record key
+  text: z.string(),
+  communityId: z.string(),
+  createdAt: z.string(), // ISO 8601
+  author: AuthorProfileSchema,
+  moderationStatus: z.enum(['approved', 'hidden', 'reported']).optional(), // Only for moderators
+});
+
+// Output: Post creation response
+export const CreatePostOutputSchema = z.object({
+  uri: z.string(),
+  rkey: z.string(),
+  createdAt: z.string(),
+});
+
+// Output: List of posts
+export const PostListOutputSchema = z.object({
+  posts: z.array(PostOutputSchema),
+  cursor: z.string().nullable(), // Next page cursor
+});

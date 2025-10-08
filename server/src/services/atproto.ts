@@ -6,6 +6,7 @@ import type { CommunityConfig, MembershipRecord, PDSRecordResult } from '../sche
 import {
   validateATUri,
   validateCommunityConfig,
+  validateCommunityPost,
   validateDID,
   validateMembershipRecord,
   validateModerationAction,
@@ -26,9 +27,8 @@ export class ATProtoService {
 
   /**
    * Initialize AtpAgent and authenticate
-   * @private
    */
-  private async getAgent(): Promise<AtpAgent> {
+  async getAgent(): Promise<AtpAgent> {
     if (this.agent) {
       return this.agent;
     }
@@ -74,6 +74,80 @@ export class ATProtoService {
       cid: response.data.cid,
       rkey: response.data.uri.split('/').pop() || '',
     };
+  }
+
+  /**
+   * Create CommunityPost record in PDS (014-bluesky)
+   * @param post Post data (text, communityId, createdAt)
+   * @param userDid Target user's DID (to create record in their PDS)
+   * @returns Record creation result
+   */
+  async createCommunityPost(post: unknown, userDid: string): Promise<PDSRecordResult> {
+    // Validate against Lexicon schema
+    const validated = validateCommunityPost(post);
+
+    const agent = await this.getAgent();
+
+    // Create post record in user's PDS
+    const response = await agent.com.atproto.repo.createRecord({
+      repo: userDid, // Write to user's PDS
+      collection: 'net.atrarium.community.post',
+      record: validated,
+    });
+
+    return {
+      uri: response.data.uri,
+      cid: response.data.cid,
+      rkey: response.data.uri.split('/').pop() || '',
+    };
+  }
+
+  /**
+   * Get user profile from Bluesky (014-bluesky)
+   * @param actor User DID or handle
+   * @returns Profile data (did, handle, displayName, avatar)
+   */
+  async getProfile(actor: string): Promise<{
+    did: string;
+    handle: string;
+    displayName: string | null;
+    avatar: string | null;
+  }> {
+    const agent = await this.getAgent();
+
+    const response = await agent.app.bsky.actor.getProfile({ actor });
+
+    return {
+      did: response.data.did,
+      handle: response.data.handle,
+      displayName: response.data.displayName || null,
+      avatar: response.data.avatar || null,
+    };
+  }
+
+  /**
+   * Get multiple user profiles from Bluesky (014-bluesky)
+   * @param actors Array of DIDs or handles
+   * @returns Array of profile data
+   */
+  async getProfiles(actors: string[]): Promise<
+    Array<{
+      did: string;
+      handle: string;
+      displayName: string | null;
+      avatar: string | null;
+    }>
+  > {
+    const agent = await this.getAgent();
+
+    const response = await agent.app.bsky.actor.getProfiles({ actors });
+
+    return response.data.profiles.map((profile) => ({
+      did: profile.did,
+      handle: profile.handle,
+      displayName: profile.displayName || null,
+      avatar: profile.avatar || null,
+    }));
   }
 
   /**

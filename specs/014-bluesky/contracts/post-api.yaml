@@ -1,0 +1,306 @@
+openapi: 3.1.0
+info:
+  title: Atrarium Post API
+  version: 014-bluesky
+  description: API for creating and retrieving community posts using net.atrarium.community.post Lexicon
+
+servers:
+  - url: https://atrarium.net
+    description: Production
+  - url: http://localhost:8787
+    description: Local development
+
+paths:
+  /api/communities/{communityId}/posts:
+    post:
+      summary: Create a new post in a community
+      operationId: createPost
+      tags:
+        - Posts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: communityId
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-f]{8}$'
+          description: 8-character hex community identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - text
+              properties:
+                text:
+                  type: string
+                  minLength: 1
+                  maxLength: 300
+                  description: Post content (plain text, no rich media)
+                  example: "Welcome to our community! 🎉"
+      responses:
+        '201':
+          description: Post created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - uri
+                  - rkey
+                  - createdAt
+                properties:
+                  uri:
+                    type: string
+                    format: uri
+                    description: AT-URI of the created post
+                    example: "at://did:plc:abc123xyz/net.atrarium.community.post/3k2l5m6n7p8q"
+                  rkey:
+                    type: string
+                    description: Record key (TID)
+                    example: "3k2l5m6n7p8q"
+                  createdAt:
+                    type: string
+                    format: date-time
+                    description: Post creation timestamp (ISO 8601)
+                    example: "2025-10-08T10:00:00.000Z"
+        '400':
+          description: Invalid request (validation error)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalidText:
+                  summary: Text exceeds max length
+                  value:
+                    error: "ValidationError"
+                    message: "Post text must be 300 characters or less"
+                emptyText:
+                  summary: Empty text
+                  value:
+                    error: "ValidationError"
+                    message: "Post text cannot be empty"
+        '401':
+          description: Unauthorized (missing or invalid JWT)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden (not a community member)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Forbidden"
+                message: "You must be a member of this community to post"
+        '404':
+          description: Community not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "RateLimitExceeded"
+                message: "Maximum 100 posts per hour exceeded"
+
+    get:
+      summary: List posts in a community timeline
+      operationId: listPosts
+      tags:
+        - Posts
+      parameters:
+        - name: communityId
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-f]{8}$'
+          description: 8-character hex community identifier
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          description: Maximum number of posts to return
+        - name: cursor
+          in: query
+          schema:
+            type: string
+          description: Pagination cursor (post key from previous response)
+      responses:
+        '200':
+          description: Posts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - posts
+                properties:
+                  posts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Post'
+                  cursor:
+                    type: string
+                    description: Pagination cursor for next page (if more posts exist)
+                    nullable: true
+                    example: "post:1696752000000:3k2l5m6n7p8q"
+        '404':
+          description: Community not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/posts/{uri}:
+    get:
+      summary: Get a single post by AT-URI
+      operationId: getPost
+      tags:
+        - Posts
+      parameters:
+        - name: uri
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uri
+          description: AT-URI of the post (URL-encoded)
+          example: "at%3A%2F%2Fdid%3Aplc%3Aabc123xyz%2Fnet.atrarium.community.post%2F3k2l5m6n7p8q"
+      responses:
+        '200':
+          description: Post retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '404':
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from /api/auth/login
+
+  schemas:
+    Post:
+      type: object
+      required:
+        - uri
+        - collection
+        - text
+        - communityId
+        - createdAt
+        - author
+      properties:
+        uri:
+          type: string
+          format: uri
+          description: AT-URI of the post
+          example: "at://did:plc:abc123xyz/net.atrarium.community.post/3k2l5m6n7p8q"
+        collection:
+          type: string
+          enum:
+            - net.atrarium.community.post
+            - app.bsky.feed.post
+          description: Lexicon collection (supports legacy posts during transition)
+          example: "net.atrarium.community.post"
+        text:
+          type: string
+          maxLength: 300
+          description: Post content
+          example: "Welcome to our community! 🎉"
+        communityId:
+          type: string
+          pattern: '^[0-9a-f]{8}$'
+          description: 8-character hex community identifier
+          example: "a1b2c3d4"
+        createdAt:
+          type: string
+          format: date-time
+          description: Post creation timestamp (ISO 8601)
+          example: "2025-10-08T10:00:00.000Z"
+        author:
+          $ref: '#/components/schemas/Author'
+        moderationStatus:
+          type: string
+          enum:
+            - approved
+            - hidden
+            - reported
+          description: Moderation status (hidden posts excluded from timeline)
+          example: "approved"
+        indexedAt:
+          type: string
+          format: date-time
+          description: Timestamp when post was indexed (ISO 8601)
+          example: "2025-10-08T10:00:02.123Z"
+
+    Author:
+      type: object
+      required:
+        - did
+        - handle
+      properties:
+        did:
+          type: string
+          description: DID of post author
+          example: "did:plc:abc123xyz"
+        handle:
+          type: string
+          description: Handle (e.g., user.bsky.social)
+          example: "alice.bsky.social"
+        displayName:
+          type: string
+          nullable: true
+          description: Display name from app.bsky.actor.profile
+          example: "Alice"
+        avatar:
+          type: string
+          format: uri
+          nullable: true
+          description: Avatar URL from app.bsky.actor.profile
+          example: "https://cdn.bsky.app/avatar/abc123.jpg"
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error code
+          example: "ValidationError"
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Post text must be 300 characters or less"
+        details:
+          type: object
+          nullable: true
+          description: Additional error details (optional)
+          additionalProperties: true

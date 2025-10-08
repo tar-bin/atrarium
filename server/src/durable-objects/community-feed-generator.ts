@@ -9,7 +9,8 @@ interface PostEvent {
   authorDid: string;
   text: string;
   createdAt: string;
-  hashtags: string[];
+  hashtags: string[]; // Legacy: extracted from text
+  communityId?: string; // NEW (014-bluesky): from net.atrarium.community.post
 }
 
 interface PostMetadata {
@@ -56,6 +57,12 @@ export class CommunityFeedGenerator extends DurableObject {
 
       case '/getFeedSkeleton':
         return this.handleGetFeedSkeleton(request);
+
+      case '/posts':
+        return this.handleGetPosts(request);
+
+      case '/checkMembership':
+        return this.handleCheckMembership(request);
 
       case '/updateConfig':
         return this.handleUpdateConfig(request);
@@ -147,6 +154,62 @@ export class CommunityFeedGenerator extends DurableObject {
           status: 500,
           headers: { 'Content-Type': 'application/json' },
         }
+      );
+    }
+  }
+
+  // GET /posts?limit=50&cursor=... - Get posts for Dashboard API (014-bluesky)
+  private async handleGetPosts(request: Request): Promise<Response> {
+    try {
+      const url = new URL(request.url);
+      const limit = parseInt(url.searchParams.get('limit') || '50', 10);
+      const cursor = url.searchParams.get('cursor') || undefined;
+
+      // Reuse getFeedSkeleton logic but return full post metadata
+      const posts = await this.getPostsWithMetadata(limit, cursor);
+
+      return new Response(JSON.stringify(posts), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    } catch (error) {
+      return new Response(
+        JSON.stringify({
+          error: 'InternalError',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+  }
+
+  // GET /checkMembership - Check if user is a member (014-bluesky)
+  private async handleCheckMembership(request: Request): Promise<Response> {
+    try {
+      const url = new URL(request.url);
+      const did = url.searchParams.get('did');
+
+      if (!did) {
+        return new Response(JSON.stringify({ error: 'Missing DID parameter' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      const isMember = await this.verifyMembership(did);
+
+      return new Response(JSON.stringify({ isMember }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    } catch (error) {
+      return new Response(
+        JSON.stringify({
+          error: 'InternalError',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
       );
     }
   }
@@ -343,6 +406,51 @@ export class CommunityFeedGenerator extends DurableObject {
 
     return {
       feed: visiblePosts.map((post) => ({ post: post.uri })),
+      cursor: nextCursor,
+    };
+  }
+
+  // Internal: Get posts with metadata for Dashboard API (014-bluesky)
+  private async getPostsWithMetadata(
+    limit: number,
+    cursor?: string
+  ): Promise<{ posts: PostMetadata[]; cursor: string | null }> {
+    // Parse cursor (format: timestamp)
+    const cursorTimestamp = cursor ? parseInt(cursor, 10) : undefined;
+
+    // List posts in reverse chronological order
+    const listOptions: DurableObjectListOptions = {
+      prefix: 'post:',
+      reverse: true,
+      limit: limit + 1, // Fetch one extra to determine if there's more
+    };
+
+    if (cursorTimestamp !== undefined) {
+      // Start from cursor timestamp
+      listOptions.start = `post:${cursorTimestamp}`;
+      listOptions.startAfter = `post:${cursorTimestamp}:~`; // Skip posts at exact cursor timestamp
+    }
+
+    const posts = await this.ctx.storage.list<PostMetadata>(listOptions);
+    const postArray = Array.from(posts.values());
+
+    // Filter out hidden posts (for non-moderators)
+    // TODO: Add role-based filtering (moderators can see hidden posts)
+    const visiblePosts = postArray
+      .filter((post) => post.moderationStatus !== 'hidden')
+      .slice(0, limit); // Only take up to limit (we fetched limit+1)
+
+    // Determine next cursor
+    let nextCursor: string | null = null;
+    if (postArray.length > limit) {
+      const lastPost = visiblePosts[visiblePosts.length - 1];
+      if (lastPost) {
+        nextCursor = lastPost.timestamp.toString();
+      }
+    }
+
+    return {
+      posts: visiblePosts,
       cursor: nextCursor,
     };
   }

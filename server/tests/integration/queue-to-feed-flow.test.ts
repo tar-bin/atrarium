@@ -91,7 +91,7 @@ describe.skip('Queue to Feed Flow Integration (requires deployed environment)', 
     // Step 1: Mock Jetstream event with correct hashtag
     const mockEvent: JetstreamEvent = {
       did: bobDid,
-      time_us: Date.now() * 1000,
+      time_us: (Date.now() as any) * 1000,
       kind: 'commit',
       commit: {
         operation: 'create',
@@ -137,7 +137,7 @@ describe.skip('Queue to Feed Flow Integration (requires deployed environment)', 
   it('should filter posts without #atrarium_ hashtag (lightweight filter)', async () => {
     const mockEvent: JetstreamEvent = {
       did: bobDid,
-      time_us: Date.now() * 1000,
+      time_us: (Date.now() as any) * 1000,
       kind: 'commit',
       commit: {
         operation: 'create',
@@ -172,7 +172,7 @@ describe.skip('Queue to Feed Flow Integration (requires deployed environment)', 
   it('should reject posts from non-members (membership verification)', async () => {
     const mockEvent: JetstreamEvent = {
       did: charlieDid, // Charlie is NOT a member
-      time_us: Date.now() * 1000,
+      time_us: (Date.now() as any) * 1000,
       kind: 'commit',
       commit: {
         operation: 'create',
@@ -207,7 +207,7 @@ describe.skip('Queue to Feed Flow Integration (requires deployed environment)', 
     // Step 1: Index a post from Bob
     const mockEvent: JetstreamEvent = {
       did: bobDid,
-      time_us: Date.now() * 1000,
+      time_us: (Date.now() as any) * 1000,
       kind: 'commit',
       commit: {
         operation: 'create',
@@ -272,7 +272,7 @@ describe.skip('Queue to Feed Flow Integration (requires deployed environment)', 
     for (let i = 0; i < 5; i++) {
       batchEvents.push({
         did: bobDid,
-        time_us: Date.now() * 1000 + i,
+        time_us: (Date.now() as any) * 1000 + i,
         kind: 'commit',
         commit: {
           operation: 'create',
@@ -319,7 +319,7 @@ describe.skip('Queue to Feed Flow Integration (requires deployed environment)', 
       uri: `at://${bobDid}/app.bsky.feed.post/oldpost`,
       authorDid: bobDid,
       text: `Old post ${testHashtag}`,
-      createdAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
+      createdAt: new Date((Date.now() as any) - 8 * 24 * 60 * 60 * 1000).toISOString(),
       hashtags: [testHashtag],
     };
 

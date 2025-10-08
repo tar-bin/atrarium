@@ -99,7 +99,7 @@ describe('Lexicon Caching Contract', () => {
       });
 
       expect(response.status).toBe(200);
-      const data = await response.json();
+      const data = (await response.json()) as any;
       expect(data).toHaveProperty('id', TEST_NSID);
     });
 

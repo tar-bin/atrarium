@@ -15,11 +15,11 @@ import authRoutes from './routes/auth';
 // Import routes (legacy, to be migrated)
 import feedGeneratorRoutes from './routes/feed-generator';
 import lexiconRoutes from './routes/lexicon';
-// import communityRoutes from './routes/communities'; // Migrated to oRPC
-// import themeFeedRoutes from './routes/theme-feeds'; // TODO: Migrate to PDS-first
-// import postRoutes from './routes/posts'; // TODO: Migrate to PDS-first
 import membershipRoutes from './routes/memberships';
 import moderationRoutes from './routes/moderation';
+// import communityRoutes from './routes/communities'; // Migrated to oRPC
+// import themeFeedRoutes from './routes/theme-feeds'; // TODO: Migrate to PDS-first
+import postRoutes from './routes/posts'; // 014-bluesky: Custom Lexicon Posts
 import type { Env, HonoVariables } from './types';
 
 // ============================================================================
@@ -164,7 +164,7 @@ app.route('/', lexiconRoutes);
 app.route('/api/auth', authRoutes);
 // app.route('/api/communities', communityRoutes); // Migrated to oRPC
 // app.route('/api/communities', themeFeedRoutes); // TODO: Migrate to PDS-first
-// app.route('/api/posts', postRoutes); // TODO: Migrate to PDS-first
+app.route('/api', postRoutes); // 014-bluesky: Custom Lexicon Posts
 app.route('/api/memberships', membershipRoutes); // T029-T038
 app.route('/api/moderation', moderationRoutes); // T039-T043
 // Note: Feed stats endpoints (T044-T045) are in feedGeneratorRoutes
@@ -195,8 +195,8 @@ app.notFound((c) => {
 // ============================================================================
 
 async function handleScheduledJob(_env: Env, _ctx: ExecutionContext) {
-  try {
-  } catch (_err) {}
+  // Placeholder for scheduled job handling
+  // TODO: Implement scheduled tasks (e.g., cleanup, metrics aggregation)
 }
 
 // ============================================================================

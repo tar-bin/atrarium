@@ -68,6 +68,18 @@ export interface UserTarget {
 }
 
 /**
+ * Community post record (stored in user's PDS)
+ * Lexicon: net.atrarium.community.post
+ * Feature: 014-bluesky (Custom Lexicon Posts)
+ */
+export interface CommunityPost {
+  $type: 'net.atrarium.community.post';
+  text: string; // Post text content (max 300 graphemes)
+  communityId: string; // 8-character hex (immutable across stages)
+  createdAt: string; // ISO 8601 datetime
+}
+
+/**
  * PDS record creation result
  */
 export interface PDSRecordResult {
@@ -183,6 +195,19 @@ export const moderationActionSchema = z.object({
   createdAt: iso8601Schema,
 });
 
+/**
+ * CommunityPost validation schema (014-bluesky)
+ */
+export const communityPostSchema = z.object({
+  $type: z.literal('net.atrarium.community.post'),
+  text: z.string().min(1, 'text must not be empty').max(300, 'text must not exceed 300 graphemes'),
+  communityId: z
+    .string()
+    .length(8, 'communityId must be exactly 8 characters')
+    .regex(/^[0-9a-f]{8}$/, 'communityId must be 8-character hex'),
+  createdAt: iso8601Schema,
+});
+
 // ============================================================================
 // Validation Helper Functions
 // ============================================================================
@@ -209,6 +234,14 @@ export function validateMembershipRecord(data: unknown): MembershipRecord {
  */
 export function validateModerationAction(data: unknown): ModerationAction {
   return moderationActionSchema.parse(data);
+}
+
+/**
+ * Validate CommunityPost record (014-bluesky)
+ * @throws {z.ZodError} if validation fails
+ */
+export function validateCommunityPost(data: unknown): CommunityPost {
+  return communityPostSchema.parse(data);
 }
 
 /**

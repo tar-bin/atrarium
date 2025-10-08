@@ -1,5 +1,11 @@
 // Atrarium MVP - Feed Generator API Routes
 // AT Protocol Feed Generator endpoints (/.well-known/did.json, describeFeedGenerator, getFeedSkeleton, stats)
+//
+// DEPRECATION NOTICE (014-bluesky):
+// This Feed Generator API is being deprecated in favor of Dashboard API-only feeds.
+// Reason: Bluesky AppView cannot render custom Lexicon posts (net.atrarium.community.post).
+// Timeline: Legacy app.bsky.feed.post indexing will continue during transition period.
+// Migration: All timeline fetching should use Dashboard API (/api/communities/{id}/posts).
 
 import { Hono } from 'hono';
 import { GetFeedSkeletonParamsSchema, validateRequest } from '../schemas/validation';

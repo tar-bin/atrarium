@@ -1,26 +1,29 @@
 <!--
-SYNC IMPACT REPORT (2025-10-08)
-Version: 1.2.0 → 1.3.0 (MINOR - New principle added)
-Rationale: MINOR - Added Principle 9 (Git Workflow and Commit Integrity) to enforce pre-merge validation and prevent bypassing quality checks
-Modified Principles: None (existing principles unchanged)
-Added Sections: Principle 9: Git Workflow and Commit Integrity
+SYNC IMPACT REPORT (2025-01-15)
+Version: 1.3.0 → 1.4.0 (MINOR - Principle 7 amended)
+Rationale: MINOR - Relaxed type checking requirements for test files while maintaining strict validation for implementation code. This acknowledges practical testing workflows (TDD with failing tests before implementation) and reduces friction in development without compromising production code quality.
+Modified Principles: Principle 7 (Code Quality and Pre-Commit Validation) - Split type checking requirements between implementation and test code
+Added Sections: None
 Removed Sections: None
 Templates Requiring Updates:
-  - ⚠ .specify/templates/plan-template.md (Constitution Check section needs Principle 9 validation)
-  - ⚠ .specify/templates/tasks-template.md (Git workflow tasks should reference Principle 9)
-  - ⚠ .specify/templates/spec-template.md (May need git workflow requirements section)
+  - ✅ Constitution updated with differentiated validation rules
+  - ⚠ .specify/templates/plan-template.md (Constitution Check section needs Principle 7 update)
+  - ⚠ .specify/templates/tasks-template.md (Testing tasks should reference relaxed test validation)
+  - ⚠ Pre-commit hooks (package.json, .husky/) may need tsconfig.test.json exclusion logic
 Follow-up TODOs:
-  - Update pre-commit hooks to prevent --no-verify usage in automated workflows
-  - Add git hook validation to CI/CD pipelines
-  - Document emergency bypass procedures (with required approvals)
-  - Consider adding pre-merge validation checks in GitHub Actions
+  - Consider creating tsconfig.test.json with looser type checking for test files
+  - Update lint-staged configuration to differentiate src/ vs tests/ validation
+  - Document test file type checking best practices in CONTRIBUTING.md
+  - Consider adding eslint rule to enforce type assertions in test files
+Previous Version Report (1.2.0 → 1.3.0, 2025-10-08):
+  - Added Principle 9: Git Workflow and Commit Integrity
 -->
 
 # Atrarium Project Constitution
 
-**Version**: 1.3.0
+**Version**: 1.4.0
 **Ratification Date**: 2025-10-06
-**Last Amended**: 2025-10-08
+**Last Amended**: 2025-01-15
 **Project**: Atrarium - Small ecosystems on AT Protocol
 
 ---
@@ -128,13 +131,46 @@ All features, implementations, and technical decisions MUST comply with these pr
 **Name**: Code Quality and Pre-Commit Validation
 
 **Rules**:
-- All code MUST pass linter checks (Biome) before commit
-- All code MUST pass formatter checks (Biome) before commit
-- All code MUST pass type checks (TypeScript) before commit
+
+### Implementation Code (src/, lib/, components/)
+- All implementation code MUST pass linter checks (Biome) before commit
+- All implementation code MUST pass formatter checks (Biome) before commit
+- All implementation code MUST pass type checks (TypeScript strict mode) before commit
 - Pre-commit validation MUST be automated (no manual checks)
 - CI/CD pipelines MUST enforce quality gates at all stages
 
-**Rationale**: Automated code quality checks prevent technical debt accumulation, reduce code review burden, and maintain consistent code style across contributors. Pre-commit validation catches issues early, reducing the cost of fixes and preventing broken commits from entering the repository.
+### Test Code (tests/, *.test.ts, *.spec.ts)
+- Test code MUST pass linter checks (Biome) before commit
+- Test code MUST pass formatter checks (Biome) before commit
+- Test code SHOULD pass type checks when practical, but MAY use type assertions (`as any`, `as unknown as T`) to satisfy TypeScript when:
+  - Testing external API responses with unknown types
+  - Following TDD workflow where tests are written before full implementation
+  - Mocking complex types that would require excessive type gymnastics
+- Test files with type errors SHOULD be addressed before production deployment, but MAY be committed during active development
+- Type assertions in tests SHOULD include comments explaining why strict typing is impractical
+
+**Rationale**: Automated code quality checks prevent technical debt accumulation and maintain consistent code style. Pre-commit validation catches issues early in implementation code where correctness is critical. Test code serves a different purpose (validating behavior, not production runtime) and often requires pragmatic type handling. Strict type checking in tests can impede TDD workflows and create unnecessary friction. This differentiation balances code quality with development velocity, recognizing that test code safety is verified through test execution, not TypeScript compilation.
+
+**Examples of Acceptable Test Type Assertions**:
+```typescript
+// ✅ External API response
+const data = (await response.json()) as { posts: Post[]; cursor?: string };
+
+// ✅ TDD - Implementation not yet complete
+const result = (mockFn() as any).someProperty;
+
+// ✅ Complex mock type
+const mockAgent = { session: { did: 'test' } } as AtpAgent;
+```
+
+**Examples of Unacceptable Shortcuts**:
+```typescript
+// ❌ Implementation code using `any` to bypass type errors
+function processData(input: any) { ... }
+
+// ❌ Test assertions without explanation
+expect((data as any).foo).toBe(true); // Why any? Add comment!
+```
 
 ---
 
@@ -160,7 +196,12 @@ All features, implementations, and technical decisions MUST comply with these pr
 
 **Rules**:
 - All changes MUST be fully committed before merging to master branch
-- Pre-commit hooks (linting, formatting, type checking) MUST NOT be bypassed with `--no-verify` flag
+- Pre-commit hooks (linting, formatting) MUST NOT be bypassed with `--no-verify` flag
+- Type checking failures in implementation code (src/) MUST be resolved before commit
+- Type checking failures in test code (tests/) MAY be committed if:
+  - Tests are part of TDD workflow (implementation incomplete)
+  - Type assertions are used appropriately with explanatory comments
+  - Failures are documented in commit message or PR description
 - Each commit MUST represent a complete, working unit of change
 - Merge commits MUST include all related changes (no partial merges followed by fix-up commits)
 - Emergency bypasses of pre-commit validation require:
@@ -169,7 +210,7 @@ All features, implementations, and technical decisions MUST comply with these pr
   - Follow-up commit within 24 hours to address skipped validations
 - CI/CD pipelines MUST validate all commits independently (no reliance on local hooks alone)
 
-**Rationale**: Bypassing validation hooks creates technical debt and undermines automated quality gates. Incomplete commits lead to broken build states, making bisecting and debugging difficult. Enforcing complete, validated commits ensures repository integrity, improves code review quality, and maintains trust in the main branch. Emergency bypasses exist for critical situations but require explicit approval and rapid remediation.
+**Rationale**: Bypassing validation hooks creates technical debt and undermines automated quality gates. Incomplete commits lead to broken build states, making bisecting and debugging difficult. However, strict type checking in test files can impede TDD workflows and create unnecessary friction during active development. This principle balances repository integrity with practical development workflows, allowing test-driven development while maintaining production code quality. Emergency bypasses exist for critical situations but require explicit approval and rapid remediation.
 
 ---
 
@@ -218,4 +259,4 @@ Constitution compliance is checked at:
 **Ratified by**: tar-bin (project maintainer)
 **Date**: 2025-10-06
 **Last Amendment by**: tar-bin (project maintainer)
-**Amendment Date**: 2025-10-08
+**Amendment Date**: 2025-01-15

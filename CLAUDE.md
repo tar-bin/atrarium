@@ -279,6 +279,7 @@ start-dev.sh         # Parallel development startup script (server + dashboard)
 1. **PDS (Source of Truth)** - Permanent storage in user Personal Data Servers
    - `net.atrarium.community.config`: Community metadata (name, hashtag, stage, moderators, feedMix)
    - `net.atrarium.community.membership`: User membership records (community, role, joinedAt, active)
+   - `net.atrarium.community.post`: Community posts (text, communityId, createdAt) - **014-bluesky**
    - `net.atrarium.moderation.action`: Moderation actions (action, target, community, reason)
 
 2. **Durable Objects Storage (Per-Community Cache)** - 7-day feed index
@@ -523,6 +524,7 @@ The client fetches actual post content from Bluesky's AppView using these URIs.
 - [x] **AT Protocol Lexicon schemas** (`net.atrarium.*` - migrated from `com.atrarium.*`)
   - [x] `net.atrarium.community.config` (community metadata)
   - [x] `net.atrarium.community.membership` (user memberships)
+  - [x] `net.atrarium.community.post` (community posts, custom Lexicon) - **014-bluesky**
   - [x] `net.atrarium.moderation.action` (moderation actions)
 - [x] **PDS read/write service** (@atproto/api with AtpAgent - BskyAgent deprecated)
 - [x] **Durable Objects architecture**
@@ -690,7 +692,9 @@ All outputs include Constitution Check section validating compliance with 7 prin
 - **Moderation**: Only moderators/owners can hide posts or block users - **003-id**
 - **Membership Validation**: Posts must be from community members (verified in Durable Object Storage) - **006-pds-1-db**
 - **PDS as Source of Truth**: All writes go to PDS first, then indexed via Firehose - **006-pds-1-db**
-- **Lexicon Collections**: `net.atrarium.community.config`, `net.atrarium.community.membership`, `net.atrarium.moderation.action` - **006-pds-1-db**
+- **Lexicon Collections**: `net.atrarium.community.config`, `net.atrarium.community.membership`, `net.atrarium.community.post`, `net.atrarium.moderation.action` - **006-pds-1-db + 014-bluesky**
+- **Custom Post Lexicon** (014-bluesky): `net.atrarium.community.post` replaces `app.bsky.feed.post` for community posts, indexed via Firehose, stored in user PDSs
+- **Feed Generator API Deprecation** (014-bluesky): Feed Generator API (`getFeedSkeleton`) being deprecated because Bluesky AppView cannot render custom Lexicon posts. Timeline fetching migrated to Dashboard API (`/api/communities/{id}/posts`). Legacy `app.bsky.feed.post` indexing continues for backward compatibility during transition period.
 - **Lexicon Publication** (010-lexicon): Schemas published at `/xrpc/net.atrarium.lexicon.get?nsid={nsid}` with ETag caching (SHA-256, 1-hour beta period)
 
 ### Testing Strategy

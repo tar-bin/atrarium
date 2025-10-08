@@ -8,11 +8,15 @@ import {
   CommunityListOutputSchema,
   CommunityOutputSchema,
   CreateCommunitySchema,
+  CreatePostInputSchema,
+  CreatePostOutputSchema,
   FeedListOutputSchema,
   FeedOutputSchema,
   GetCommunityInputSchema,
   GetFeedInputSchema,
   GetMembershipInputSchema,
+  GetPostInputSchema,
+  GetPostsInputSchema,
   HidePostInputSchema,
   JoinCommunityInputSchema,
   JoinRequestListOutputSchema,
@@ -24,6 +28,8 @@ import {
   MembershipOutputSchema,
   ModerationActionListOutputSchema,
   ModerationActionOutputSchema,
+  PostListOutputSchema,
+  PostOutputSchema,
   RejectJoinRequestInputSchema,
   UnblockUserInputSchema,
   UnhidePostInputSchema,
@@ -225,6 +231,36 @@ export const feedsContract = {
 };
 
 // ============================================================================
+// Posts Router Contract (014-bluesky: Custom Lexicon Posts)
+// ============================================================================
+
+export const postsContract = {
+  create: authed
+    .route({
+      method: 'POST',
+      path: '/api/communities/:communityId/posts',
+    })
+    .input(CreatePostInputSchema)
+    .output(CreatePostOutputSchema),
+
+  list: authed
+    .route({
+      method: 'GET',
+      path: '/api/communities/:communityId/posts',
+    })
+    .input(GetPostsInputSchema)
+    .output(PostListOutputSchema),
+
+  get: authed
+    .route({
+      method: 'GET',
+      path: '/api/posts/:uri',
+    })
+    .input(GetPostInputSchema)
+    .output(PostOutputSchema),
+};
+
+// ============================================================================
 // Root Router Contract
 // ============================================================================
 
@@ -234,6 +270,7 @@ export const contract = {
   joinRequests: joinRequestsContract,
   moderation: moderationContract,
   feeds: feedsContract,
+  posts: postsContract,
 };
 
 export type Contract = typeof contract;

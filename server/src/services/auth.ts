@@ -179,3 +179,34 @@ export class AuthService {
     return this.env.ENVIRONMENT === 'production' ? 'atrarium.net' : '127.0.0.1:8787';
   }
 }
+
+// ============================================================================
+// Hono Middleware
+// ============================================================================
+
+import type { Context as HonoContext, Next } from 'hono';
+
+/**
+ * Authentication middleware for Hono routes
+ * Extracts and verifies JWT, sets userDid in context
+ */
+export async function authMiddleware(c: HonoContext, next: Next): Promise<Response | undefined> {
+  const authHeader = c.req.header('Authorization');
+
+  if (!authHeader) {
+    return c.json({ error: 'Unauthorized', message: 'Missing Authorization header' }, 401);
+  }
+
+  try {
+    const authService = new AuthService(c.env as Env);
+    const userDid = await authService.extractUserFromHeader(authHeader);
+
+    // Set userDid in Hono context for downstream handlers
+    c.set('userDid', userDid);
+
+    await next();
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Invalid authentication';
+    return c.json({ error: 'Unauthorized', message }, 401);
+  }
+}

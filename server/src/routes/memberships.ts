@@ -136,7 +136,8 @@ app.delete('/:communityId', async (c) => {
       return c.json({ error: 'NotMember', message: 'User is not a member of this community' }, 404);
     }
 
-    const membership = memberships[0]!;
+    // Safe: memberships.length > 0 is guaranteed by the check above
+    const membership = memberships[0] as MembershipRecord;
 
     // Prevent owner from leaving (must transfer ownership first)
     if (membership.role === 'owner') {
@@ -216,8 +217,8 @@ app.get('/:communityId/members', async (c) => {
     // Community config exists check (can throw if community not found)
     await atproto.getCommunityConfig(communityUri);
 
-    // Extract owner DID from community URI
-    const ownerDid = communityUri.split('/')[2]!; // Non-null: AT-URI format guaranteed
+    // Extract owner DID from community URI (AT-URI format: at://did:plc:xxx/collection/rkey)
+    const ownerDid = communityUri.split('/')[2] as string;
 
     // Check if requester is admin (owner or moderator)
     const requesterMemberships = await atproto.listMemberships(userDid, {
@@ -229,7 +230,7 @@ app.get('/:communityId/members', async (c) => {
       return c.json({ error: 'Forbidden', message: 'User is not a member' }, 403);
     }
 
-    const requesterRole = requesterMemberships[0]!.role;
+    const requesterRole = requesterMemberships[0]?.role;
     if (requesterRole !== 'owner' && requesterRole !== 'moderator') {
       return c.json({ error: 'Forbidden', message: 'Admin access required' }, 403);
     }
@@ -289,7 +290,7 @@ app.patch('/:communityId/:did/role', async (c) => {
       activeOnly: true,
     });
 
-    if (requesterMemberships.length === 0 || requesterMemberships[0]!.role !== 'owner') {
+    if (requesterMemberships.length === 0 || requesterMemberships[0]?.role !== 'owner') {
       return c.json({ error: 'Forbidden', message: 'Owner access required' }, 403);
     }
 
@@ -303,7 +304,8 @@ app.patch('/:communityId/:did/role', async (c) => {
       return c.json({ error: 'NotFound', message: 'Target user is not a member' }, 404);
     }
 
-    const targetMembership = targetMemberships[0]!;
+    // Safe: targetMemberships.length > 0 is guaranteed by previous check
+    const targetMembership = targetMemberships[0] as MembershipRecord;
 
     // Prevent changing owner role (use transfer ownership instead)
     if (newRole === 'owner') {
@@ -370,7 +372,7 @@ app.delete('/:communityId/:did', async (c) => {
       return c.json({ error: 'Forbidden', message: 'User is not a member' }, 403);
     }
 
-    const requesterRole = requesterMemberships[0]!.role;
+    const requesterRole = requesterMemberships[0]?.role;
     if (requesterRole !== 'owner' && requesterRole !== 'moderator') {
       return c.json({ error: 'Forbidden', message: 'Admin access required' }, 403);
     }
@@ -385,7 +387,8 @@ app.delete('/:communityId/:did', async (c) => {
       return c.json({ error: 'NotFound', message: 'Target user is not a member' }, 404);
     }
 
-    const targetMembership = targetMemberships[0]!;
+    // Safe: targetMemberships.length > 0 is guaranteed by previous check
+    const targetMembership = targetMemberships[0] as MembershipRecord;
 
     // Prevent removing owner
     if (targetMembership.role === 'owner') {
@@ -460,7 +463,7 @@ app.post('/:communityId/transfer', async (c) => {
       activeOnly: true,
     });
 
-    if (requesterMemberships.length === 0 || requesterMemberships[0]!.role !== 'owner') {
+    if (requesterMemberships.length === 0 || requesterMemberships[0]?.role !== 'owner') {
       return c.json({ error: 'Forbidden', message: 'Owner access required' }, 403);
     }
 
@@ -480,8 +483,8 @@ app.post('/:communityId/transfer', async (c) => {
       );
     }
 
-    const oldOwnerMembershipUri = requesterMemberships[0]!.uri;
-    const newOwnerMembershipUri = newOwnerMemberships[0]!.uri;
+    const oldOwnerMembershipUri = requesterMemberships[0]?.uri;
+    const newOwnerMembershipUri = newOwnerMemberships[0]?.uri;
 
     // Transfer ownership in PDS
     await atproto.transferOwnership(oldOwnerMembershipUri, newOwnerMembershipUri);
@@ -547,13 +550,13 @@ app.get('/join-requests/:communityId', async (c) => {
       return c.json({ error: 'Forbidden', message: 'User is not a member' }, 403);
     }
 
-    const requesterRole = requesterMemberships[0]!.role;
+    const requesterRole = requesterMemberships[0]?.role;
     if (requesterRole !== 'owner' && requesterRole !== 'moderator') {
       return c.json({ error: 'Forbidden', message: 'Admin access required' }, 403);
     }
 
-    // Extract owner DID from community URI
-    const ownerDid = communityUri.split('/')[2]!; // Non-null: AT-URI format guaranteed
+    // Extract owner DID from community URI (AT-URI format: at://did:plc:xxx/collection/rkey)
+    const ownerDid = communityUri.split('/')[2] as string;
 
     // List pending join requests (status='pending')
     const pendingRequests = await atproto.listMemberships(ownerDid, {
@@ -598,7 +601,7 @@ app.post('/join-requests/:communityId/:did/approve', async (c) => {
       return c.json({ error: 'Forbidden', message: 'User is not a member' }, 403);
     }
 
-    const approverRole = approverMemberships[0]!.role;
+    const approverRole = approverMemberships[0]?.role;
     if (approverRole !== 'owner' && approverRole !== 'moderator') {
       return c.json({ error: 'Forbidden', message: 'Admin access required' }, 403);
     }
@@ -613,7 +616,8 @@ app.post('/join-requests/:communityId/:did/approve', async (c) => {
       return c.json({ error: 'NotFound', message: 'No pending join request found' }, 404);
     }
 
-    const pendingMembership = pendingMemberships[0]!;
+    // Safe: pendingMemberships.length > 0 is guaranteed by previous check
+    const pendingMembership = pendingMemberships[0] as MembershipRecord;
 
     // Change status from 'pending' to 'active'
     await atproto.updateMembershipRecord(pendingMembership.uri, {
@@ -672,7 +676,7 @@ app.post('/join-requests/:communityId/:did/reject', async (c) => {
       return c.json({ error: 'Forbidden', message: 'User is not a member' }, 403);
     }
 
-    const rejectorRole = rejectorMemberships[0]!.role;
+    const rejectorRole = rejectorMemberships[0]?.role;
     if (rejectorRole !== 'owner' && rejectorRole !== 'moderator') {
       return c.json({ error: 'Forbidden', message: 'Admin access required' }, 403);
     }
@@ -687,7 +691,8 @@ app.post('/join-requests/:communityId/:did/reject', async (c) => {
       return c.json({ error: 'NotFound', message: 'No pending join request found' }, 404);
     }
 
-    const pendingMembership = pendingMemberships[0]!;
+    // Safe: pendingMemberships.length > 0 is guaranteed by previous check
+    const pendingMembership = pendingMemberships[0] as MembershipRecord;
 
     // Delete membership record (reject join request)
     await atproto.deleteMembershipRecord(pendingMembership.uri);

@@ -64,7 +64,7 @@ async function checkAdminPermission(
       return { isAdmin: false, error: 'User is not a member' };
     }
 
-    const role = memberships[0]!.role;
+    const role = memberships[0]?.role;
     if (role !== 'owner' && role !== 'moderator') {
       return { isAdmin: false, error: 'Admin access required' };
     }

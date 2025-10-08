@@ -20,9 +20,13 @@ describe.skip('POST /api/moderation/hide-post - Reason Enum Validation', () => {
   // - Load test data (community, membership, post)
   // - Setup mock AT Protocol service
 
-  beforeAll(async () => {});
+  beforeAll(async () => {
+    // Setup code to be added when implementing moderation tests
+  });
 
-  afterAll(async () => {});
+  afterAll(async () => {
+    // Cleanup code to be added when implementing moderation tests
+  });
 
   describe('Valid enum values', () => {
     it('should accept all 17 predefined enum values', async () => {
@@ -45,7 +49,7 @@ describe.skip('POST /api/moderation/hide-post - Reason Enum Validation', () => {
         // );
         //
         // expect(response.status).toBe(200);
-        // const data = await response.json();
+        // const data = (await response.json()) as any;
         // expect(data.success).toBe(true);
 
         // Temporary assertion to make test fail
@@ -117,7 +121,7 @@ describe.skip('POST /api/moderation/hide-post - Reason Enum Validation', () => {
       // );
       //
       // expect(response.status).toBe(400);
-      // const data = await response.json();
+      // const data = (await response.json()) as any;
       // expect(data.error).toContain('Invalid reason');
       // expect(data.message).toContain('Must be one of:');
 
