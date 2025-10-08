@@ -76,6 +76,12 @@
 - ✅ Durable Objects Storage used only as 7-day ephemeral cache (if applicable)
 - ✅ No feature requires additional database infrastructure
 
+**Git Workflow and Commit Integrity** (Principle 9):
+- ✅ Implementation plan includes complete commit strategy (no partial merges)
+- ✅ Pre-commit hooks will validate all changes (no --no-verify planned)
+- ✅ Emergency bypass procedures documented (if applicable)
+- ✅ CI/CD validation independent of local hooks
+
 **Conclusion**: ✅ PASS - Feature complies with all constitution principles
 (or ❌ FAIL with explicit justification and remediation plan)
 
@@ -246,4 +252,4 @@ directories captured above]
 - [ ] Complexity deviations documented
 
 ---
-*Based on Constitution v2.1.1 - See `/memory/constitution.md`*
+*Based on Constitution v1.3.0 - See `.specify/memory/constitution.md`*

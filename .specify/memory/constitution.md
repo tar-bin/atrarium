@@ -1,25 +1,26 @@
 <!--
-SYNC IMPACT REPORT (2025-10-07)
-Version: 1.1.0 → 1.2.0 (MINOR - New principle added)
-Rationale: MINOR - Added Principle 8 (AT Protocol + PDS + Lexicon Constraints) to enforce strict architectural boundaries and prevent database proliferation
+SYNC IMPACT REPORT (2025-10-08)
+Version: 1.2.0 → 1.3.0 (MINOR - New principle added)
+Rationale: MINOR - Added Principle 9 (Git Workflow and Commit Integrity) to enforce pre-merge validation and prevent bypassing quality checks
 Modified Principles: None (existing principles unchanged)
-Added Sections: Principle 8: AT Protocol + PDS + Lexicon Constraints
+Added Sections: Principle 9: Git Workflow and Commit Integrity
 Removed Sections: None
 Templates Requiring Updates:
-  - ✅ .specify/templates/plan-template.md (Constitution Check section updated to include Principle 8 validation)
-  - ✅ .specify/templates/spec-template.md (Requirements section guidance updated to flag database dependencies)
-  - ✅ .specify/templates/tasks-template.md (Architecture tasks updated to validate PDS-only storage)
+  - ⚠ .specify/templates/plan-template.md (Constitution Check section needs Principle 9 validation)
+  - ⚠ .specify/templates/tasks-template.md (Git workflow tasks should reference Principle 9)
+  - ⚠ .specify/templates/spec-template.md (May need git workflow requirements section)
 Follow-up TODOs:
-  - Review existing features to ensure no hidden database dependencies exist
-  - Document PDS + Lexicon feasibility testing procedures
-  - Add explicit DB-free validation to CI/CD pipelines
+  - Update pre-commit hooks to prevent --no-verify usage in automated workflows
+  - Add git hook validation to CI/CD pipelines
+  - Document emergency bypass procedures (with required approvals)
+  - Consider adding pre-merge validation checks in GitHub Actions
 -->
 
 # Atrarium Project Constitution
 
-**Version**: 1.2.0
+**Version**: 1.3.0
 **Ratification Date**: 2025-10-06
-**Last Amended**: 2025-10-07
+**Last Amended**: 2025-10-08
 **Project**: Atrarium - Small ecosystems on AT Protocol
 
 ---
@@ -153,6 +154,25 @@ All features, implementations, and technical decisions MUST comply with these pr
 
 ---
 
+## Principle 9: Git Workflow and Commit Integrity
+
+**Name**: Git Workflow and Commit Integrity
+
+**Rules**:
+- All changes MUST be fully committed before merging to master branch
+- Pre-commit hooks (linting, formatting, type checking) MUST NOT be bypassed with `--no-verify` flag
+- Each commit MUST represent a complete, working unit of change
+- Merge commits MUST include all related changes (no partial merges followed by fix-up commits)
+- Emergency bypasses of pre-commit validation require:
+  - Explicit justification in commit message
+  - Maintainer approval (via GitHub Issue or PR comment)
+  - Follow-up commit within 24 hours to address skipped validations
+- CI/CD pipelines MUST validate all commits independently (no reliance on local hooks alone)
+
+**Rationale**: Bypassing validation hooks creates technical debt and undermines automated quality gates. Incomplete commits lead to broken build states, making bisecting and debugging difficult. Enforcing complete, validated commits ensures repository integrity, improves code review quality, and maintains trust in the main branch. Emergency bypasses exist for critical situations but require explicit approval and rapid remediation.
+
+---
+
 ## Governance
 
 ### Amendment Procedure
@@ -190,6 +210,7 @@ Constitution compliance is checked at:
 - Feature specification (`/specify` command)
 - Implementation planning (`/plan` command)
 - Code review (PR checklist)
+- Pre-merge validation (git hooks + CI/CD)
 - Quarterly architecture review
 
 ---
@@ -197,4 +218,4 @@ Constitution compliance is checked at:
 **Ratified by**: tar-bin (project maintainer)
 **Date**: 2025-10-06
 **Last Amendment by**: tar-bin (project maintainer)
-**Amendment Date**: 2025-10-07
+**Amendment Date**: 2025-10-08
