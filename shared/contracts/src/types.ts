@@ -3,14 +3,24 @@
 
 import type { z } from 'zod';
 import type {
+  // T034: Emoji schemas
+  ApproveEmojiInputSchema,
+  ApproveEmojiOutputSchema,
   ApproveJoinRequestInputSchema,
+  BlobRefSchema,
   BlockUserInputSchema,
   CommunityListOutputSchema,
   CommunityOutputSchema,
   CreateCommunitySchema,
+  CustomEmojiSchema,
+  EmojiApprovalSchema,
+  EmojiMetadataSchema,
+  EmojiSubmissionSchema,
   FeedListOutputSchema,
   FeedOutputSchema,
   GetCommunityInputSchema,
+  GetEmojiRegistryInputSchema,
+  GetEmojiRegistryOutputSchema,
   GetFeedInputSchema,
   GetMembershipInputSchema,
   HidePostInputSchema,
@@ -18,17 +28,27 @@ import type {
   JoinRequestListOutputSchema,
   JoinRequestOutputSchema,
   LeaveCommunityInputSchema,
+  ListEmojiInputSchema,
+  ListEmojiOutputSchema,
   ListFeedsInputSchema,
   ListJoinRequestsInputSchema,
   ListMembershipsInputSchema,
+  ListPendingEmojiInputSchema,
+  ListPendingEmojiOutputSchema,
   MembershipListOutputSchema,
   MembershipOutputSchema,
   ModerationActionListOutputSchema,
   ModerationActionOutputSchema,
   RejectJoinRequestInputSchema,
+  RevokeEmojiInputSchema,
+  RevokeEmojiOutputSchema,
+  SubmitEmojiInputSchema,
+  SubmitEmojiOutputSchema,
   UnblockUserInputSchema,
   UnhidePostInputSchema,
   UpdateMembershipInputSchema,
+  UploadEmojiInputSchema,
+  UploadEmojiOutputSchema,
 } from './schemas';
 
 // ============================================================================
@@ -81,3 +101,29 @@ export type ListFeedsInput = z.infer<typeof ListFeedsInputSchema>;
 export type GetFeedInput = z.infer<typeof GetFeedInputSchema>;
 export type FeedOutput = z.infer<typeof FeedOutputSchema>;
 export type FeedListOutput = z.infer<typeof FeedListOutputSchema>;
+
+// ============================================================================
+// Emoji Types (T034 - 015-markdown-pds)
+// ============================================================================
+
+export type BlobRef = z.infer<typeof BlobRefSchema>;
+export type CustomEmoji = z.infer<typeof CustomEmojiSchema>;
+export type EmojiApproval = z.infer<typeof EmojiApprovalSchema>;
+export type EmojiSubmission = z.infer<typeof EmojiSubmissionSchema>;
+export type EmojiMetadata = z.infer<typeof EmojiMetadataSchema>;
+
+// Emoji API Input/Output Types
+export type UploadEmojiInput = z.infer<typeof UploadEmojiInputSchema>;
+export type UploadEmojiOutput = z.infer<typeof UploadEmojiOutputSchema>;
+export type ListEmojiInput = z.infer<typeof ListEmojiInputSchema>;
+export type ListEmojiOutput = z.infer<typeof ListEmojiOutputSchema>;
+export type SubmitEmojiInput = z.infer<typeof SubmitEmojiInputSchema>;
+export type SubmitEmojiOutput = z.infer<typeof SubmitEmojiOutputSchema>;
+export type ListPendingEmojiInput = z.infer<typeof ListPendingEmojiInputSchema>;
+export type ListPendingEmojiOutput = z.infer<typeof ListPendingEmojiOutputSchema>;
+export type ApproveEmojiInput = z.infer<typeof ApproveEmojiInputSchema>;
+export type ApproveEmojiOutput = z.infer<typeof ApproveEmojiOutputSchema>;
+export type RevokeEmojiInput = z.infer<typeof RevokeEmojiInputSchema>;
+export type RevokeEmojiOutput = z.infer<typeof RevokeEmojiOutputSchema>;
+export type GetEmojiRegistryInput = z.infer<typeof GetEmojiRegistryInputSchema>;
+export type GetEmojiRegistryOutput = z.infer<typeof GetEmojiRegistryOutputSchema>;

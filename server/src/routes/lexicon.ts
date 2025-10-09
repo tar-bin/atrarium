@@ -8,6 +8,9 @@ import { cors } from 'hono/cors';
 // Import Lexicon JSON schemas from top-level lexicons/ directory
 import communityConfigSchema from '../../../lexicons/net.atrarium.community.config.json';
 import communityMembershipSchema from '../../../lexicons/net.atrarium.community.membership.json';
+import communityPostSchema from '../../../lexicons/net.atrarium.community.post.json';
+import emojiApprovalSchema from '../../../lexicons/net.atrarium.emoji.approval.json';
+import emojiCustomSchema from '../../../lexicons/net.atrarium.emoji.custom.json';
 import moderationActionSchema from '../../../lexicons/net.atrarium.moderation.action.json';
 
 type LexiconSchema = {
@@ -20,6 +23,9 @@ type LexiconSchema = {
 const SCHEMAS: Record<string, LexiconSchema> = {
   'net.atrarium.community.config': communityConfigSchema as LexiconSchema,
   'net.atrarium.community.membership': communityMembershipSchema as LexiconSchema,
+  'net.atrarium.community.post': communityPostSchema as LexiconSchema,
+  'net.atrarium.emoji.custom': emojiCustomSchema as LexiconSchema,
+  'net.atrarium.emoji.approval': emojiApprovalSchema as LexiconSchema,
   'net.atrarium.moderation.action': moderationActionSchema as LexiconSchema,
 };
 

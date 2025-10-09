@@ -71,12 +71,58 @@ export interface UserTarget {
  * Community post record (stored in user's PDS)
  * Lexicon: net.atrarium.community.post
  * Feature: 014-bluesky (Custom Lexicon Posts)
+ * Feature: 015-markdown-pds (Markdown + Emoji support)
  */
 export interface CommunityPost {
   $type: 'net.atrarium.community.post';
   text: string; // Post text content (max 300 graphemes)
+  markdown?: string; // Optional Markdown-formatted content (015-markdown-pds)
+  emojiShortcodes?: string[]; // Optional emoji shortcodes used in post (015-markdown-pds)
   communityId: string; // 8-character hex (immutable across stages)
   createdAt: string; // ISO 8601 datetime
+}
+
+/**
+ * Custom emoji record (stored in user's PDS)
+ * Lexicon: net.atrarium.emoji.custom
+ * Feature: 015-markdown-pds
+ */
+export interface CustomEmoji {
+  $type: 'net.atrarium.emoji.custom';
+  shortcode: string; // Emoji shortcode (e.g., 'my_emoji' for :my_emoji:)
+  blob: BlobRef; // Emoji image blob reference
+  creator: string; // DID of uploader
+  uploadedAt: string; // ISO 8601 datetime
+  format: 'png' | 'gif' | 'webp'; // Image format
+  size: number; // File size in bytes (≤500KB)
+  dimensions: { width: number; height: number }; // Image dimensions (≤256×256px)
+  animated: boolean; // True for animated GIFs
+}
+
+/**
+ * Emoji approval record (stored in community owner's PDS)
+ * Lexicon: net.atrarium.emoji.approval
+ * Feature: 015-markdown-pds
+ */
+export interface EmojiApproval {
+  $type: 'net.atrarium.emoji.approval';
+  shortcode: string; // Registered shortcode in community namespace
+  emojiRef: string; // AT-URI of CustomEmoji
+  communityId: string; // Community ID (8-character hex)
+  status: 'approved' | 'rejected' | 'revoked'; // Approval status
+  approver: string; // DID of community owner who made decision
+  decidedAt: string; // ISO 8601 datetime
+  reason?: string; // Optional rejection/revocation reason
+}
+
+/**
+ * AT Protocol blob reference
+ */
+export interface BlobRef {
+  $type: 'blob';
+  ref: { $link: string }; // CID reference
+  mimeType: string; // MIME type (image/png, image/gif, image/webp)
+  size: number; // File size in bytes
 }
 
 /**
@@ -196,16 +242,78 @@ export const moderationActionSchema = z.object({
 });
 
 /**
- * CommunityPost validation schema (014-bluesky)
+ * CommunityPost validation schema (014-bluesky, 015-markdown-pds)
  */
 export const communityPostSchema = z.object({
   $type: z.literal('net.atrarium.community.post'),
   text: z.string().min(1, 'text must not be empty').max(300, 'text must not exceed 300 graphemes'),
+  markdown: z.string().max(300, 'markdown must not exceed 300 graphemes').optional(),
+  emojiShortcodes: z
+    .array(
+      z
+        .string()
+        .regex(/^[a-z0-9_]+$/, 'emoji shortcode must be lowercase alphanumeric with underscores')
+    )
+    .max(20, 'emojiShortcodes must not exceed 20 items')
+    .optional(),
   communityId: z
     .string()
     .length(8, 'communityId must be exactly 8 characters')
     .regex(/^[0-9a-f]{8}$/, 'communityId must be 8-character hex'),
   createdAt: iso8601Schema,
+});
+
+/**
+ * BlobRef validation schema
+ */
+const blobRefSchema = z.object({
+  $type: z.literal('blob'),
+  ref: z.object({ $link: z.string() }),
+  mimeType: z.enum(['image/png', 'image/gif', 'image/webp']),
+  size: z.number().int().min(1).max(512000), // Max 500KB
+});
+
+/**
+ * CustomEmoji validation schema (015-markdown-pds)
+ */
+export const customEmojiSchema = z.object({
+  $type: z.literal('net.atrarium.emoji.custom'),
+  shortcode: z
+    .string()
+    .min(2, 'shortcode must be at least 2 characters')
+    .max(32, 'shortcode must not exceed 32 characters')
+    .regex(/^[a-z0-9_]+$/, 'shortcode must be lowercase alphanumeric with underscores'),
+  blob: blobRefSchema,
+  creator: didSchema,
+  uploadedAt: iso8601Schema,
+  format: z.enum(['png', 'gif', 'webp']),
+  size: z.number().int().min(1).max(512000), // Max 500KB
+  dimensions: z.object({
+    width: z.number().int().min(1).max(256),
+    height: z.number().int().min(1).max(256),
+  }),
+  animated: z.boolean(),
+});
+
+/**
+ * EmojiApproval validation schema (015-markdown-pds)
+ */
+export const emojiApprovalSchema = z.object({
+  $type: z.literal('net.atrarium.emoji.approval'),
+  shortcode: z
+    .string()
+    .min(2)
+    .max(32)
+    .regex(/^[a-z0-9_]+$/),
+  emojiRef: atUriSchema,
+  communityId: z
+    .string()
+    .length(8)
+    .regex(/^[0-9a-f]{8}$/),
+  status: z.enum(['approved', 'rejected', 'revoked']),
+  approver: didSchema,
+  decidedAt: iso8601Schema,
+  reason: z.string().max(250, 'reason must not exceed 250 graphemes').optional(),
 });
 
 // ============================================================================
@@ -237,11 +345,27 @@ export function validateModerationAction(data: unknown): ModerationAction {
 }
 
 /**
- * Validate CommunityPost record (014-bluesky)
+ * Validate CommunityPost record (014-bluesky, 015-markdown-pds)
  * @throws {z.ZodError} if validation fails
  */
 export function validateCommunityPost(data: unknown): CommunityPost {
   return communityPostSchema.parse(data);
+}
+
+/**
+ * Validate CustomEmoji record (015-markdown-pds)
+ * @throws {z.ZodError} if validation fails
+ */
+export function validateCustomEmoji(data: unknown): CustomEmoji {
+  return customEmojiSchema.parse(data);
+}
+
+/**
+ * Validate EmojiApproval record (015-markdown-pds)
+ * @throws {z.ZodError} if validation fails
+ */
+export function validateEmojiApproval(data: unknown): EmojiApproval {
+  return emojiApprovalSchema.parse(data);
 }
 
 /**

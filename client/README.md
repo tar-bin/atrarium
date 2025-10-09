@@ -372,6 +372,110 @@ Dashboard → Workers API → ATProtoService.createModerationAction()
          → getFeedSkeleton excludes hidden posts
 ```
 
+### Custom Emoji Management
+
+**Feature**: Upload and manage custom emoji for communities (015-markdown-pds)
+
+**Access**: Owner and moderator roles only
+
+**Workflow**:
+
+1. **Navigate to Emoji Management**:
+   - Go to `/communities/:id/emoji` (owner/moderator only)
+   - Two tabs: "Upload Emoji" and "Pending Approvals"
+
+2. **Upload Custom Emoji**:
+   - Click "Upload Emoji" tab
+   - Fill in emoji shortcode (lowercase, numbers, underscores only, 2-32 chars)
+     - Example: `wave`, `happy_face`, `rocket_ship`
+   - Select image file:
+     - **Formats**: PNG, GIF, WEBP
+     - **Size**: ≤500KB
+     - **Dimensions**: ≤256×256px
+   - Preview appears after file selection
+   - Click "Upload Emoji"
+   - Backend creates:
+     - **Blob upload**: Uploaded to PDS blob storage
+     - **PDS record**: `net.atrarium.emoji.custom` in user's PDS
+     - **Approval request**: `net.atrarium.emoji.approval` with `status='pending'`
+
+3. **Approve/Reject Emoji** (Owner/Moderator):
+   - Click "Pending Approvals" tab
+   - View list of pending emoji submissions
+   - Each submission shows:
+     - Emoji preview image
+     - Shortcode (e.g., `:wave:`)
+     - Submitter handle and upload date
+     - Format (PNG/GIF/WEBP) and animation status
+   - Actions:
+     - **Approve**: Emoji becomes available for use in posts
+     - **Reject**: Optionally provide reason for rejection
+   - Backend updates:
+     - **PDS record**: `net.atrarium.emoji.approval` status → `approved` or `rejected`
+     - **Durable Object**: Emoji added to community registry cache (7-day TTL)
+
+4. **Use Emoji in Posts**:
+   - Create new post in community
+   - Click emoji picker button
+   - Popover displays all approved emoji
+   - Click emoji to insert shortcode (e.g., `:wave:`)
+   - Post text includes shortcode
+   - Backend stores:
+     - **Post text**: Plain text with shortcodes
+     - **Emoji metadata**: List of shortcodes used
+   - Rendering:
+     - Client fetches emoji registry from cache
+     - Shortcodes replaced with `<img>` tags
+     - Fallback: Missing emoji display as plain text
+
+5. **Markdown + Emoji Rendering**:
+   - Posts support Markdown formatting (GFM):
+     - **Bold**: `**text**` → `<strong>text</strong>`
+     - **Italic**: `*text*` → `<em>text</em>`
+     - **Tables**: GitHub Flavored Markdown syntax
+     - **Strikethrough**: `~~text~~` → `<del>text</del>`
+   - Emoji shortcodes in Markdown:
+     - `Hello :wave:` → `Hello <img src="..." alt="wave">`
+     - Shortcodes in code blocks preserved: `` `code :wave:` `` → `:wave:` (not replaced)
+   - XSS protection via DOMPurify sanitization
+   - Bundle size: 17KB gzipped (marked 10KB + DOMPurify 7KB)
+
+**Data Flow**:
+```
+# Upload
+Dashboard → Workers API → ATProtoService.uploadEmojiBlob()
+         → PDS blob storage
+         → ATProtoService.createCustomEmoji()
+         → PDS (at://did:plc:user/net.atrarium.emoji.custom/rkey)
+
+# Approval
+Dashboard → Workers API → ATProtoService.createEmojiApproval()
+         → PDS (at://did:plc:owner/net.atrarium.emoji.approval/rkey)
+         → Firehose → CommunityFeedGenerator DO (update emoji registry cache)
+
+# Post with Emoji
+Dashboard → Workers API → ATProtoService.createPost({ markdown, emojiShortcodes })
+         → PDS (at://did:plc:user/net.atrarium.community.post/rkey)
+
+# Rendering
+Client → Workers API → GET /api/communities/:id/emoji/registry
+      → CommunityFeedGenerator DO (emoji registry from cache)
+      → renderMarkdown(text, emojiRegistry)
+      → <img> tags with blob URLs
+```
+
+**Edge Cases**:
+- **Deleted Emoji**: If emoji is deleted from PDS, shortcode displays as plain text (fallback)
+- **Revoked Emoji**: If approval is revoked, emoji removed from registry, shortcode displays as plain text
+- **Expired Cache**: Emoji registry cache expires after 7 days, auto-rebuilt from PDS on next request
+- **Performance**: Emoji cache lookup <10ms (Durable Objects Storage)
+
+**Validation**:
+- Shortcode: `/^[a-z0-9_]{2,32}$/` (lowercase, numbers, underscores only)
+- Image format: PNG, GIF, WEBP (detected via file header)
+- Image size: ≤500KB (client + server validation)
+- Image dimensions: ≤256×256px (client-side check via Image API)
+
 ## Testing Strategy
 
 **Prerequisites:**
@@ -414,7 +518,7 @@ Dashboard → Workers API → ATProtoService.createModerationAction()
 
 ## Features Implemented
 
-**Phase 1 Complete** (PDS-first architecture + 013-join-leave-workflow):
+**Phase 1 Complete** (PDS-first architecture + 013-join-leave-workflow + 015-markdown-pds):
 - ✅ PDS authentication via AtpAgent
 - ✅ Community management UI (create, list, view)
   - ✅ Access type support (open, invite-only)
@@ -432,6 +536,17 @@ Dashboard → Workers API → ATProtoService.createModerationAction()
   - ✅ Block/unblock users
   - ✅ Moderation history log
   - ✅ Community statistics (member count, pending requests)
+- ✅ **Custom Emoji & Markdown** (015-markdown-pds)
+  - ✅ Emoji upload UI (file picker, validation, preview)
+  - ✅ Emoji approval workflow (owner/moderator only)
+  - ✅ Emoji picker component (grid display, tooltip)
+  - ✅ Markdown rendering (GFM support: tables, strikethrough, task lists)
+  - ✅ Emoji shortcode replacement in Markdown
+  - ✅ XSS protection (DOMPurify sanitization)
+  - ✅ Image validation (PNG/GIF/WEBP, ≤500KB, ≤256×256px)
+  - ✅ PDS blob storage integration
+  - ✅ Durable Objects emoji registry cache (7-day TTL, <10ms lookup)
+  - ✅ Edge case handling (deleted/revoked emoji fallback)
 - ✅ PDS session management (localStorage persistence)
 - ✅ i18n support (EN/JA translations)
   - ✅ Community, membership, moderation translations
@@ -439,7 +554,10 @@ Dashboard → Workers API → ATProtoService.createModerationAction()
 - ✅ Responsive layout (mobile-friendly)
 - ✅ Type-safe API integration (oRPC + TanStack Query)
 - ✅ Component tests (TDD framework ready)
-- ✅ Production build (<500KB gzip)
+  - ✅ 27 Markdown rendering tests
+  - ✅ 24 emoji component tests
+  - ✅ 15 E2E emoji workflow tests
+- ✅ Production build (<500KB gzip, +17KB for Markdown/emoji)
 
 **Architecture Highlights**:
 - PDS-first data flow (all writes go to user PDSs)

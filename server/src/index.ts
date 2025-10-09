@@ -12,6 +12,7 @@ import { generateOpenAPISpec } from './openapi';
 // Import oRPC router
 import { router } from './router';
 import authRoutes from './routes/auth';
+import emojiRoutes from './routes/emoji'; // 015-markdown-pds: Emoji Management
 // Import routes (legacy, to be migrated)
 import feedGeneratorRoutes from './routes/feed-generator';
 import lexiconRoutes from './routes/lexicon';
@@ -165,6 +166,7 @@ app.route('/api/auth', authRoutes);
 // app.route('/api/communities', communityRoutes); // Migrated to oRPC
 // app.route('/api/communities', themeFeedRoutes); // TODO: Migrate to PDS-first
 app.route('/api', postRoutes); // 014-bluesky: Custom Lexicon Posts
+app.route('/api/emoji', emojiRoutes); // 015-markdown-pds: Emoji Management (T024-T030)
 app.route('/api/memberships', membershipRoutes); // T029-T038
 app.route('/api/moderation', moderationRoutes); // T039-T043
 // Note: Feed stats endpoints (T044-T045) are in feedGeneratorRoutes

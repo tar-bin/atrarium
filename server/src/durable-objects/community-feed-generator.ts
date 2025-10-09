@@ -44,6 +44,15 @@ interface ModerationAction {
   createdAt: string;
 }
 
+// T019: Emoji registry cache types
+interface EmojiMetadata {
+  emojiURI: string; // AT URI of CustomEmoji record
+  blobURI: string; // Blob URL for rendering
+  animated: boolean;
+}
+
+type EmojiRegistry = Record<string, EmojiMetadata>;
+
 export class CommunityFeedGenerator extends DurableObject {
   private readonly POST_RETENTION_DAYS = 7;
   private readonly POST_RETENTION_MS = this.POST_RETENTION_DAYS * 24 * 60 * 60 * 1000;
@@ -78,6 +87,9 @@ export class CommunityFeedGenerator extends DurableObject {
 
       case '/cleanup':
         return this.handleCleanup();
+
+      case '/rpc':
+        return this.handleRPC(request);
 
       default:
         return new Response('Not Found', { status: 404 });
@@ -512,5 +524,198 @@ export class CommunityFeedGenerator extends DurableObject {
     }
 
     return deletedCount;
+  }
+
+  // T019-T021: Emoji registry cache methods
+
+  /**
+   * Handle RPC method calls
+   */
+  private async handleRPC(request: Request): Promise<Response> {
+    try {
+      const body = await request.json();
+      // biome-ignore lint/suspicious/noExplicitAny: RPC params can be any type
+      const { method, params } = body as { method: string; params: any };
+
+      switch (method) {
+        case 'getEmojiRegistry':
+          return this.handleGetEmojiRegistry(params);
+
+        case 'updateEmojiRegistry':
+          return this.handleUpdateEmojiRegistry(params);
+
+        case 'invalidateEmojiCache':
+          return this.handleInvalidateEmojiCache(params);
+
+        case 'removeEmojiFromRegistry':
+          return this.handleRemoveEmojiFromRegistry(params);
+
+        case 'rebuildEmojiRegistry':
+          return this.handleRebuildEmojiRegistry(params);
+
+        default:
+          return new Response(JSON.stringify({ error: 'Unknown RPC method' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          });
+      }
+    } catch (error) {
+      return new Response(JSON.stringify({ error: String(error) }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+  }
+
+  /**
+   * T019: Get emoji registry for a community (cache read)
+   */
+  private async handleGetEmojiRegistry(params: { communityId: string }): Promise<Response> {
+    const { communityId } = params;
+    const registry = await this.getEmojiRegistry(communityId);
+
+    return new Response(JSON.stringify({ success: true, data: registry }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  /**
+   * T019: Update emoji registry (cache write)
+   */
+  private async handleUpdateEmojiRegistry(params: {
+    communityId: string;
+    shortcode: string;
+    metadata: EmojiMetadata;
+  }): Promise<Response> {
+    const { communityId, shortcode, metadata } = params;
+    await this.updateEmojiInRegistry(communityId, shortcode, metadata);
+
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  /**
+   * T021: Invalidate entire emoji cache for a community
+   */
+  private async handleInvalidateEmojiCache(params: { communityId: string }): Promise<Response> {
+    const { communityId } = params;
+    await this.invalidateEmojiCache(communityId);
+
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  /**
+   * T021: Remove specific emoji from registry (on revocation)
+   */
+  private async handleRemoveEmojiFromRegistry(params: {
+    communityId: string;
+    shortcode: string;
+  }): Promise<Response> {
+    const { communityId, shortcode } = params;
+    await this.removeEmojiFromRegistry(communityId, shortcode);
+
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  /**
+   * T020: Rebuild emoji registry from PDS approval records
+   */
+  private async handleRebuildEmojiRegistry(params: {
+    communityId: string;
+    approvals: Array<{
+      shortcode: string;
+      emojiRef: string;
+      status: string;
+    }>;
+  }): Promise<Response> {
+    const { communityId, approvals } = params;
+    await this.rebuildEmojiRegistry(communityId, approvals);
+
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  /**
+   * T019: Get emoji registry from Durable Objects Storage
+   */
+  private async getEmojiRegistry(communityId: string): Promise<EmojiRegistry> {
+    const key = `emoji_registry:${communityId}`;
+    const registry = (await this.ctx.storage.get<EmojiRegistry>(key)) || {};
+    return registry;
+  }
+
+  /**
+   * T019: Update emoji in registry
+   */
+  private async updateEmojiInRegistry(
+    communityId: string,
+    shortcode: string,
+    metadata: EmojiMetadata
+  ): Promise<void> {
+    const registry = await this.getEmojiRegistry(communityId);
+    registry[shortcode] = metadata;
+
+    const key = `emoji_registry:${communityId}`;
+    await this.ctx.storage.put(key, registry);
+  }
+
+  /**
+   * T020: Rebuild emoji registry from PDS approval records
+   */
+  private async rebuildEmojiRegistry(
+    communityId: string,
+    approvals: Array<{
+      shortcode: string;
+      emojiRef: string;
+      status: string;
+    }>
+  ): Promise<void> {
+    const registry: EmojiRegistry = {};
+
+    // Build registry from approved emoji only
+    for (const approval of approvals) {
+      if (approval.status === 'approved') {
+        // In production, this would fetch emoji metadata from PDS using emojiRef
+        // For now, we construct a minimal metadata object
+        registry[approval.shortcode] = {
+          emojiURI: approval.emojiRef,
+          blobURI: approval.emojiRef.replace('at://', 'https://'),
+          animated: false,
+        };
+      }
+    }
+
+    const key = `emoji_registry:${communityId}`;
+    await this.ctx.storage.put(key, registry);
+  }
+
+  /**
+   * T021: Invalidate (clear) entire emoji cache
+   */
+  private async invalidateEmojiCache(communityId: string): Promise<void> {
+    const key = `emoji_registry:${communityId}`;
+    await this.ctx.storage.delete(key);
+  }
+
+  /**
+   * T021: Remove specific emoji from registry (on revocation)
+   */
+  private async removeEmojiFromRegistry(communityId: string, shortcode: string): Promise<void> {
+    const registry = await this.getEmojiRegistry(communityId);
+    delete registry[shortcode];
+
+    const key = `emoji_registry:${communityId}`;
+    await this.ctx.storage.put(key, registry);
   }
 }

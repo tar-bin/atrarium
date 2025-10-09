@@ -12,10 +12,26 @@
         "properties": {
           "text": {
             "type": "string",
-            "description": "Post text content (plain text only in initial version)",
+            "description": "Post text content (plain text fallback, required even if markdown is provided)",
             "maxLength": 3000,
             "maxGraphemes": 300,
             "minLength": 1
+          },
+          "markdown": {
+            "type": "string",
+            "description": "Optional Markdown-formatted content (extended syntax: tables, strikethrough, task lists). If provided, clients should render this instead of plain text. Raw HTML is blocked.",
+            "maxLength": 3000,
+            "maxGraphemes": 300
+          },
+          "emojiShortcodes": {
+            "type": "array",
+            "description": "Optional array of emoji shortcodes used in this post (for indexing and caching). Community-approved emoji only.",
+            "maxLength": 20,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9_]+$",
+              "maxLength": 32
+            }
           },
           "communityId": {
             "type": "string",

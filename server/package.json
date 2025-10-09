@@ -15,15 +15,18 @@
     "codegen": "npx @atproto/lex-cli gen-api src/schemas/generated/ ../lexicons/*.json"
   },
   "dependencies": {
-    "@atrarium/contracts": "workspace:*",
     "@atproto/api": "^0.13.35",
     "@atproto/identity": "^0.4.3",
+    "@atproto/lexicon": "^0.5.1",
+    "@atproto/xrpc": "^0.7.5",
     "@atproto/xrpc-server": "^0.7.4",
+    "@atrarium/contracts": "workspace:*",
     "@orpc/openapi": "^1.9.3",
     "@orpc/server": "^1.9.3",
     "@orpc/zod": "^1.9.3",
     "hono": "^4.6.14",
     "jose": "^5.9.6",
+    "multiformats": "^13.4.1",
     "zod": "^4.1.11"
   },
   "devDependencies": {

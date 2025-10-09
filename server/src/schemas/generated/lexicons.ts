@@ -194,10 +194,29 @@ export const schemaDict = {
           properties: {
             text: {
               type: 'string',
-              description: 'Post text content (plain text only in initial version)',
+              description:
+                'Post text content (plain text fallback, required even if markdown is provided)',
               maxLength: 3000,
               maxGraphemes: 300,
               minLength: 1,
+            },
+            markdown: {
+              type: 'string',
+              description:
+                'Optional Markdown-formatted content (extended syntax: tables, strikethrough, task lists). If provided, clients should render this instead of plain text. Raw HTML is blocked.',
+              maxLength: 3000,
+              maxGraphemes: 300,
+            },
+            emojiShortcodes: {
+              type: 'array',
+              description:
+                'Optional array of emoji shortcodes used in this post (for indexing and caching). Community-approved emoji only.',
+              maxLength: 20,
+              items: {
+                type: 'string',
+                pattern: '^[a-z0-9_]+$',
+                maxLength: 32,
+              },
             },
             communityId: {
               type: 'string',
@@ -212,6 +231,150 @@ export const schemaDict = {
               format: 'datetime',
               description: 'Post creation timestamp (ISO 8601)',
             },
+          },
+        },
+      },
+    },
+  },
+  NetAtrariumEmojiApproval: {
+    lexicon: 1,
+    id: 'net.atrarium.emoji.approval',
+    defs: {
+      main: {
+        type: 'record',
+        description:
+          "Emoji approval decision by a community owner. Stored in the community owner's Personal Data Server (PDS). Approved emoji are registered in the community's emoji namespace and cached in Durable Objects for fast lookups.",
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: ['shortcode', 'emojiRef', 'communityId', 'status', 'approver', 'decidedAt'],
+          properties: {
+            shortcode: {
+              type: 'string',
+              description:
+                'Registered shortcode in community namespace (unique per community). Must match the shortcode in the referenced custom emoji.',
+              pattern: '^[a-z0-9_]+$',
+              maxLength: 32,
+              minLength: 2,
+            },
+            emojiRef: {
+              type: 'string',
+              format: 'at-uri',
+              description:
+                'AT URI of the custom emoji record (e.g., at://did:plc:xxx/net.atrarium.emoji.custom/yyy)',
+            },
+            communityId: {
+              type: 'string',
+              description:
+                'Community identifier (8-character hex). Defines the emoji namespace scope.',
+              pattern: '^[0-9a-f]{8}$',
+              maxLength: 8,
+              minLength: 8,
+            },
+            status: {
+              type: 'string',
+              description:
+                "Approval status: 'approved' (emoji available in community), 'rejected' (not available), 'revoked' (previously approved, now removed)",
+              enum: ['approved', 'rejected', 'revoked'],
+            },
+            approver: {
+              type: 'string',
+              format: 'did',
+              description: 'DID of the community owner who made the approval decision',
+            },
+            decidedAt: {
+              type: 'string',
+              format: 'datetime',
+              description: 'Timestamp when the approval decision was made (ISO 8601)',
+            },
+            reason: {
+              type: 'string',
+              description: 'Optional reason for rejection or revocation',
+              maxLength: 500,
+              maxGraphemes: 250,
+            },
+          },
+        },
+      },
+    },
+  },
+  NetAtrariumEmojiCustom: {
+    lexicon: 1,
+    id: 'net.atrarium.emoji.custom',
+    defs: {
+      main: {
+        type: 'record',
+        description:
+          'Custom emoji uploaded by a user and stored in their Personal Data Server (PDS). Community owners approve custom emoji for community-wide use via net.atrarium.emoji.approval records.',
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: ['shortcode', 'blob', 'creator', 'uploadedAt', 'format', 'size', 'dimensions'],
+          properties: {
+            shortcode: {
+              type: 'string',
+              description:
+                "Emoji shortcode identifier (e.g., 'my_emoji' for :my_emoji:). Used for insertion in posts.",
+              pattern: '^[a-z0-9_]+$',
+              maxLength: 32,
+              minLength: 2,
+            },
+            blob: {
+              type: 'blob',
+              description: "Emoji image blob stored in user's PDS blob storage",
+              accept: ['image/png', 'image/gif', 'image/webp'],
+              maxSize: 512000,
+            },
+            creator: {
+              type: 'string',
+              format: 'did',
+              description: 'DID of the user who uploaded this emoji',
+            },
+            uploadedAt: {
+              type: 'string',
+              format: 'datetime',
+              description: 'Emoji upload timestamp (ISO 8601)',
+            },
+            format: {
+              type: 'string',
+              description: 'Image format',
+              enum: ['png', 'gif', 'webp'],
+            },
+            size: {
+              type: 'integer',
+              description: 'File size in bytes (max 500KB = 512000 bytes)',
+              minimum: 1,
+              maximum: 512000,
+            },
+            dimensions: {
+              type: 'ref',
+              ref: 'lex:net.atrarium.emoji.custom#dimensions',
+              description: 'Image dimensions in pixels',
+            },
+            animated: {
+              type: 'boolean',
+              description: 'True if the emoji is an animated GIF',
+              default: false,
+            },
+          },
+        },
+      },
+      dimensions: {
+        type: 'object',
+        description: 'Image dimensions (max 256x256 pixels)',
+        required: ['width', 'height'],
+        properties: {
+          width: {
+            type: 'integer',
+            description: 'Image width in pixels',
+            minimum: 1,
+            maximum: 256,
+          },
+          height: {
+            type: 'integer',
+            description: 'Image height in pixels',
+            minimum: 1,
+            maximum: 256,
           },
         },
       },
@@ -347,5 +510,7 @@ export const ids = {
   NetAtrariumCommunityConfig: 'net.atrarium.community.config',
   NetAtrariumCommunityMembership: 'net.atrarium.community.membership',
   NetAtrariumCommunityPost: 'net.atrarium.community.post',
+  NetAtrariumEmojiApproval: 'net.atrarium.emoji.approval',
+  NetAtrariumEmojiCustom: 'net.atrarium.emoji.custom',
   NetAtrariumModerationAction: 'net.atrarium.moderation.action',
 } as const;

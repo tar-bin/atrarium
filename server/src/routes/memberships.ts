@@ -2,6 +2,7 @@
 // Membership management API (T029-T038)
 
 import { Hono } from 'hono';
+import type { Record as MembershipRecord } from '../schemas/generated/types/net/atrarium/community/membership';
 import { ATProtoService } from '../services/atproto';
 import { AuthService } from '../services/auth';
 import type { Env, HonoVariables } from '../types';
@@ -137,7 +138,7 @@ app.delete('/:communityId', async (c) => {
     }
 
     // Safe: memberships.length > 0 is guaranteed by the check above
-    const membership = memberships[0] as MembershipRecord;
+    const membership = memberships[0] as unknown as MembershipRecord & { uri: string };
 
     // Prevent owner from leaving (must transfer ownership first)
     if (membership.role === 'owner') {
@@ -151,7 +152,7 @@ app.delete('/:communityId', async (c) => {
     }
 
     // Deactivate membership in PDS
-    await atproto.deleteMembershipRecord(membership.uri);
+    await atproto.deleteMembershipRecord(membership.uri as string);
 
     // Remove from Durable Object
     const id = c.env.COMMUNITY_FEED.idFromName(communityId);
@@ -305,7 +306,7 @@ app.patch('/:communityId/:did/role', async (c) => {
     }
 
     // Safe: targetMemberships.length > 0 is guaranteed by previous check
-    const targetMembership = targetMemberships[0] as MembershipRecord;
+    const targetMembership = targetMemberships[0] as unknown as MembershipRecord & { uri: string };
 
     // Prevent changing owner role (use transfer ownership instead)
     if (newRole === 'owner') {
@@ -319,7 +320,7 @@ app.patch('/:communityId/:did/role', async (c) => {
     }
 
     // Update membership role in PDS
-    await atproto.updateMembershipRecord(targetMembership.uri, { role: newRole });
+    await atproto.updateMembershipRecord(targetMembership.uri as string, { role: newRole });
 
     // Update role in Durable Object
     const id = c.env.COMMUNITY_FEED.idFromName(communityId);
@@ -388,7 +389,7 @@ app.delete('/:communityId/:did', async (c) => {
     }
 
     // Safe: targetMemberships.length > 0 is guaranteed by previous check
-    const targetMembership = targetMemberships[0] as MembershipRecord;
+    const targetMembership = targetMemberships[0] as unknown as MembershipRecord & { uri: string };
 
     // Prevent removing owner
     if (targetMembership.role === 'owner') {
@@ -413,7 +414,7 @@ app.delete('/:communityId/:did', async (c) => {
     }
 
     // Deactivate membership in PDS
-    await atproto.deleteMembershipRecord(targetMembership.uri);
+    await atproto.deleteMembershipRecord(targetMembership.uri as string);
 
     // Remove from Durable Object
     const id = c.env.COMMUNITY_FEED.idFromName(communityId);
@@ -485,6 +486,10 @@ app.post('/:communityId/transfer', async (c) => {
 
     const oldOwnerMembershipUri = requesterMemberships[0]?.uri;
     const newOwnerMembershipUri = newOwnerMemberships[0]?.uri;
+
+    if (!oldOwnerMembershipUri || !newOwnerMembershipUri) {
+      return c.json({ error: 'Membership URIs not found' }, 404);
+    }
 
     // Transfer ownership in PDS
     await atproto.transferOwnership(oldOwnerMembershipUri, newOwnerMembershipUri);
@@ -617,10 +622,12 @@ app.post('/join-requests/:communityId/:did/approve', async (c) => {
     }
 
     // Safe: pendingMemberships.length > 0 is guaranteed by previous check
-    const pendingMembership = pendingMemberships[0] as MembershipRecord;
+    const pendingMembership = pendingMemberships[0] as unknown as MembershipRecord & {
+      uri: string;
+    };
 
     // Change status from 'pending' to 'active'
-    await atproto.updateMembershipRecord(pendingMembership.uri, {
+    await atproto.updateMembershipRecord(pendingMembership.uri as string, {
       status: 'active',
     });
 
@@ -692,7 +699,9 @@ app.post('/join-requests/:communityId/:did/reject', async (c) => {
     }
 
     // Safe: pendingMemberships.length > 0 is guaranteed by previous check
-    const pendingMembership = pendingMemberships[0] as MembershipRecord;
+    const pendingMembership = pendingMemberships[0] as unknown as MembershipRecord & {
+      uri: string;
+    };
 
     // Delete membership record (reject join request)
     await atproto.deleteMembershipRecord(pendingMembership.uri);

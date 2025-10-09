@@ -3,6 +3,8 @@
 
 import { os } from '@orpc/server';
 import {
+  ApproveEmojiInputSchema,
+  ApproveEmojiOutputSchema,
   ApproveJoinRequestInputSchema,
   BlockUserInputSchema,
   CommunityListOutputSchema,
@@ -13,6 +15,8 @@ import {
   FeedListOutputSchema,
   FeedOutputSchema,
   GetCommunityInputSchema,
+  GetEmojiRegistryInputSchema,
+  GetEmojiRegistryOutputSchema,
   GetFeedInputSchema,
   GetMembershipInputSchema,
   GetPostInputSchema,
@@ -21,9 +25,13 @@ import {
   JoinCommunityInputSchema,
   JoinRequestListOutputSchema,
   LeaveCommunityInputSchema,
+  ListEmojiInputSchema,
+  ListEmojiOutputSchema,
   ListFeedsInputSchema,
   ListJoinRequestsInputSchema,
   ListMembershipsInputSchema,
+  ListPendingEmojiInputSchema,
+  ListPendingEmojiOutputSchema,
   MembershipListOutputSchema,
   MembershipOutputSchema,
   ModerationActionListOutputSchema,
@@ -31,9 +39,15 @@ import {
   PostListOutputSchema,
   PostOutputSchema,
   RejectJoinRequestInputSchema,
+  RevokeEmojiInputSchema,
+  RevokeEmojiOutputSchema,
+  SubmitEmojiInputSchema,
+  SubmitEmojiOutputSchema,
   UnblockUserInputSchema,
   UnhidePostInputSchema,
   UpdateMembershipInputSchema,
+  UploadEmojiInputSchema,
+  UploadEmojiOutputSchema,
 } from './schemas';
 
 // ============================================================================
@@ -41,7 +55,8 @@ import {
 // ============================================================================
 
 export interface Context {
-  env?: any; // Server-side only, typed as any for client compatibility
+  // biome-ignore lint/suspicious/noExplicitAny: Server-side env binding, client-compatible type
+  env?: any;
   userDid?: string;
 }
 
@@ -261,6 +276,68 @@ export const postsContract = {
 };
 
 // ============================================================================
+// Emoji Router Contract (015-markdown-pds: Custom Emoji)
+// ============================================================================
+
+export const emojiContract = {
+  upload: authed
+    .route({
+      method: 'POST',
+      path: '/api/emoji/upload',
+    })
+    .input(UploadEmojiInputSchema)
+    .output(UploadEmojiOutputSchema),
+
+  list: authed
+    .route({
+      method: 'GET',
+      path: '/api/emoji/list',
+    })
+    .input(ListEmojiInputSchema)
+    .output(ListEmojiOutputSchema),
+
+  submit: authed
+    .route({
+      method: 'POST',
+      path: '/api/communities/:id/emoji/submit',
+    })
+    .input(SubmitEmojiInputSchema)
+    .output(SubmitEmojiOutputSchema),
+
+  listPending: authed
+    .route({
+      method: 'GET',
+      path: '/api/communities/:id/emoji/pending',
+    })
+    .input(ListPendingEmojiInputSchema)
+    .output(ListPendingEmojiOutputSchema),
+
+  approve: authed
+    .route({
+      method: 'POST',
+      path: '/api/communities/:id/emoji/approve',
+    })
+    .input(ApproveEmojiInputSchema)
+    .output(ApproveEmojiOutputSchema),
+
+  revoke: authed
+    .route({
+      method: 'POST',
+      path: '/api/communities/:id/emoji/revoke',
+    })
+    .input(RevokeEmojiInputSchema)
+    .output(RevokeEmojiOutputSchema),
+
+  registry: pub
+    .route({
+      method: 'GET',
+      path: '/api/communities/:id/emoji/registry',
+    })
+    .input(GetEmojiRegistryInputSchema)
+    .output(GetEmojiRegistryOutputSchema),
+};
+
+// ============================================================================
 // Root Router Contract
 // ============================================================================
 
@@ -271,6 +348,7 @@ export const contract = {
   moderation: moderationContract,
   feeds: feedsContract,
   posts: postsContract,
+  emoji: emojiContract,
 };
 
 export type Contract = typeof contract;
