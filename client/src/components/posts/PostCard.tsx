@@ -110,18 +110,20 @@ export function PostCard({ post, canModerate, onHide }: PostCardProps) {
             )}
 
             {/* Reactions */}
-            <div className="mb-3 flex items-center gap-2">
-              <ReactionBar postUri={post.uri} communityId={post.communityId} className="flex-1" />
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setShowReactionPicker(!showReactionPicker)}
-                className="h-8 w-8 p-0"
-                title="Add reaction"
-              >
-                <Smile className="h-4 w-4" />
-              </Button>
-            </div>
+            {post.communityId && (
+              <div className="mb-3 flex items-center gap-2">
+                <ReactionBar postUri={post.uri} communityId={post.communityId} className="flex-1" />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setShowReactionPicker(!showReactionPicker)}
+                  className="h-8 w-8 p-0"
+                  title="Add reaction"
+                >
+                  <Smile className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
 
             {/* Reaction Picker */}
             {showReactionPicker && (

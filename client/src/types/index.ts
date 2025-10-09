@@ -74,6 +74,7 @@ export interface Post {
   id: number;
   uri: string;
   feedId: string;
+  communityId?: string; // Optional community ID for reaction SSE (016-slack-mastodon-misskey)
   authorDid: string;
   text: string;
   markdown?: string; // Optional Markdown content (015-markdown-pds)
