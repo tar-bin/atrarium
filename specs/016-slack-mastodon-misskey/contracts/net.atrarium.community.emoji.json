@@ -1,0 +1,71 @@
+{
+  "lexicon": 1,
+  "id": "net.atrarium.community.emoji",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A community-specific custom emoji.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": [
+          "shortcode",
+          "imageBlobCid",
+          "communityId",
+          "createdBy",
+          "createdAt",
+          "approvalStatus"
+        ],
+        "properties": {
+          "shortcode": {
+            "type": "string",
+            "description": "Emoji shortcode (alphanumeric + underscore, case-insensitive)",
+            "minLength": 2,
+            "maxLength": 32,
+            "pattern": "^[a-zA-Z0-9_]+$"
+          },
+          "imageBlobCid": {
+            "type": "string",
+            "format": "cid",
+            "description": "AT Protocol blob CID for the emoji image"
+          },
+          "communityId": {
+            "type": "string",
+            "description": "Community where the emoji is available",
+            "maxLength": 128
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "did",
+            "description": "DID of the user who uploaded the emoji"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "Timestamp when the emoji was created"
+          },
+          "approvalStatus": {
+            "type": "string",
+            "enum": ["pending", "approved", "rejected", "revoked"],
+            "description": "Moderation status of the emoji"
+          },
+          "approvedBy": {
+            "type": "string",
+            "format": "did",
+            "description": "DID of the owner/moderator who approved the emoji (optional)"
+          },
+          "approvedAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "Timestamp when the emoji was approved (optional)"
+          },
+          "rejectionReason": {
+            "type": "string",
+            "description": "Reason for rejection (if status is rejected, optional)",
+            "maxLength": 500
+          }
+        }
+      }
+    }
+  }
+}

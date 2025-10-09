@@ -1,0 +1,92 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Add Reaction",
+    "version": "1.0.0",
+    "description": "Add an emoji reaction to a post"
+  },
+  "paths": {
+    "/api/reactions/add": {
+      "post": {
+        "summary": "Add reaction",
+        "operationId": "addReaction",
+        "tags": ["reactions"],
+        "security": [{ "bearer": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["postUri", "emoji"],
+                "properties": {
+                  "postUri": {
+                    "type": "string",
+                    "format": "at-uri",
+                    "description": "AT URI of the post to react to",
+                    "example": "at://did:plc:xxx/app.bsky.feed.post/yyy"
+                  },
+                  "emoji": {
+                    "type": "object",
+                    "required": ["type", "value"],
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": ["unicode", "custom"],
+                        "description": "Emoji type discriminator"
+                      },
+                      "value": {
+                        "type": "string",
+                        "description": "Unicode codepoint (e.g., U+1F44D) or custom emoji AT URI",
+                        "example": "U+1F44D"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reaction added successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["success", "reactionUri"],
+                  "properties": {
+                    "success": { "type": "boolean", "const": true },
+                    "reactionUri": {
+                      "type": "string",
+                      "format": "at-uri",
+                      "description": "AT URI of the created reaction record"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - missing or invalid authentication"
+          },
+          "403": {
+            "description": "Forbidden - not a community member"
+          },
+          "409": {
+            "description": "Conflict - reaction already exists"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}

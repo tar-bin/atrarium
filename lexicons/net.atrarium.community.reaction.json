@@ -1,0 +1,59 @@
+{
+  "lexicon": 1,
+  "id": "net.atrarium.community.reaction",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A user's emoji reaction to a post within a community.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["reactorDid", "postUri", "emoji", "communityId", "createdAt"],
+        "properties": {
+          "reactorDid": {
+            "type": "string",
+            "format": "did",
+            "description": "DID of the user who reacted"
+          },
+          "postUri": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "AT Protocol URI of the target post"
+          },
+          "emoji": {
+            "type": "ref",
+            "ref": "#emoji",
+            "description": "Emoji identifier (Unicode or custom)"
+          },
+          "communityId": {
+            "type": "string",
+            "description": "Community where the reaction was added",
+            "maxLength": 128
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "Timestamp when the reaction was created"
+          }
+        }
+      }
+    },
+    "emoji": {
+      "type": "object",
+      "description": "Emoji identifier (Unicode or custom)",
+      "required": ["type", "value"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["unicode", "custom"],
+          "description": "Type of emoji"
+        },
+        "value": {
+          "type": "string",
+          "description": "Unicode codepoint (e.g., U+1F44D) or custom emoji shortcode (e.g., partyblob)",
+          "maxLength": 128
+        }
+      }
+    }
+  }
+}

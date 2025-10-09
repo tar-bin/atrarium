@@ -3,6 +3,7 @@
 // Handles post indexing, membership verification, and feed skeleton generation
 
 import { DurableObject } from 'cloudflare:workers';
+import { checkRateLimit } from '../utils/rate-limiter';
 
 interface PostEvent {
   uri: string;
@@ -53,9 +54,33 @@ interface EmojiMetadata {
 
 type EmojiRegistry = Record<string, EmojiMetadata>;
 
+// T018: Reaction aggregate types (016-slack-mastodon-misskey)
+interface EmojiReference {
+  type: 'unicode' | 'custom';
+  value: string; // Unicode codepoint (U+XXXX) or AT-URI of CustomEmoji
+}
+
+interface ReactionAggregate {
+  emoji: EmojiReference;
+  count: number;
+  reactors: string[]; // Array of DIDs
+}
+
+interface ReactionRecord {
+  reactionUri: string; // AT-URI of reaction record
+  postUri: string; // AT-URI of post
+  emoji: EmojiReference;
+  reactor: string; // DID of reactor
+  createdAt: string; // ISO 8601
+}
+
 export class CommunityFeedGenerator extends DurableObject {
   private readonly POST_RETENTION_DAYS = 7;
   private readonly POST_RETENTION_MS = this.POST_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+
+  // T044: SSE connection management (max 100 concurrent connections)
+  private sseConnections: Map<string, ReadableStreamDefaultController> = new Map();
+  private readonly MAX_SSE_CONNECTIONS = 100;
 
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
@@ -88,8 +113,20 @@ export class CommunityFeedGenerator extends DurableObject {
       case '/cleanup':
         return this.handleCleanup();
 
+      case '/updateReaction':
+        return this.handleUpdateReaction(request);
+
+      case '/getReactions':
+        return this.handleGetReactions(request);
+
       case '/rpc':
         return this.handleRPC(request);
+
+      case '/reactions/stream':
+        return this.handleSSEStream(request);
+
+      case '/checkRateLimit':
+        return this.handleCheckRateLimit(request);
 
       default:
         return new Response('Not Found', { status: 404 });
@@ -717,5 +754,228 @@ export class CommunityFeedGenerator extends DurableObject {
 
     const key = `emoji_registry:${communityId}`;
     await this.ctx.storage.put(key, registry);
+  }
+
+  /**
+   * T018: Update reaction aggregate (016-slack-mastodon-misskey)
+   * @param postUri AT-URI of post
+   * @param emoji Emoji reference
+   * @param reactorDid DID of reactor
+   * @param operation 'add' or 'remove'
+   */
+  private async handleUpdateReaction(request: Request): Promise<Response> {
+    const body = (await request.json()) as {
+      postUri: string;
+      emoji: EmojiReference;
+      reactorDid: string;
+      operation: 'add' | 'remove';
+      reactionUri: string;
+    };
+    const { postUri, emoji, reactorDid, operation, reactionUri } = body;
+
+    // Storage key: `reaction:{postUri}:{emojiKey}`
+    const emojiKey = `${emoji.type}:${emoji.value}`;
+    const aggregateKey = `reaction:${postUri}:${emojiKey}`;
+
+    let aggregate = await this.ctx.storage.get<ReactionAggregate>(aggregateKey);
+
+    if (operation === 'add') {
+      if (!aggregate) {
+        aggregate = { emoji, count: 0, reactors: [] };
+      }
+      if (!aggregate.reactors.includes(reactorDid)) {
+        aggregate.reactors.push(reactorDid);
+        aggregate.count = aggregate.reactors.length;
+        await this.ctx.storage.put(aggregateKey, aggregate);
+
+        // Store individual reaction record for removal tracking
+        const reactionRecordKey = `reaction_record:${reactionUri}`;
+        const record: ReactionRecord = {
+          reactionUri,
+          postUri,
+          emoji,
+          reactor: reactorDid,
+          createdAt: new Date().toISOString(),
+        };
+        await this.ctx.storage.put(reactionRecordKey, record);
+
+        // T044: Broadcast SSE update
+        this.broadcastReactionUpdate({
+          postUri,
+          emoji,
+          count: aggregate.count,
+          reactors: aggregate.reactors,
+        });
+      }
+    } else if (operation === 'remove') {
+      if (aggregate) {
+        aggregate.reactors = aggregate.reactors.filter((did) => did !== reactorDid);
+        aggregate.count = aggregate.reactors.length;
+
+        if (aggregate.count === 0) {
+          await this.ctx.storage.delete(aggregateKey);
+
+          // T044: Broadcast deletion (count = 0)
+          this.broadcastReactionUpdate({
+            postUri,
+            emoji,
+            count: 0,
+            reactors: [],
+          });
+        } else {
+          await this.ctx.storage.put(aggregateKey, aggregate);
+
+          // T044: Broadcast SSE update
+          this.broadcastReactionUpdate({
+            postUri,
+            emoji,
+            count: aggregate.count,
+            reactors: aggregate.reactors,
+          });
+        }
+
+        // Remove reaction record
+        const reactionRecordKey = `reaction_record:${reactionUri}`;
+        await this.ctx.storage.delete(reactionRecordKey);
+      }
+    }
+
+    return Response.json({ success: true });
+  }
+
+  /**
+   * T018: Get reaction aggregates for a post (016-slack-mastodon-misskey)
+   * @param postUri AT-URI of post
+   * @param currentUserDid Optional DID of current user (to set currentUserReacted flag)
+   */
+  private async handleGetReactions(request: Request): Promise<Response> {
+    const body = (await request.json()) as {
+      postUri: string;
+      currentUserDid?: string;
+    };
+    const { postUri, currentUserDid } = body;
+
+    // List all reaction aggregates for this post
+    const prefix = `reaction:${postUri}:`;
+    const aggregates: ReactionAggregate[] = [];
+
+    const stored = await this.ctx.storage.list({ prefix });
+
+    for (const [_, aggregate] of stored) {
+      const typedAggregate = aggregate as ReactionAggregate;
+      aggregates.push({
+        ...typedAggregate,
+        // Check if current user has reacted (for client UI highlighting)
+        currentUserReacted: currentUserDid
+          ? typedAggregate.reactors.includes(currentUserDid)
+          : false,
+      } as ReactionAggregate & { currentUserReacted: boolean });
+    }
+
+    return Response.json({ reactions: aggregates });
+  }
+
+  /**
+   * T044: Handle SSE stream connection (016-slack-mastodon-misskey)
+   * Client subscribes to real-time reaction updates via Server-Sent Events
+   */
+  private async handleSSEStream(_request: Request): Promise<Response> {
+    // Check connection limit
+    if (this.sseConnections.size >= this.MAX_SSE_CONNECTIONS) {
+      return new Response(
+        JSON.stringify({
+          error: 'TooManyConnections',
+          message: `SSE connection limit reached (${this.MAX_SSE_CONNECTIONS} max)`,
+        }),
+        {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Create unique connection ID
+    const connectionId = crypto.randomUUID();
+
+    // Create SSE stream
+    const stream = new ReadableStream({
+      start: (controller) => {
+        // Store connection
+        this.sseConnections.set(connectionId, controller);
+
+        // Send initial connection event
+        const initMessage = `event: connected\ndata: ${JSON.stringify({ connectionId })}\n\n`;
+        controller.enqueue(new TextEncoder().encode(initMessage));
+
+        // Send keepalive ping every 30 seconds
+        const keepaliveInterval = setInterval(() => {
+          try {
+            controller.enqueue(new TextEncoder().encode(': keepalive\n\n'));
+          } catch {
+            // Connection closed, cleanup handled in cancel()
+            clearInterval(keepaliveInterval);
+          }
+        }, 30000);
+
+        // Store interval for cleanup
+        // biome-ignore lint/suspicious/noExplicitAny: ReadableStreamDefaultController doesn't expose custom properties
+        (controller as any).keepaliveInterval = keepaliveInterval;
+      },
+      cancel: () => {
+        // Cleanup on disconnect
+        const controller = this.sseConnections.get(connectionId);
+        if (controller) {
+          // biome-ignore lint/suspicious/noExplicitAny: ReadableStreamDefaultController doesn't expose custom properties
+          clearInterval((controller as any).keepaliveInterval);
+          this.sseConnections.delete(connectionId);
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+      },
+    });
+  }
+
+  /**
+   * T044: Broadcast reaction update to all SSE clients (016-slack-mastodon-misskey)
+   * Called after reaction aggregate is updated
+   */
+  private broadcastReactionUpdate(data: {
+    postUri: string;
+    emoji: EmojiReference;
+    count: number;
+    reactors: string[];
+  }): void {
+    const message = `event: reaction_update\ndata: ${JSON.stringify(data)}\n\n`;
+    const encoded = new TextEncoder().encode(message);
+
+    // Broadcast to all connected clients
+    for (const [connectionId, controller] of this.sseConnections.entries()) {
+      try {
+        controller.enqueue(encoded);
+      } catch (error) {
+        // Connection closed, remove it
+        // biome-ignore lint/suspicious/noConsole: Intentional warning log for SSE broadcast failures
+        console.warn(`Failed to send to connection ${connectionId}:`, error);
+        this.sseConnections.delete(connectionId);
+      }
+    }
+  }
+
+  /**
+   * T047: Check rate limit for user (016-slack-mastodon-misskey)
+   */
+  private async handleCheckRateLimit(request: Request): Promise<Response> {
+    const body = (await request.json()) as { userId: string };
+    const { userId } = body;
+
+    const result = await checkRateLimit(this.ctx.storage, userId);
+
+    return Response.json(result);
   }
 }

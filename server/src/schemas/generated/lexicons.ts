@@ -122,6 +122,77 @@ export const schemaDict = {
       },
     },
   },
+  NetAtrariumCommunityEmoji: {
+    lexicon: 1,
+    id: 'net.atrarium.community.emoji',
+    defs: {
+      main: {
+        type: 'record',
+        description: 'A community-specific custom emoji.',
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: [
+            'shortcode',
+            'imageBlobCid',
+            'communityId',
+            'createdBy',
+            'createdAt',
+            'approvalStatus',
+          ],
+          properties: {
+            shortcode: {
+              type: 'string',
+              description: 'Emoji shortcode (alphanumeric + underscore, case-insensitive)',
+              minLength: 2,
+              maxLength: 32,
+              pattern: '^[a-zA-Z0-9_]+$',
+            },
+            imageBlobCid: {
+              type: 'string',
+              format: 'cid',
+              description: 'AT Protocol blob CID for the emoji image',
+            },
+            communityId: {
+              type: 'string',
+              description: 'Community where the emoji is available',
+              maxLength: 128,
+            },
+            createdBy: {
+              type: 'string',
+              format: 'did',
+              description: 'DID of the user who uploaded the emoji',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+              description: 'Timestamp when the emoji was created',
+            },
+            approvalStatus: {
+              type: 'string',
+              enum: ['pending', 'approved', 'rejected', 'revoked'],
+              description: 'Moderation status of the emoji',
+            },
+            approvedBy: {
+              type: 'string',
+              format: 'did',
+              description: 'DID of the owner/moderator who approved the emoji (optional)',
+            },
+            approvedAt: {
+              type: 'string',
+              format: 'datetime',
+              description: 'Timestamp when the emoji was approved (optional)',
+            },
+            rejectionReason: {
+              type: 'string',
+              description: 'Reason for rejection (if status is rejected, optional)',
+              maxLength: 500,
+            },
+          },
+        },
+      },
+    },
+  },
   NetAtrariumCommunityMembership: {
     lexicon: 1,
     id: 'net.atrarium.community.membership',
@@ -231,6 +302,66 @@ export const schemaDict = {
               format: 'datetime',
               description: 'Post creation timestamp (ISO 8601)',
             },
+          },
+        },
+      },
+    },
+  },
+  NetAtrariumCommunityReaction: {
+    lexicon: 1,
+    id: 'net.atrarium.community.reaction',
+    defs: {
+      main: {
+        type: 'record',
+        description: "A user's emoji reaction to a post within a community.",
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: ['reactorDid', 'postUri', 'emoji', 'communityId', 'createdAt'],
+          properties: {
+            reactorDid: {
+              type: 'string',
+              format: 'did',
+              description: 'DID of the user who reacted',
+            },
+            postUri: {
+              type: 'string',
+              format: 'at-uri',
+              description: 'AT Protocol URI of the target post',
+            },
+            emoji: {
+              type: 'ref',
+              ref: 'lex:net.atrarium.community.reaction#emoji',
+              description: 'Emoji identifier (Unicode or custom)',
+            },
+            communityId: {
+              type: 'string',
+              description: 'Community where the reaction was added',
+              maxLength: 128,
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+              description: 'Timestamp when the reaction was created',
+            },
+          },
+        },
+      },
+      emoji: {
+        type: 'object',
+        description: 'Emoji identifier (Unicode or custom)',
+        required: ['type', 'value'],
+        properties: {
+          type: {
+            type: 'string',
+            enum: ['unicode', 'custom'],
+            description: 'Type of emoji',
+          },
+          value: {
+            type: 'string',
+            description:
+              'Unicode codepoint (e.g., U+1F44D) or custom emoji shortcode (e.g., partyblob)',
+            maxLength: 128,
           },
         },
       },
@@ -508,8 +639,10 @@ export function validate(
 
 export const ids = {
   NetAtrariumCommunityConfig: 'net.atrarium.community.config',
+  NetAtrariumCommunityEmoji: 'net.atrarium.community.emoji',
   NetAtrariumCommunityMembership: 'net.atrarium.community.membership',
   NetAtrariumCommunityPost: 'net.atrarium.community.post',
+  NetAtrariumCommunityReaction: 'net.atrarium.community.reaction',
   NetAtrariumEmojiApproval: 'net.atrarium.emoji.approval',
   NetAtrariumEmojiCustom: 'net.atrarium.emoji.custom',
   NetAtrariumModerationAction: 'net.atrarium.moderation.action',

@@ -116,17 +116,20 @@
       }
     },
     {
-      "includes": ["**/*.test.ts", "**/*.spec.ts"],
+      "includes": ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts"],
       "linter": {
         "rules": {
           "suspicious": {
             "noExplicitAny": "off"
+          },
+          "correctness": {
+            "noUndeclaredVariables": "off"
           }
         }
       }
     },
     {
-      "includes": ["**/client-types.ts"],
+      "includes": ["**/client-types.ts", "**/routeTree.gen.ts"],
       "linter": {
         "rules": {
           "suspicious": {

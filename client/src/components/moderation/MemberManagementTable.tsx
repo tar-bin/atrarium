@@ -40,7 +40,7 @@ export function MemberManagementTable({
   const queryClient = useQueryClient();
 
   const changeRoleMutation = useMutation({
-    mutationFn: async ({ did, newRole }: { did: string; newRole: string }) => {
+    mutationFn: async ({ did: _did, newRole: _newRole }: { did: string; newRole: string }) => {
       // PATCH /api/memberships/:communityId/:did/role
       return { success: true };
     },

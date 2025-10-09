@@ -27,6 +27,7 @@ Atrarium enables small & open communities (10-200 people) to operate sustainably
 - 🔌 **AT Protocol Lexicon Schemas**: Community semantics defined in `net.atrarium.*` schemas
 - 🔓 **Decentralized Identity**: User data stored in Personal Data Servers (PDS)
 - 🎯 **Membership-Based Feeds**: Community-specific feeds with role-based access control
+- 😄 **Custom Emoji Reactions**: Slack/Mastodon/Misskey-style reactions with Unicode & custom emojis ([quickstart](specs/016-slack-mastodon-misskey/quickstart.md))
 - 📱 **AT Protocol Compatible**: Works with any AT Protocol-compatible client (e.g., Bluesky apps)
 
 ## Unique Positioning

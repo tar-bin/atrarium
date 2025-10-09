@@ -1,29 +1,30 @@
 <!--
-SYNC IMPACT REPORT (2025-01-15)
-Version: 1.3.0 → 1.4.0 (MINOR - Principle 7 amended)
-Rationale: MINOR - Relaxed type checking requirements for test files while maintaining strict validation for implementation code. This acknowledges practical testing workflows (TDD with failing tests before implementation) and reduces friction in development without compromising production code quality.
-Modified Principles: Principle 7 (Code Quality and Pre-Commit Validation) - Split type checking requirements between implementation and test code
-Added Sections: None
+SYNC IMPACT REPORT (2025-10-09)
+Version: 1.4.0 → 1.5.0 (MINOR - Principle 10 added)
+Rationale: MINOR - Added new Principle 10 (Complete Implementation Over MVP Excuses) to prevent incomplete implementations from being accepted as "MVP". This establishes clear expectations for implementation completeness and prevents scope creep through deferred work.
+Modified Principles: None (existing principles unchanged)
+Added Sections: Principle 10 (Complete Implementation Over MVP Excuses)
 Removed Sections: None
 Templates Requiring Updates:
-  - ✅ Constitution updated with differentiated validation rules
-  - ⚠ .specify/templates/plan-template.md (Constitution Check section needs Principle 7 update)
-  - ⚠ .specify/templates/tasks-template.md (Testing tasks should reference relaxed test validation)
-  - ⚠ Pre-commit hooks (package.json, .husky/) may need tsconfig.test.json exclusion logic
+  - ✅ Constitution updated with Principle 10
+  - ⚠ .specify/templates/plan-template.md (Constitution Check section needs Principle 10 validation)
+  - ⚠ .specify/templates/tasks-template.md (Task completion criteria should reference Principle 10)
+  - ⚠ CLAUDE.md and other agent-specific docs (Implementation Status sections should reflect Principle 10)
 Follow-up TODOs:
-  - Consider creating tsconfig.test.json with looser type checking for test files
-  - Update lint-staged configuration to differentiate src/ vs tests/ validation
-  - Document test file type checking best practices in CONTRIBUTING.md
-  - Consider adding eslint rule to enforce type assertions in test files
-Previous Version Report (1.2.0 → 1.3.0, 2025-10-08):
-  - Added Principle 9: Git Workflow and Commit Integrity
+  - Update plan-template.md Constitution Check with Principle 10 validation
+  - Update tasks-template.md with explicit completion criteria
+  - Review existing features marked as "MVP" for compliance with Principle 10
+  - Update PR templates to include "Implementation Completeness" checklist item
+Previous Version Reports:
+  - 1.3.0 → 1.4.0 (2025-01-15): Principle 7 amended (relaxed test code type checking)
+  - 1.2.0 → 1.3.0 (2025-10-08): Added Principle 9 (Git Workflow and Commit Integrity)
 -->
 
 # Atrarium Project Constitution
 
-**Version**: 1.4.0
+**Version**: 1.5.0
 **Ratification Date**: 2025-10-06
-**Last Amended**: 2025-01-15
+**Last Amended**: 2025-10-09
 **Project**: Atrarium - Small ecosystems on AT Protocol
 
 ---
@@ -41,7 +42,7 @@ All features, implementations, and technical decisions MUST comply with these pr
 **Name**: Protocol-First Architecture
 
 **Rules**:
-- AT Protocol Lexicon schemas (`net.atrarium.*`) MUST define all community data structures
+- AT Protocol Lexicon schemas (\`net.atrarium.*\`) MUST define all community data structures
 - Lexicon schemas are the single source of truth and API contract
 - All implementations (client/server) are reference implementations and MUST be replaceable
 - No proprietary data formats or vendor-specific APIs MAY be introduced
@@ -142,7 +143,7 @@ All features, implementations, and technical decisions MUST comply with these pr
 ### Test Code (tests/, *.test.ts, *.spec.ts)
 - Test code MUST pass linter checks (Biome) before commit
 - Test code MUST pass formatter checks (Biome) before commit
-- Test code SHOULD pass type checks when practical, but MAY use type assertions (`as any`, `as unknown as T`) to satisfy TypeScript when:
+- Test code SHOULD pass type checks when practical, but MAY use type assertions (\`as any\`, \`as unknown as T\`) to satisfy TypeScript when:
   - Testing external API responses with unknown types
   - Following TDD workflow where tests are written before full implementation
   - Mocking complex types that would require excessive type gymnastics
@@ -152,7 +153,7 @@ All features, implementations, and technical decisions MUST comply with these pr
 **Rationale**: Automated code quality checks prevent technical debt accumulation and maintain consistent code style. Pre-commit validation catches issues early in implementation code where correctness is critical. Test code serves a different purpose (validating behavior, not production runtime) and often requires pragmatic type handling. Strict type checking in tests can impede TDD workflows and create unnecessary friction. This differentiation balances code quality with development velocity, recognizing that test code safety is verified through test execution, not TypeScript compilation.
 
 **Examples of Acceptable Test Type Assertions**:
-```typescript
+\`\`\`typescript
 // ✅ External API response
 const data = (await response.json()) as { posts: Post[]; cursor?: string };
 
@@ -161,16 +162,16 @@ const result = (mockFn() as any).someProperty;
 
 // ✅ Complex mock type
 const mockAgent = { session: { did: 'test' } } as AtpAgent;
-```
+\`\`\`
 
 **Examples of Unacceptable Shortcuts**:
-```typescript
-// ❌ Implementation code using `any` to bypass type errors
+\`\`\`typescript
+// ❌ Implementation code using \`any\` to bypass type errors
 function processData(input: any) { ... }
 
 // ❌ Test assertions without explanation
 expect((data as any).foo).toBe(true); // Why any? Add comment!
-```
+\`\`\`
 
 ---
 
@@ -182,7 +183,7 @@ expect((data as any).foo).toBe(true); // Why any? Add comment!
 - All features MUST be implementable using AT Protocol + PDS + Lexicon schemas only
 - No separate databases (SQL/NoSQL/KV) MAY be introduced beyond Durable Objects ephemeral cache
 - If a feature requires additional database infrastructure, the design MUST be rejected and redesigned
-- All persistent state MUST reside in PDS using `net.atrarium.*` Lexicon records
+- All persistent state MUST reside in PDS using \`net.atrarium.*\` Lexicon records
 - Durable Objects Storage is permissible only as 7-day ephemeral cache for performance optimization
 - Any feature specification flagged as "requires database" indicates architectural failure
 
@@ -196,7 +197,7 @@ expect((data as any).foo).toBe(true); // Why any? Add comment!
 
 **Rules**:
 - All changes MUST be fully committed before merging to master branch
-- Pre-commit hooks (linting, formatting) MUST NOT be bypassed with `--no-verify` flag
+- Pre-commit hooks (linting, formatting) MUST NOT be bypassed with \`--no-verify\` flag
 - Type checking failures in implementation code (src/) MUST be resolved before commit
 - Type checking failures in test code (tests/) MAY be committed if:
   - Tests are part of TDD workflow (implementation incomplete)
@@ -214,14 +215,57 @@ expect((data as any).foo).toBe(true); // Why any? Add comment!
 
 ---
 
+## Principle 10: Complete Implementation Over MVP Excuses
+
+**Name**: Complete Implementation Over MVP Excuses
+
+**Rules**:
+- Features MUST be fully implemented according to specification before being marked as complete
+- "MVP" or "Phase 1" labels MUST NOT be used to justify incomplete implementations
+- Deferred work MUST be explicitly tracked as separate future features, not as part of current scope
+- If a feature specification includes optional components marked as "Phase 2" or "Future", those MUST be removed from the specification or implemented before completion
+- Implementation completion criteria:
+  - All core functionality specified in spec.md MUST be implemented
+  - All UI components specified MUST be created and integrated
+  - All API endpoints specified MUST be implemented and tested
+  - All error handling paths MUST be implemented
+  - All validation logic MUST be implemented
+  - User-facing features MUST NOT require placeholder data or mock responses
+- Features marked as "complete" in Implementation Status (CLAUDE.md, README.md) MUST satisfy all completion criteria
+- Incremental delivery is acceptable, but each increment MUST be a complete, usable feature on its own
+
+**Rationale**: Labeling incomplete implementations as "MVP" creates technical debt, undermines user trust, and leads to feature bloat through accumulated deferred work. This practice also violates Principle 2 (Simplicity) by creating hidden complexity in the form of partially-implemented features. Complete implementations ensure that:
+1. **User Experience**: Features work as specified without surprising gaps or limitations
+2. **Maintainability**: No orphaned code paths or incomplete logic that future developers must complete
+3. **Documentation Accuracy**: Implementation Status sections accurately reflect system capabilities
+4. **Scope Management**: Features are either fully done or explicitly deferred to separate specifications
+
+**Examples of Compliant vs. Non-Compliant Implementations**:
+
+✅ **Compliant**:
+- Specification calls for emoji reactions. Implementation includes: reaction UI, backend storage, API endpoints, emoji picker with search, custom emoji upload, approval workflow. All components integrated and tested.
+- Specification calls for basic reactions only (👍❤️). Implementation delivers exactly that, with custom emoji support deferred to a separate "016-custom-emoji" specification.
+
+❌ **Non-Compliant**:
+- Specification calls for emoji reactions with custom emoji support. Implementation delivers basic reactions only, marks feature as "MVP: Phase 1 complete, custom emoji deferred".
+- Specification calls for emoji picker with search. Implementation delivers picker without search, comments "TODO: Add search functionality".
+- Feature marked as "complete" in CLAUDE.md but frontend components not integrated into actual UI.
+
+**Acceptable Scope Reductions**:
+- If during implementation, a component proves infeasible or violates other principles (e.g., requires separate database), the specification MUST be revised to remove that component before marking feature complete
+- Performance optimizations (caching, indexing) MAY be deferred if core functionality works without them
+- Non-critical edge cases (e.g., handling malformed inputs beyond standard validation) MAY be deferred with explicit documentation
+
+---
+
 ## Governance
 
 ### Amendment Procedure
 
-1. **Proposal**: Any contributor MAY propose a constitutional amendment via GitHub Issue with tag `constitution-amendment`
+1. **Proposal**: Any contributor MAY propose a constitutional amendment via GitHub Issue with tag \`constitution-amendment\`
 2. **Discussion**: Minimum 7-day public comment period
 3. **Approval**: Project maintainers vote (simple majority required for MINOR/PATCH, 2/3 majority for MAJOR)
-4. **Implementation**: Version bump and template propagation via `/constitution` command
+4. **Implementation**: Version bump and template propagation via \`/constitution\` command
 5. **Communication**: Announce changes in project documentation and release notes
 
 ### Versioning Policy
@@ -232,7 +276,7 @@ expect((data as any).foo).toBe(true); // Why any? Add comment!
 
 ### Compliance Review
 
-- All `/specify`, `/plan`, and `/tasks` outputs MUST include Constitution Check section
+- All \`/specify\`, \`/plan\`, and \`/tasks\` outputs MUST include Constitution Check section
 - Any MUST violation requires explicit justification or spec revision
 - SHOULD violations require documented rationale
 - Regular audits (quarterly) to ensure existing features comply with updated principles
@@ -248,8 +292,8 @@ Features violating these principles MUST NOT be merged. Exceptions require:
 4. Commitment to remediate in next release cycle
 
 Constitution compliance is checked at:
-- Feature specification (`/specify` command)
-- Implementation planning (`/plan` command)
+- Feature specification (\`/specify\` command)
+- Implementation planning (\`/plan\` command)
 - Code review (PR checklist)
 - Pre-merge validation (git hooks + CI/CD)
 - Quarterly architecture review
@@ -259,4 +303,4 @@ Constitution compliance is checked at:
 **Ratified by**: tar-bin (project maintainer)
 **Date**: 2025-10-06
 **Last Amendment by**: tar-bin (project maintainer)
-**Amendment Date**: 2025-01-15
+**Amendment Date**: 2025-10-09

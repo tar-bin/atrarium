@@ -101,6 +101,64 @@ export const GetFeedSkeletonParamsSchema = z.object({
 // Validation Helper
 // ============================================================================
 
+// ============================================================================
+// Reaction Schemas
+// ============================================================================
+
+/**
+ * EmojiReference - discriminated union for Unicode or custom emojis
+ */
+export const EmojiReferenceSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('unicode'),
+    value: z
+      .string()
+      .regex(/^U\+[0-9A-F]{4,6}$/, 'Invalid Unicode codepoint format (expected U+XXXX)'),
+  }),
+  z.object({
+    type: z.literal('custom'),
+    value: z.string().regex(/^at:\/\//, 'Custom emoji value must be an AT URI'),
+  }),
+]);
+
+/**
+ * Reaction record validation
+ */
+export const ReactionSchema = z.object({
+  postUri: z.string().regex(/^at:\/\//, 'postUri must be a valid AT URI'),
+  emoji: EmojiReferenceSchema,
+  communityId: z.string().regex(/^[0-9a-f]{8}$/, 'communityId must be 8-character hex'),
+  createdAt: z.string().datetime(),
+});
+
+/**
+ * Add reaction request
+ */
+export const AddReactionRequestSchema = z.object({
+  postUri: z.string().regex(/^at:\/\//, 'postUri must be a valid AT URI'),
+  emoji: EmojiReferenceSchema,
+});
+
+/**
+ * Remove reaction request
+ */
+export const RemoveReactionRequestSchema = z.object({
+  reactionUri: z.string().regex(/^at:\/\//, 'reactionUri must be a valid AT URI'),
+});
+
+/**
+ * List reactions request
+ */
+export const ListReactionsRequestSchema = z.object({
+  postUri: z.string().regex(/^at:\/\//, 'postUri must be a valid AT URI'),
+  limit: z.number().int().min(1).max(100).optional().default(50),
+  cursor: z.string().optional(),
+});
+
+// ============================================================================
+// Validation Helper
+// ============================================================================
+
 /**
  * Validate request body against schema
  */

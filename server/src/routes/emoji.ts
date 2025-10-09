@@ -2,8 +2,8 @@
 // Handles emoji upload, approval, and registry operations
 
 import { Hono } from 'hono';
-import { validateDimensions, validateFormat, validateSize } from '../services/emoji-validation';
 import type { Env } from '../types';
+import { validateEmoji } from '../utils/emoji-validator';
 
 const emoji = new Hono<{ Bindings: Env }>();
 
@@ -34,17 +34,18 @@ emoji.post('/upload', async (c) => {
       );
     }
 
-    // Validate file
-    const blob = new Blob([await file.arrayBuffer()], { type: file.type });
+    // Validate file using emoji-validator utility
+    const validationResult = await validateEmoji({
+      mimeType: file.type,
+      sizeBytes: file.size,
+      shortcode,
+      // Dimensions should be extracted client-side or via image decoding
+      // For now, we validate type and size only
+    });
 
-    // T015-T017: Image validation
-    await validateFormat(blob);
-    await validateSize(blob);
-
-    // TODO: Extract actual dimensions from image
-    // For now, assume valid dimensions (this should use image-size library)
-    const mockDimensions = { width: 128, height: 128 };
-    await validateDimensions(blob, mockDimensions.width, mockDimensions.height);
+    if (!validationResult.valid) {
+      return c.json({ error: validationResult.error }, 400);
+    }
 
     // T007-T008: Upload to PDS
     // TODO: Get actual AtpAgent from session
@@ -59,8 +60,8 @@ emoji.post('/upload', async (c) => {
     const mockBlobRef = {
       $type: 'blob' as const,
       ref: { $link: 'bafyreigbtj4x7ip5legnfznufuopl4sg4knzc2cof6duas4b3q2fy6swua' },
-      mimeType: blob.type,
-      size: blob.size,
+      mimeType: file.type,
+      size: file.size,
     };
 
     const mockEmojiURI = `at://${userDid}/net.atrarium.emoji.custom/${Date.now()}`;
@@ -164,7 +165,7 @@ emoji.post('/communities/:id/approve', async (c) => {
     // TODO: Extract shortcode from emojiURI
 
     const status = approve ? 'approved' : 'rejected';
-    const _shortcode = 'mock_shortcode'; // Extract from emojiURI
+    const _ = 'mock_'; // Extract from emojiURI
 
     // T009: Create approval record
     // const atprotoService = new ATProtoService();
