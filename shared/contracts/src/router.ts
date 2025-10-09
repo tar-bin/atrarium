@@ -3,6 +3,8 @@
 
 import { os } from '@orpc/server';
 import {
+  AddReactionInputSchema,
+  AddReactionOutputSchema,
   ApproveEmojiInputSchema,
   ApproveEmojiOutputSchema,
   ApproveJoinRequestInputSchema,
@@ -32,6 +34,8 @@ import {
   ListMembershipsInputSchema,
   ListPendingEmojiInputSchema,
   ListPendingEmojiOutputSchema,
+  ListReactionsInputSchema,
+  ListReactionsOutputSchema,
   MembershipListOutputSchema,
   MembershipOutputSchema,
   ModerationActionListOutputSchema,
@@ -39,6 +43,8 @@ import {
   PostListOutputSchema,
   PostOutputSchema,
   RejectJoinRequestInputSchema,
+  RemoveReactionInputSchema,
+  RemoveReactionOutputSchema,
   RevokeEmojiInputSchema,
   RevokeEmojiOutputSchema,
   SubmitEmojiInputSchema,
@@ -338,6 +344,36 @@ export const emojiContract = {
 };
 
 // ============================================================================
+// Reactions Router Contract
+// ============================================================================
+
+export const reactionsContract = {
+  add: authed
+    .route({
+      method: 'POST',
+      path: '/api/reactions/add',
+    })
+    .input(AddReactionInputSchema)
+    .output(AddReactionOutputSchema),
+
+  remove: authed
+    .route({
+      method: 'DELETE',
+      path: '/api/reactions/remove',
+    })
+    .input(RemoveReactionInputSchema)
+    .output(RemoveReactionOutputSchema),
+
+  list: pub
+    .route({
+      method: 'GET',
+      path: '/api/reactions/list',
+    })
+    .input(ListReactionsInputSchema)
+    .output(ListReactionsOutputSchema),
+};
+
+// ============================================================================
 // Root Router Contract
 // ============================================================================
 
@@ -349,6 +385,7 @@ export const contract = {
   feeds: feedsContract,
   posts: postsContract,
   emoji: emojiContract,
+  reactions: reactionsContract,
 };
 
 export type Contract = typeof contract;

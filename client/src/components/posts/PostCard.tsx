@@ -1,4 +1,4 @@
-import { EyeOff } from 'lucide-react';
+import { EyeOff, Smile } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,8 @@ import {
 import { formatRelativeTime } from '@/lib/date';
 import { renderMarkdown } from '@/lib/markdown';
 import type { Post } from '@/types';
+import { ReactionBar } from '../reactions/ReactionBar';
+import { ReactionPicker } from '../reactions/ReactionPicker';
 
 // Helper function to get avatar from DID
 function getAvatarUrl(did: string): string {
@@ -35,6 +37,7 @@ interface PostCardProps {
 export function PostCard({ post, canModerate, onHide }: PostCardProps) {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [isHiding, setIsHiding] = useState(false);
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
 
   // Render Markdown if available, otherwise plain text
   const renderedContent = useMemo(() => {
@@ -104,6 +107,25 @@ export function PostCard({ post, canModerate, onHide }: PostCardProps) {
               <div className="mb-3 rounded-2xl overflow-hidden border border-border">
                 <img src={getPostImageUrl(post.uri)} alt="Post media" className="w-full" />
               </div>
+            )}
+
+            {/* Reactions */}
+            <div className="mb-3 flex items-center gap-2">
+              <ReactionBar postUri={post.uri} className="flex-1" />
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setShowReactionPicker(!showReactionPicker)}
+                className="h-8 w-8 p-0"
+                title="Add reaction"
+              >
+                <Smile className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Reaction Picker */}
+            {showReactionPicker && (
+              <ReactionPicker postUri={post.uri} onClose={() => setShowReactionPicker(false)} />
             )}
 
             {/* Indicators & Actions */}

@@ -1,0 +1,98 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "List Reactions",
+    "version": "1.0.0",
+    "description": "Get aggregated reaction counts for a post"
+  },
+  "paths": {
+    "/api/reactions/list": {
+      "get": {
+        "summary": "List reactions",
+        "operationId": "listReactions",
+        "tags": ["reactions"],
+        "parameters": [
+          {
+            "name": "postUri",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "description": "AT URI of the post"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "minimum": 1,
+              "maximum": 100
+            },
+            "description": "Maximum number of reactions to return"
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Pagination cursor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reactions retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["reactions"],
+                  "properties": {
+                    "reactions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": ["emoji", "count", "reactors", "currentUserReacted"],
+                        "properties": {
+                          "emoji": {
+                            "type": "object",
+                            "required": ["type", "value"],
+                            "properties": {
+                              "type": { "type": "string", "enum": ["unicode", "custom"] },
+                              "value": { "type": "string" }
+                            }
+                          },
+                          "count": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "description": "Number of users who reacted with this emoji"
+                          },
+                          "reactors": {
+                            "type": "array",
+                            "items": { "type": "string", "format": "did" },
+                            "description": "List of DIDs who reacted (for tooltip display)"
+                          },
+                          "currentUserReacted": {
+                            "type": "boolean",
+                            "description": "Whether the current user reacted with this emoji"
+                          }
+                        }
+                      }
+                    },
+                    "cursor": {
+                      "type": "string",
+                      "description": "Pagination cursor for next page"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

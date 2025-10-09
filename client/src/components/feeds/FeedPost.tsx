@@ -20,7 +20,12 @@ interface FeedPostProps {
   canModerate?: boolean;
 }
 
-export function FeedPost({ post, communityId, onHide, canModerate = false }: FeedPostProps) {
+export function FeedPost({
+  post,
+  communityId: _communityId,
+  onHide: _onHide,
+  canModerate: _canModerate = false,
+}: FeedPostProps) {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('en-US', {
@@ -39,7 +44,7 @@ export function FeedPost({ post, communityId, onHide, canModerate = false }: Fee
             <p className="text-sm font-medium">{post.author}</p>
             <p className="text-xs text-muted-foreground">{formatDate(post.createdAt)}</p>
           </div>
-          {canModerate && (
+          {_canModerate && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm">
@@ -47,7 +52,7 @@ export function FeedPost({ post, communityId, onHide, canModerate = false }: Fee
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={onHide}>Hide Post</DropdownMenuItem>
+                <DropdownMenuItem onClick={_onHide}>Hide Post</DropdownMenuItem>
                 <DropdownMenuItem>Report</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

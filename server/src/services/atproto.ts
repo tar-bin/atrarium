@@ -7,8 +7,10 @@ import type {
   CommunityConfig,
   CustomEmoji,
   EmojiApproval,
+  EmojiReference,
   MembershipRecord,
   PDSRecordResult,
+  Reaction,
 } from '../schemas/lexicon';
 import {
   validateATUri,
@@ -19,6 +21,7 @@ import {
   validateEmojiApproval,
   validateMembershipRecord,
   validateModerationAction,
+  validateReaction,
 } from '../schemas/lexicon';
 import type { Env } from '../types';
 
@@ -1007,5 +1010,109 @@ export class ATProtoService {
     }
 
     return results;
+  }
+
+  // ============================================================================
+  // Reaction Operations (016-slack-mastodon-misskey, T016)
+  // ============================================================================
+
+  /**
+   * Create Reaction record in PDS
+   * @param postUri AT-URI of post being reacted to
+   * @param emoji Emoji reference (Unicode or custom)
+   * @param communityId Community ID (8-character hex)
+   * @returns Record creation result with URI, CID, rkey
+   */
+  async createReaction(
+    postUri: string,
+    emoji: EmojiReference,
+    communityId: string
+  ): Promise<PDSRecordResult> {
+    const agent = await this.getAgent();
+
+    const reactionRecord: Reaction = {
+      $type: 'net.atrarium.community.reaction',
+      postUri,
+      emoji,
+      communityId,
+      createdAt: new Date().toISOString(),
+    };
+
+    // Validate against Lexicon schema
+    const validated = validateReaction(reactionRecord);
+
+    // Create record in user's PDS
+    const response = await agent.com.atproto.repo.createRecord({
+      repo: agent.session?.did || '',
+      collection: 'net.atrarium.community.reaction',
+      record: validated,
+    });
+
+    return {
+      uri: response.data.uri,
+      cid: response.data.cid,
+      rkey: response.data.uri.split('/').pop() || '',
+    };
+  }
+
+  /**
+   * Delete Reaction record from PDS
+   * @param reactionUri AT-URI of reaction record
+   * @returns True if deletion successful
+   */
+  async deleteReaction(reactionUri: string): Promise<boolean> {
+    // Validate AT-URI format
+    validateATUri(reactionUri);
+
+    const agent = await this.getAgent();
+
+    // Parse AT-URI: at://did:plc:xxx/net.atrarium.community.reaction/rkey
+    const parts = reactionUri.split('/');
+    const rkey = parts.pop() || '';
+    const collection = parts.pop() || '';
+    const did = parts.slice(2).join('/'); // Reconstruct DID
+
+    if (collection !== 'net.atrarium.community.reaction') {
+      throw new Error('Invalid reaction URI: must be net.atrarium.community.reaction collection');
+    }
+
+    // Delete record from PDS
+    await agent.com.atproto.repo.deleteRecord({
+      repo: did,
+      collection: 'net.atrarium.community.reaction',
+      rkey,
+    });
+
+    return true;
+  }
+
+  /**
+   * List reactions for a post from PDS
+   * @param postUri AT-URI of post
+   * @param limit Maximum number of results (default 50)
+   * @param cursor Pagination cursor
+   * @returns Array of Reaction records with URIs
+   */
+  async listReactions(
+    postUri: string,
+    _limit = 50,
+    _cursor?: string
+  ): Promise<{
+    reactions: Array<Reaction & { uri: string; reactor: string }>;
+    cursor?: string;
+  }> {
+    // Validate post URI
+    validateATUri(postUri);
+
+    const _agent = await this.getAgent();
+
+    // In production: Query PDS for reactions using listRecords with filter
+    // For MVP: Return empty array (reactions will be cached in Durable Objects)
+    // TODO: Implement PDS query when AT Protocol supports record filtering
+
+    return {
+      reactions: [],
+      cursor: undefined,
+    };
   }
 }

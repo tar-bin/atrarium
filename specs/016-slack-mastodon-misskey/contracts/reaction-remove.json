@@ -1,0 +1,71 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Remove Reaction",
+    "version": "1.0.0",
+    "description": "Remove a user's reaction from a post"
+  },
+  "paths": {
+    "/api/reactions/remove": {
+      "delete": {
+        "summary": "Remove reaction",
+        "operationId": "removeReaction",
+        "tags": ["reactions"],
+        "security": [{ "bearer": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["reactionUri"],
+                "properties": {
+                  "reactionUri": {
+                    "type": "string",
+                    "format": "at-uri",
+                    "description": "AT URI of the reaction to remove",
+                    "example": "at://did:plc:zzz/net.atrarium.community.reaction/abc"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reaction removed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["success"],
+                  "properties": {
+                    "success": { "type": "boolean", "const": true }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - missing or invalid authentication"
+          },
+          "403": {
+            "description": "Forbidden - not the reaction owner"
+          },
+          "404": {
+            "description": "Not Found - reaction does not exist"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}

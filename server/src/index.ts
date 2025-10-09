@@ -21,6 +21,7 @@ import moderationRoutes from './routes/moderation';
 // import communityRoutes from './routes/communities'; // Migrated to oRPC
 // import themeFeedRoutes from './routes/theme-feeds'; // TODO: Migrate to PDS-first
 import postRoutes from './routes/posts'; // 014-bluesky: Custom Lexicon Posts
+import reactionRoutes from './routes/reactions'; // 016-slack-mastodon-misskey: Reactions
 import type { Env, HonoVariables } from './types';
 
 // ============================================================================
@@ -167,6 +168,7 @@ app.route('/api/auth', authRoutes);
 // app.route('/api/communities', themeFeedRoutes); // TODO: Migrate to PDS-first
 app.route('/api', postRoutes); // 014-bluesky: Custom Lexicon Posts
 app.route('/api/emoji', emojiRoutes); // 015-markdown-pds: Emoji Management (T024-T030)
+app.route('/api/reactions', reactionRoutes); // 016-slack-mastodon-misskey: Reactions (T019)
 app.route('/api/memberships', membershipRoutes); // T029-T038
 app.route('/api/moderation', moderationRoutes); // T039-T043
 // Note: Feed stats endpoints (T044-T045) are in feedGeneratorRoutes

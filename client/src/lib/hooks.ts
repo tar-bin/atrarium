@@ -103,8 +103,8 @@ export function useJoinCommunity() {
 
   return useMutation({
     mutationFn: async ({
-      communityId,
-      accessType,
+      communityId: _communityId,
+      accessType: _accessType,
     }: {
       communityId: string;
       accessType: 'open' | 'invite-only';
@@ -159,9 +159,9 @@ export function useChangeMemberRole() {
 
   return useMutation({
     mutationFn: async ({
-      communityId,
-      did,
-      newRole,
+      communityId: _communityId,
+      did: _did,
+      newRole: _newRole,
     }: {
       communityId: string;
       did: string;
@@ -189,7 +189,13 @@ export function useRemoveMember() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ communityId, did }: { communityId: string; did: string }) => {
+    mutationFn: async ({
+      communityId: _communityId,
+      did: _did,
+    }: {
+      communityId: string;
+      did: string;
+    }) => {
       // DELETE /api/memberships/:communityId/:did
       return { success: true };
     },
@@ -212,7 +218,13 @@ export function useApproveJoinRequest() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ communityId, did }: { communityId: string; did: string }) => {
+    mutationFn: async ({
+      communityId: _communityId,
+      did: _did,
+    }: {
+      communityId: string;
+      did: string;
+    }) => {
       // POST /api/join-requests/:communityId/:did/approve
       return { success: true };
     },
@@ -236,7 +248,13 @@ export function useRejectJoinRequest() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ communityId, did }: { communityId: string; did: string }) => {
+    mutationFn: async ({
+      communityId: _communityId,
+      did: _did,
+    }: {
+      communityId: string;
+      did: string;
+    }) => {
       // POST /api/join-requests/:communityId/:did/reject
       return { success: true };
     },
@@ -260,9 +278,9 @@ export function useHidePost() {
 
   return useMutation({
     mutationFn: async ({
-      postUri,
-      communityId,
-      reason,
+      postUri: _postUri,
+      communityId: _communityId,
+      reason: _reason,
     }: {
       postUri: string;
       communityId: string;
@@ -292,9 +310,9 @@ export function useUnhidePost() {
 
   return useMutation({
     mutationFn: async ({
-      postUri,
-      communityId,
-      reason,
+      postUri: _postUri,
+      communityId: _communityId,
+      reason: _reason,
     }: {
       postUri: string;
       communityId: string;
@@ -324,9 +342,9 @@ export function useBlockUser() {
 
   return useMutation({
     mutationFn: async ({
-      targetDid,
-      communityId,
-      reason,
+      targetDid: _targetDid,
+      communityId: _communityId,
+      reason: _reason,
     }: {
       targetDid: string;
       communityId: string;
@@ -356,9 +374,9 @@ export function useUnblockUser() {
 
   return useMutation({
     mutationFn: async ({
-      targetDid,
-      communityId,
-      reason,
+      targetDid: _targetDid,
+      communityId: _communityId,
+      reason: _reason,
     }: {
       targetDid: string;
       communityId: string;
@@ -388,8 +406,8 @@ export function useTransferOwnership() {
 
   return useMutation({
     mutationFn: async ({
-      communityId,
-      newOwnerDid,
+      communityId: _communityId,
+      newOwnerDid: _newOwnerDid,
     }: {
       communityId: string;
       newOwnerDid: string;

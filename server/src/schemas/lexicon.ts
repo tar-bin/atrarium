@@ -126,6 +126,33 @@ export interface BlobRef {
 }
 
 /**
+ * Emoji reference (discriminated union for Unicode or custom emoji)
+ * Feature: 016-slack-mastodon-misskey
+ */
+export type EmojiReference =
+  | {
+      type: 'unicode';
+      value: string; // Unicode codepoint (e.g., U+1F44D)
+    }
+  | {
+      type: 'custom';
+      value: string; // AT-URI of CustomEmoji
+    };
+
+/**
+ * Reaction record (stored in user's PDS)
+ * Lexicon: net.atrarium.community.reaction
+ * Feature: 016-slack-mastodon-misskey
+ */
+export interface Reaction {
+  $type: 'net.atrarium.community.reaction';
+  postUri: string; // AT-URI of post being reacted to
+  emoji: EmojiReference; // Emoji (Unicode or custom)
+  communityId: string; // Community ID (8-character hex)
+  createdAt: string; // ISO 8601 datetime
+}
+
+/**
  * PDS record creation result
  */
 export interface PDSRecordResult {
@@ -316,6 +343,34 @@ export const emojiApprovalSchema = z.object({
   reason: z.string().max(250, 'reason must not exceed 250 graphemes').optional(),
 });
 
+/**
+ * EmojiReference validation schema (016-slack-mastodon-misskey)
+ */
+export const emojiReferenceSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('unicode'),
+    value: z.string().regex(/^U\+[0-9A-F]{4,6}$/, 'Unicode codepoint must be in format U+XXXX'),
+  }),
+  z.object({
+    type: z.literal('custom'),
+    value: atUriSchema,
+  }),
+]);
+
+/**
+ * Reaction validation schema (016-slack-mastodon-misskey)
+ */
+export const reactionSchema = z.object({
+  $type: z.literal('net.atrarium.community.reaction'),
+  postUri: atUriSchema,
+  emoji: emojiReferenceSchema,
+  communityId: z
+    .string()
+    .length(8, 'communityId must be exactly 8 characters')
+    .regex(/^[0-9a-f]{8}$/, 'communityId must be 8-character hex'),
+  createdAt: iso8601Schema,
+});
+
 // ============================================================================
 // Validation Helper Functions
 // ============================================================================
@@ -382,4 +437,12 @@ export function validateDID(did: string): string {
  */
 export function validateATUri(uri: string): string {
   return atUriSchema.parse(uri);
+}
+
+/**
+ * Validate Reaction record (016-slack-mastodon-misskey)
+ * @throws {z.ZodError} if validation fails
+ */
+export function validateReaction(data: unknown): Reaction {
+  return reactionSchema.parse(data);
 }

@@ -17,13 +17,13 @@ interface Post {
   createdAt: string;
 }
 
-export function CommunityFeed({ communityId, limit = 20 }: CommunityFeedProps) {
+export function CommunityFeed({ communityId, limit: _limit = 20 }: CommunityFeedProps) {
   const [_cursor, _setCursor] = useState<string | undefined>();
 
   // TODO: Implement actual API call using TanStack Query
   const { data, isLoading, hasNextPage, fetchNextPage } = useInfiniteQuery({
     queryKey: ['community-feed', communityId],
-    queryFn: async ({ pageParam }) => {
+    queryFn: async ({ pageParam: _pageParam }) => {
       // GET /api/feeds/:communityId?limit=20&cursor=...
       return { feed: [] as Post[], cursor: undefined };
     },

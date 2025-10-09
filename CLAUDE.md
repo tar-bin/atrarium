@@ -8,9 +8,9 @@ Atrarium is a community management system built on AT Protocol (Bluesky), design
 
 ### Project Constitution
 
-**All features MUST comply with the [Project Constitution](.specify/memory/constitution.md) v1.3.0.**
+**All features MUST comply with the [Project Constitution](.specify/memory/constitution.md) v1.5.0.**
 
-Nine core principles govern all technical decisions:
+Ten core principles govern all technical decisions:
 1. **Protocol-First Architecture**: Lexicon schemas are API contract, implementations are replaceable
 2. **Simplicity and Minimal Complexity**: No new projects/databases/services without necessity
 3. **Economic Efficiency**: <$5/month for communities with <200 members
@@ -20,6 +20,7 @@ Nine core principles govern all technical decisions:
 7. **Code Quality and Pre-Commit Validation**: Biome linting/formatting, TypeScript type checks before commit
 8. **AT Protocol + PDS + Lexicon Constraints**: All features must be implementable using AT Protocol + PDS + Lexicon only (no separate databases)
 9. **Git Workflow and Commit Integrity**: All changes fully committed before merge, no --no-verify bypasses without approval
+10. **Complete Implementation Over MVP Excuses**: Features must be fully implemented per spec, no "MVP" labels to justify incomplete work
 
 See [constitution.md](.specify/memory/constitution.md) for detailed rules and rationale.
 
@@ -127,10 +128,10 @@ Client (Bluesky AppView fetches post content)
   - `src/schemas/` - Validation schemas (Zod, Lexicon types)
   - `tests/` - Contract, integration, unit tests (Vitest + @cloudflare/vitest-pool-workers)
 - `client/` - React dashboard (TanStack Router + Query + Table)
-  - `src/components/` - React components (communities, feeds, posts, moderation, layout, UI)
+  - `src/components/` - React components (communities, feeds, posts, moderation, reactions, emoji, layout, UI)
   - `src/routes/` - TanStack Router file-based routes
   - `src/contexts/` - React Context providers (PDS session management)
-  - `src/lib/` - Utilities (API client, PDS integration, TanStack Query client)
+  - `src/lib/` - Utilities (API client with reaction/emoji helpers, PDS integration, TanStack Query client)
   - `src/i18n/` - i18next translations (EN/JA)
   - `tests/` - Component tests (Vitest + Testing Library), E2E tests (Playwright)
 
@@ -139,6 +140,7 @@ Client (Bluesky AppView fetches post content)
 lexicons/              # AT Protocol Lexicon schemas (protocol definition, implementation-agnostic)
 ├── net.atrarium.community.config.json
 ├── net.atrarium.community.membership.json
+├── net.atrarium.community.reaction.json  # NEW (016-slack-mastodon-misskey): Reaction records
 ├── net.atrarium.moderation.action.json
 └── README.md          # Lexicon schema documentation
 
@@ -162,6 +164,7 @@ server/                # Cloudflare Workers backend (pnpm workspace: @atrarium/s
 │   ├── communities.ts     # Community management (writes to PDS, creates Durable Object)
 │   ├── memberships.ts     # Membership management (writes to PDS)
 │   ├── moderation.ts      # Moderation API (writes to PDS) - 003-id
+│   ├── reactions.ts       # NEW (016-slack-mastodon-misskey): Reaction management (POST /add, DELETE /remove, GET /list)
 │   └── lexicon.ts         # NEW (010-lexicon): Lexicon publication endpoints (serves lexicons/)
 ├── durable-objects/   # Durable Objects (006-pds-1-db)
 │   ├── community-feed-generator.ts  # Per-community feed index (Storage: config:, member:, post:, moderation:)
@@ -212,6 +215,14 @@ client/               # React web dashboard (pnpm workspace: client)
     │   │   ├── feeds/              # Feed management components
     │   │   ├── posts/              # Post creation & display components
     │   │   ├── moderation/         # Moderation components
+    │   │   ├── reactions/          # NEW (016-slack-mastodon-misskey): Reaction UI components
+    │   │   │   ├── ReactionBar.tsx      # Display reaction counts with toggle
+    │   │   │   ├── ReactionPicker.tsx   # Simple emoji selector (10 common emojis)
+    │   │   │   └── EmojiPicker.tsx      # Full emoji picker (6 categories, search, custom emojis)
+    │   │   ├── emoji/              # NEW (016-slack-mastodon-misskey): Custom emoji management
+    │   │   │   ├── CustomEmojiUpload.tsx  # Upload form with validation
+    │   │   │   ├── CustomEmojiList.tsx    # User's emoji list with delete
+    │   │   │   └── EmojiApproval.tsx      # Owner approval queue
     │   │   ├── pds/                # PDS login component
     │   │   ├── layout/             # Layout components (Header, Sidebar, Layout)
     │   │   └── ui/                 # shadcn/ui components (button, card, etc.)
@@ -223,7 +234,7 @@ client/               # React web dashboard (pnpm workspace: client)
     │   ├── contexts/            # React Context providers
     │   │   └── PDSContext.tsx      # PDS session management
     │   ├── lib/                 # Utilities
-    │   │   ├── api.ts              # API client (TODO: update to oRPC v1.9.3)
+    │   │   ├── api.ts              # API client with reaction/emoji helpers (016-slack-mastodon-misskey)
     │   │   ├── pds.ts              # PDS integration (@atproto/api)
     │   │   ├── queryClient.ts      # TanStack Query client
     │   │   └── utils.ts            # Tailwind utilities
@@ -280,11 +291,14 @@ start-dev.sh         # Parallel development startup script (server + dashboard)
    - `net.atrarium.community.config`: Community metadata (name, hashtag, stage, moderators, feedMix)
    - `net.atrarium.community.membership`: User membership records (community, role, joinedAt, active)
    - `net.atrarium.community.post`: Community posts (text, communityId, createdAt) - **014-bluesky**
+   - `net.atrarium.community.reaction`: Post reactions (postUri, emoji, communityId, createdAt) - **016-slack-mastodon-misskey**
    - `net.atrarium.moderation.action`: Moderation actions (action, target, community, reason)
 
 2. **Durable Objects Storage (Per-Community Cache)** - 7-day feed index
    - `config:<communityId>`: CommunityConfig (name, hashtag, stage, createdAt)
    - `member:<did>`: MembershipRecord (did, role, joinedAt, active)
+   - `reaction:{postUri}:{emojiKey}`: ReactionAggregate (emoji, count, reactors[]) - **016-slack-mastodon-misskey**
+   - `reaction_record:{reactionUri}`: ReactionRecord (reactionUri, postUri, emoji, reactor, createdAt) - **016-slack-mastodon-misskey**
    - `post:<timestamp>:<rkey>`: PostMetadata (uri, authorDid, createdAt, moderationStatus, indexedAt)
    - `moderation:<uri>`: ModerationAction (action, targetUri, reason, createdAt)
 
@@ -525,6 +539,7 @@ The client fetches actual post content from Bluesky's AppView using these URIs.
   - [x] `net.atrarium.community.config` (community metadata)
   - [x] `net.atrarium.community.membership` (user memberships)
   - [x] `net.atrarium.community.post` (community posts, custom Lexicon) - **014-bluesky**
+  - [x] `net.atrarium.community.reaction` (post reactions with emoji) - **016-slack-mastodon-misskey**
   - [x] `net.atrarium.moderation.action` (moderation actions)
 - [x] **PDS read/write service** (@atproto/api with AtpAgent - BskyAgent deprecated)
 - [x] **Durable Objects architecture**
@@ -532,7 +547,7 @@ The client fetches actual post content from Bluesky's AppView using these URIs.
   - [x] FirehoseReceiver (Jetstream WebSocket → Queue, lightweight filter)
 - [x] **Cloudflare Queues** (firehose-events, firehose-dlq, 5000 msg/sec)
 - [x] **FirehoseProcessor Worker** (Queue consumer, heavyweight regex filter)
-- [x] **API routes** (communities, memberships, moderation - write to PDS, proxy to DOs)
+- [x] **API routes** (communities, memberships, moderation, reactions - write to PDS, proxy to DOs)
 - [x] **Hashtag system** (system-generated `#atrarium_[0-9a-f]{8}`, unique per community)
 - [x] **Moderation system** (hide posts, block users, role-based access)
 - [x] **Authentication** (JWT with DID verification)
@@ -542,6 +557,11 @@ The client fetches actual post content from Bluesky's AppView using these URIs.
 - [x] **Local PDS integration** (DevContainer with Bluesky PDS for testing)
 - [x] **Domain migration** (atrarium.net acquired, all references updated)
 - [x] **Lexicon publication API** (010-lexicon: HTTP endpoints with ETag caching, beta status documented)
+- [x] **Custom emoji reactions** (016-slack-mastodon-misskey: Slack/Mastodon/Misskey-style reactions)
+  - [x] Backend: Reaction PDS methods, Durable Objects aggregation, API routes
+  - [x] Frontend Components: ReactionBar, ReactionPicker, EmojiPicker (6 Unicode categories, 60+ emojis, search, custom emoji integration)
+  - [x] Custom Emoji Management: CustomEmojiUpload, CustomEmojiList, EmojiApproval (upload, validation, approval queue)
+  - [x] API Helpers: addReaction, removeReaction, listReactions, uploadEmoji, deleteEmoji, listEmojis, listUserEmojis, listPendingEmojis, approveEmoji
 
 ### 🚧 In Progress / Pending
 - [ ] Production deployment (Cloudflare Workers + Durable Objects + Queues)
@@ -669,7 +689,7 @@ This project uses `.specify/` slash commands for feature development workflow:
 - `.specify/templates/spec-template.md` - Feature specification template
 - `.specify/templates/plan-template.md` - Implementation plan template (includes Constitution Check)
 - `.specify/templates/tasks-template.md` - Task generation template
-- `.specify/memory/constitution.md` - Project constitution v1.0.0 (6 principles)
+- `.specify/memory/constitution.md` - Project constitution v1.5.0 (10 principles)
 
 **Workflow**:
 1. `/specify` with feature description → generates `specs/{feature-id}/spec.md`

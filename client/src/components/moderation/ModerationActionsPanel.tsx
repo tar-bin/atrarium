@@ -13,9 +13,9 @@ interface ModerationActionsPanelProps {
 }
 
 export function ModerationActionsPanel({
-  targetUri,
+  targetUri: _targetUri,
   targetType,
-  communityId,
+  communityId: _communityId,
   onActionComplete,
 }: ModerationActionsPanelProps) {
   const [reason, setReason] = useState<ModerationReason | undefined>(undefined);

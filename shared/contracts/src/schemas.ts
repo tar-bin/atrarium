@@ -464,3 +464,58 @@ export const GetEmojiRegistryInputSchema = z.object({
 export const GetEmojiRegistryOutputSchema = z.object({
   emoji: z.record(z.string(), EmojiMetadataSchema), // Map<shortcode, metadata>
 });
+
+// ============================================================================
+// Reaction Schemas
+// ============================================================================
+
+// EmojiReference - discriminated union for Unicode or custom emojis
+export const EmojiReferenceSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('unicode'),
+    value: z.string().regex(/^U\+[0-9A-F]{4,6}$/, 'Invalid Unicode codepoint'),
+  }),
+  z.object({
+    type: z.literal('custom'),
+    value: z.string().regex(/^at:\/\//, 'Custom emoji must be AT URI'),
+  }),
+]);
+
+// POST /api/reactions/add
+export const AddReactionInputSchema = z.object({
+  postUri: z.string().regex(/^at:\/\//, 'postUri must be AT URI'),
+  emoji: EmojiReferenceSchema,
+});
+
+export const AddReactionOutputSchema = z.object({
+  success: z.boolean(),
+  reactionUri: z.string(),
+});
+
+// DELETE /api/reactions/remove
+export const RemoveReactionInputSchema = z.object({
+  reactionUri: z.string().regex(/^at:\/\//, 'reactionUri must be AT URI'),
+});
+
+export const RemoveReactionOutputSchema = z.object({
+  success: z.boolean(),
+});
+
+// GET /api/reactions/list
+export const ListReactionsInputSchema = z.object({
+  postUri: z.string().regex(/^at:\/\//, 'postUri must be AT URI'),
+  limit: z.number().int().min(1).max(100).optional(),
+  cursor: z.string().optional(),
+});
+
+export const ReactionAggregateSchema = z.object({
+  emoji: EmojiReferenceSchema,
+  count: z.number().int().min(1),
+  reactors: z.array(z.string()), // DIDs
+  currentUserReacted: z.boolean(),
+});
+
+export const ListReactionsOutputSchema = z.object({
+  reactions: z.array(ReactionAggregateSchema),
+  cursor: z.string().optional(),
+});
