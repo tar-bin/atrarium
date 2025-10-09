@@ -316,3 +316,151 @@ export const PostListOutputSchema = z.object({
   posts: z.array(PostOutputSchema),
   cursor: z.string().nullable(), // Next page cursor
 });
+
+// ============================================================================
+// Emoji Schemas (T033 - 015-markdown-pds)
+// ============================================================================
+
+// T033: BlobRef schema (AT Protocol blob reference)
+export const BlobRefSchema = z.object({
+  $type: z.literal('blob'),
+  ref: z.object({ $link: z.string() }), // CID
+  mimeType: z.string(),
+  size: z.number().int().min(1),
+});
+
+// T033: CustomEmoji schema (user-uploaded emoji in PDS)
+export const CustomEmojiSchema = z.object({
+  $type: z.literal('net.atrarium.emoji.custom'),
+  shortcode: z
+    .string()
+    .min(2)
+    .max(32)
+    .regex(/^[a-z0-9_]+$/),
+  blob: BlobRefSchema,
+  creator: z.string(), // DID
+  uploadedAt: z.string(), // ISO 8601
+  format: z.enum(['png', 'gif', 'webp']),
+  size: z.number().int().min(1).max(512000), // ≤500KB
+  dimensions: z.object({
+    width: z.number().int().min(1).max(256),
+    height: z.number().int().min(1).max(256),
+  }),
+  animated: z.boolean(),
+});
+
+// T033: EmojiApproval schema (community owner approval decision)
+export const EmojiApprovalSchema = z.object({
+  $type: z.literal('net.atrarium.emoji.approval'),
+  shortcode: z
+    .string()
+    .min(2)
+    .max(32)
+    .regex(/^[a-z0-9_]+$/),
+  emojiRef: z.string(), // AT-URI of CustomEmoji
+  communityId: z.string().regex(/^[0-9a-f]{8}$/),
+  status: z.enum(['approved', 'rejected', 'revoked']),
+  approver: z.string(), // DID
+  decidedAt: z.string(), // ISO 8601
+  reason: z.string().max(500).optional(),
+});
+
+// T033: EmojiSubmission schema (pending approval request)
+export const EmojiSubmissionSchema = z.object({
+  emojiUri: z.string(), // AT-URI of CustomEmoji
+  shortcode: z.string(),
+  creator: z.string(), // DID
+  creatorHandle: z.string(),
+  uploadedAt: z.string(),
+  format: z.enum(['png', 'gif', 'webp']),
+  animated: z.boolean(),
+  blobUrl: z.string().url(), // Preview URL
+});
+
+// T033: EmojiMetadata schema (for rendering)
+export const EmojiMetadataSchema = z.object({
+  emojiURI: z.string(), // AT-URI of CustomEmoji
+  blobURI: z.string(), // Blob URL for rendering
+  animated: z.boolean(),
+});
+
+// ============================================================================
+// Emoji API Input/Output Schemas (T033)
+// ============================================================================
+
+// POST /api/emoji/upload
+export const UploadEmojiInputSchema = z.object({
+  file: z.any(), // Blob type (client-side only, not available in Node.js)
+  shortcode: z
+    .string()
+    .min(2)
+    .max(32)
+    .regex(/^[a-z0-9_]+$/),
+});
+
+export const UploadEmojiOutputSchema = z.object({
+  emojiURI: z.string(),
+  blob: BlobRefSchema,
+});
+
+// GET /api/emoji/list
+export const ListEmojiInputSchema = z.object({
+  did: z.string(),
+});
+
+export const ListEmojiOutputSchema = z.object({
+  emoji: z.array(CustomEmojiSchema.extend({ uri: z.string() })),
+});
+
+// POST /api/communities/:id/emoji/submit
+export const SubmitEmojiInputSchema = z.object({
+  communityId: z.string().regex(/^[0-9a-f]{8}$/),
+  emojiURI: z.string(),
+});
+
+export const SubmitEmojiOutputSchema = z.object({
+  submissionId: z.string(),
+  status: z.literal('pending'),
+});
+
+// GET /api/communities/:id/emoji/pending
+export const ListPendingEmojiInputSchema = z.object({
+  communityId: z.string().regex(/^[0-9a-f]{8}$/),
+});
+
+export const ListPendingEmojiOutputSchema = z.object({
+  submissions: z.array(EmojiSubmissionSchema),
+});
+
+// POST /api/communities/:id/emoji/approve
+export const ApproveEmojiInputSchema = z.object({
+  communityId: z.string().regex(/^[0-9a-f]{8}$/),
+  emojiURI: z.string(),
+  approve: z.boolean(),
+  reason: z.string().max(500).optional(),
+});
+
+export const ApproveEmojiOutputSchema = z.object({
+  approvalURI: z.string(),
+  status: z.enum(['approved', 'rejected']),
+});
+
+// POST /api/communities/:id/emoji/revoke
+export const RevokeEmojiInputSchema = z.object({
+  communityId: z.string().regex(/^[0-9a-f]{8}$/),
+  shortcode: z.string(),
+  reason: z.string().max(500).optional(),
+});
+
+export const RevokeEmojiOutputSchema = z.object({
+  success: z.boolean(),
+});
+
+// GET /api/communities/:id/emoji/registry
+export const GetEmojiRegistryInputSchema = z.object({
+  communityId: z.string().regex(/^[0-9a-f]{8}$/),
+});
+
+export const GetEmojiRegistryOutputSchema = z.object({
+  emoji: z.record(z.string(), EmojiMetadataSchema), // Map<shortcode, metadata>
+});

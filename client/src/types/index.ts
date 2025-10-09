@@ -76,6 +76,8 @@ export interface Post {
   feedId: string;
   authorDid: string;
   text: string;
+  markdown?: string; // Optional Markdown content (015-markdown-pds)
+  emojiShortcodes?: string[]; // Optional emoji shortcodes (015-markdown-pds)
   createdAt: number;
   hasMedia: boolean;
   langs: string[] | null;

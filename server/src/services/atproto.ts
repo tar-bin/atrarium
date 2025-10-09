@@ -2,12 +2,21 @@
 // PDS read/write operations and Bluesky integration
 
 import { AtpAgent } from '@atproto/api';
-import type { CommunityConfig, MembershipRecord, PDSRecordResult } from '../schemas/lexicon';
+import type {
+  BlobRef,
+  CommunityConfig,
+  CustomEmoji,
+  EmojiApproval,
+  MembershipRecord,
+  PDSRecordResult,
+} from '../schemas/lexicon';
 import {
   validateATUri,
   validateCommunityConfig,
   validateCommunityPost,
+  validateCustomEmoji,
   validateDID,
+  validateEmojiApproval,
   validateMembershipRecord,
   validateModerationAction,
 } from '../schemas/lexicon';
@@ -100,6 +109,202 @@ export class ATProtoService {
       cid: response.data.cid,
       rkey: response.data.uri.split('/').pop() || '',
     };
+  }
+
+  // ============================================================================
+  // PDS Emoji Operations (015-markdown-pds: T007-T012)
+  // ============================================================================
+
+  /**
+   * Upload emoji blob to PDS (T007)
+   * @param agent AtpAgent instance
+   * @param file Emoji image file (Blob)
+   * @returns BlobRef with CID and metadata
+   */
+  async uploadEmojiBlob(agent: AtpAgent, file: Blob): Promise<BlobRef> {
+    // Validate file size (max 500KB = 512000 bytes)
+    if (file.size > 512000) {
+      throw new Error('File size exceeds 500KB limit');
+    }
+
+    // Validate MIME type
+    const allowedTypes = ['image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      throw new Error(`Unsupported format: ${file.type}. Allowed: PNG, GIF, WEBP`);
+    }
+
+    // Upload blob to PDS
+    const response = await agent.uploadBlob(file);
+
+    return {
+      $type: 'blob',
+      ref: response.data.blob.ref,
+      mimeType: response.data.blob.mimeType,
+      size: response.data.blob.size,
+    };
+  }
+
+  /**
+   * Create CustomEmoji record in PDS (T008)
+   * @param agent AtpAgent instance
+   * @param shortcode Emoji shortcode (lowercase alphanumeric + underscores)
+   * @param blob BlobRef from uploadEmojiBlob
+   * @param format Image format (png, gif, webp)
+   * @param size File size in bytes
+   * @param dimensions Image dimensions { width, height }
+   * @param animated True for animated GIFs
+   * @returns Record creation result
+   */
+  async createCustomEmoji(
+    agent: AtpAgent,
+    shortcode: string,
+    blob: BlobRef,
+    format: 'png' | 'gif' | 'webp',
+    size: number,
+    dimensions: { width: number; height: number },
+    animated: boolean
+  ): Promise<PDSRecordResult> {
+    const emojiRecord: CustomEmoji = {
+      $type: 'net.atrarium.emoji.custom',
+      shortcode,
+      blob,
+      creator: agent.session?.did || '',
+      uploadedAt: new Date().toISOString(),
+      format,
+      size,
+      dimensions,
+      animated,
+    };
+
+    // Validate against Lexicon schema
+    const validated = validateCustomEmoji(emojiRecord);
+
+    // Create record in user's PDS
+    const response = await agent.com.atproto.repo.createRecord({
+      repo: agent.session?.did || '',
+      collection: 'net.atrarium.emoji.custom',
+      record: validated,
+    });
+
+    return {
+      uri: response.data.uri,
+      cid: response.data.cid,
+      rkey: response.data.uri.split('/').pop() || '',
+    };
+  }
+
+  /**
+   * Create EmojiApproval record in PDS (T009)
+   * @param agent AtpAgent instance
+   * @param shortcode Emoji shortcode to register in community namespace
+   * @param emojiRef AT-URI of CustomEmoji record
+   * @param communityId Community ID (8-char hex)
+   * @param status Approval status (approved, rejected, revoked)
+   * @param reason Optional rejection/revocation reason
+   * @returns Record creation result
+   */
+  async createEmojiApproval(
+    agent: AtpAgent,
+    shortcode: string,
+    emojiRef: string,
+    communityId: string,
+    status: 'approved' | 'rejected' | 'revoked',
+    reason?: string
+  ): Promise<PDSRecordResult> {
+    const approvalRecord: EmojiApproval = {
+      $type: 'net.atrarium.emoji.approval',
+      shortcode,
+      emojiRef,
+      communityId,
+      status,
+      approver: agent.session?.did || '',
+      decidedAt: new Date().toISOString(),
+      reason,
+    };
+
+    // Validate against Lexicon schema
+    const validated = validateEmojiApproval(approvalRecord);
+
+    // Create record in community owner's PDS
+    const response = await agent.com.atproto.repo.createRecord({
+      repo: agent.session?.did || '',
+      collection: 'net.atrarium.emoji.approval',
+      record: validated,
+    });
+
+    return {
+      uri: response.data.uri,
+      cid: response.data.cid,
+      rkey: response.data.uri.split('/').pop() || '',
+    };
+  }
+
+  /**
+   * List user's custom emoji from PDS (T010)
+   * @param agent AtpAgent instance
+   * @param did User DID to query
+   * @returns Array of CustomEmoji records
+   */
+  async listUserEmoji(agent: AtpAgent, did: string): Promise<Array<CustomEmoji & { uri: string }>> {
+    // Validate DID format
+    validateDID(did);
+
+    // Query PDS for custom emoji records
+    const response = await agent.com.atproto.repo.listRecords({
+      repo: did,
+      collection: 'net.atrarium.emoji.custom',
+      limit: 100,
+    });
+
+    return response.data.records.map((record) => {
+      const validated = validateCustomEmoji(record.value);
+      return {
+        ...validated,
+        uri: record.uri,
+      };
+    });
+  }
+
+  /**
+   * List community emoji approvals from PDS (T011)
+   * @param agent AtpAgent instance
+   * @param communityId Community ID (8-char hex)
+   * @param statusFilter Optional filter by status (approved, rejected, revoked)
+   * @returns Array of EmojiApproval records
+   */
+  async listCommunityApprovals(
+    agent: AtpAgent,
+    communityId: string,
+    statusFilter?: 'approved' | 'rejected' | 'revoked'
+  ): Promise<Array<EmojiApproval & { uri: string }>> {
+    // Validate community ID format
+    if (!/^[0-9a-f]{8}$/.test(communityId)) {
+      throw new Error('Invalid community ID format (must be 8-char hex)');
+    }
+
+    // Query community owner's PDS for approval records
+    const response = await agent.com.atproto.repo.listRecords({
+      repo: agent.session?.did || '',
+      collection: 'net.atrarium.emoji.approval',
+      limit: 100,
+    });
+
+    let approvals = response.data.records
+      .map((record) => {
+        const validated = validateEmojiApproval(record.value);
+        return {
+          ...validated,
+          uri: record.uri,
+        };
+      })
+      .filter((approval) => approval.communityId === communityId);
+
+    // Filter by status if specified
+    if (statusFilter) {
+      approvals = approvals.filter((approval) => approval.status === statusFilter);
+    }
+
+    return approvals;
   }
 
   /**

@@ -1,5 +1,5 @@
 import { EyeOff } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { formatRelativeTime } from '@/lib/date';
+import { renderMarkdown } from '@/lib/markdown';
 import type { Post } from '@/types';
 
 // Helper function to get avatar from DID
@@ -34,6 +35,16 @@ interface PostCardProps {
 export function PostCard({ post, canModerate, onHide }: PostCardProps) {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [isHiding, setIsHiding] = useState(false);
+
+  // Render Markdown if available, otherwise plain text
+  const renderedContent = useMemo(() => {
+    if (post.markdown) {
+      // TODO: Fetch emoji registry for community and pass to renderMarkdown
+      // For now, render without emoji registry
+      return renderMarkdown(post.markdown);
+    }
+    return null;
+  }, [post.markdown]);
 
   const handleHideClick = () => {
     setShowConfirmDialog(true);
@@ -77,8 +88,16 @@ export function PostCard({ post, canModerate, onHide }: PostCardProps) {
               </span>
             </div>
 
-            {/* Post text */}
-            <p className="text-sm whitespace-pre-wrap break-words mb-3">{post.text}</p>
+            {/* Post text - Markdown or plain text */}
+            {renderedContent ? (
+              <div
+                className="text-sm break-words mb-3 prose prose-sm dark:prose-invert max-w-none"
+                // biome-ignore lint/security/noDangerouslySetInnerHtml: Sanitized via DOMPurify in renderMarkdown
+                dangerouslySetInnerHTML={{ __html: renderedContent }}
+              />
+            ) : (
+              <p className="text-sm whitespace-pre-wrap break-words mb-3">{post.text}</p>
+            )}
 
             {/* Post image */}
             {post.hasMedia && (

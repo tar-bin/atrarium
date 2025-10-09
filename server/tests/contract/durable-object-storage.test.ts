@@ -315,3 +315,208 @@ describe.skip('Contract: Durable Objects Storage', () => {
     expect(finalAction.pdsSyncedAt).toBe(1704067300000);
   });
 });
+
+// Contract Test: Emoji Registry Cache Performance (T023)
+// Validates performance requirements for Durable Objects emoji cache
+describe('Contract: Emoji Registry Cache Performance (T023)', () => {
+  let durableObjectStub: DurableObjectStub;
+
+  beforeEach(() => {
+    const binding = env.COMMUNITY_FEED_GENERATOR;
+    const id = binding.idFromName(`perf-test-${Date.now()}`);
+    durableObjectStub = binding.get(id);
+  });
+
+  it('should complete cache read in <10ms (cache hit)', async () => {
+    const communityId = 'perf-test-001';
+
+    // Arrange: Populate cache with emoji registry
+    await durableObjectStub.fetch(
+      new Request('http://test/rpc', {
+        method: 'POST',
+        body: JSON.stringify({
+          method: 'updateEmojiRegistry',
+          params: {
+            communityId,
+            shortcode: 'perf_emoji',
+            metadata: {
+              emojiURI: 'at://did:plc:test/net.atrarium.emoji.custom/abc',
+              blobURI: 'https://pds.example.com/blob/xyz',
+              animated: false,
+            },
+          },
+        }),
+      })
+    );
+
+    // Act: Measure cache read performance (10 iterations for reliability)
+    const iterations = 10;
+    const measurements: number[] = [];
+
+    for (let i = 0; i < iterations; i++) {
+      const startTime = performance.now();
+
+      const response = await durableObjectStub.fetch(
+        new Request('http://test/rpc', {
+          method: 'POST',
+          body: JSON.stringify({
+            method: 'getEmojiRegistry',
+            params: { communityId },
+          }),
+        })
+      );
+
+      const endTime = performance.now();
+      const duration = endTime - startTime;
+      measurements.push(duration);
+
+      expect(response.ok).toBe(true);
+    }
+
+    // Calculate average and p95 latency
+    const average = measurements.reduce((sum, val) => sum + val, 0) / measurements.length;
+    const sorted = measurements.slice().sort((a, b) => a - b);
+    const p95Index = Math.floor(iterations * 0.95);
+    const p95 = sorted[p95Index] || 0;
+    expect(average).toBeLessThan(10);
+    expect(p95).toBeLessThan(15);
+  });
+
+  it('should complete cache rebuild in <100ms (cache miss)', async () => {
+    const communityId = 'perf-test-002';
+
+    // Arrange: Mock PDS approval data (5 approved emoji)
+    const mockApprovals = Array.from({ length: 5 }, (_, i) => ({
+      shortcode: `emoji_${i}`,
+      emojiRef: `at://did:plc:test/net.atrarium.emoji.custom/${i}`,
+      status: 'approved' as const,
+    }));
+
+    // Act: Measure cache rebuild performance
+    const startTime = performance.now();
+
+    const rebuildResponse = await durableObjectStub.fetch(
+      new Request('http://test/rpc', {
+        method: 'POST',
+        body: JSON.stringify({
+          method: 'rebuildEmojiRegistry',
+          params: {
+            communityId,
+            approvals: mockApprovals,
+          },
+        }),
+      })
+    );
+
+    const endTime = performance.now();
+    const duration = endTime - startTime;
+    expect(rebuildResponse.ok).toBe(true);
+    expect(duration).toBeLessThan(100);
+
+    // Verify all emoji were cached
+    const getResponse = await durableObjectStub.fetch(
+      new Request('http://test/rpc', {
+        method: 'POST',
+        body: JSON.stringify({
+          method: 'getEmojiRegistry',
+          params: { communityId },
+        }),
+      })
+    );
+
+    const result = await getResponse.json();
+    expect(Object.keys(result.data)).toHaveLength(5);
+  });
+
+  it('should scale to 50 emoji in registry without degradation', async () => {
+    const communityId = 'perf-test-scale';
+
+    // Arrange: Add 50 emoji to registry
+    const emojiCount = 50;
+    for (let i = 0; i < emojiCount; i++) {
+      await durableObjectStub.fetch(
+        new Request('http://test/rpc', {
+          method: 'POST',
+          body: JSON.stringify({
+            method: 'updateEmojiRegistry',
+            params: {
+              communityId,
+              shortcode: `emoji_scale_${i}`,
+              metadata: {
+                emojiURI: `at://did:plc:test/net.atrarium.emoji.custom/${i}`,
+                blobURI: `https://pds.example.com/blob/${i}`,
+                animated: i % 2 === 0, // Half animated
+              },
+            },
+          }),
+        })
+      );
+    }
+
+    // Act: Measure read performance with large registry
+    const startTime = performance.now();
+
+    const response = await durableObjectStub.fetch(
+      new Request('http://test/rpc', {
+        method: 'POST',
+        body: JSON.stringify({
+          method: 'getEmojiRegistry',
+          params: { communityId },
+        }),
+      })
+    );
+
+    const endTime = performance.now();
+    const duration = endTime - startTime;
+
+    const result = await response.json();
+    expect(duration).toBeLessThan(10);
+    expect(Object.keys(result.data)).toHaveLength(50);
+  });
+
+  it('should handle concurrent cache reads without degradation', async () => {
+    const communityId = 'perf-test-concurrent';
+
+    // Arrange: Populate cache
+    await durableObjectStub.fetch(
+      new Request('http://test/rpc', {
+        method: 'POST',
+        body: JSON.stringify({
+          method: 'updateEmojiRegistry',
+          params: {
+            communityId,
+            shortcode: 'concurrent_test',
+            metadata: {
+              emojiURI: 'at://did:plc:test/net.atrarium.emoji.custom/concurrent',
+              blobURI: 'https://pds.example.com/blob/concurrent',
+              animated: false,
+            },
+          },
+        }),
+      })
+    );
+
+    // Act: Issue 10 concurrent reads
+    const concurrentReads = 10;
+    const startTime = performance.now();
+
+    const promises = Array.from({ length: concurrentReads }, () =>
+      durableObjectStub.fetch(
+        new Request('http://test/rpc', {
+          method: 'POST',
+          body: JSON.stringify({
+            method: 'getEmojiRegistry',
+            params: { communityId },
+          }),
+        })
+      )
+    );
+
+    const responses = await Promise.all(promises);
+    const endTime = performance.now();
+    const totalDuration = endTime - startTime;
+    const avgDuration = totalDuration / concurrentReads;
+    expect(responses.every((r) => r.ok)).toBe(true);
+    expect(avgDuration).toBeLessThan(20);
+  });
+});

@@ -1,0 +1,80 @@
+{
+  "lexicon": 1,
+  "id": "net.atrarium.emoji.custom",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Custom emoji uploaded by a user and stored in their Personal Data Server (PDS). Community owners approve custom emoji for community-wide use via net.atrarium.emoji.approval records.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["shortcode", "blob", "creator", "uploadedAt", "format", "size", "dimensions"],
+        "properties": {
+          "shortcode": {
+            "type": "string",
+            "description": "Emoji shortcode identifier (e.g., 'my_emoji' for :my_emoji:). Used for insertion in posts.",
+            "pattern": "^[a-z0-9_]+$",
+            "maxLength": 32,
+            "minLength": 2
+          },
+          "blob": {
+            "type": "blob",
+            "description": "Emoji image blob stored in user's PDS blob storage",
+            "accept": ["image/png", "image/gif", "image/webp"],
+            "maxSize": 512000
+          },
+          "creator": {
+            "type": "string",
+            "format": "did",
+            "description": "DID of the user who uploaded this emoji"
+          },
+          "uploadedAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "Emoji upload timestamp (ISO 8601)"
+          },
+          "format": {
+            "type": "string",
+            "description": "Image format",
+            "enum": ["png", "gif", "webp"]
+          },
+          "size": {
+            "type": "integer",
+            "description": "File size in bytes (max 500KB = 512000 bytes)",
+            "minimum": 1,
+            "maximum": 512000
+          },
+          "dimensions": {
+            "type": "ref",
+            "ref": "#dimensions",
+            "description": "Image dimensions in pixels"
+          },
+          "animated": {
+            "type": "boolean",
+            "description": "True if the emoji is an animated GIF",
+            "default": false
+          }
+        }
+      }
+    },
+    "dimensions": {
+      "type": "object",
+      "description": "Image dimensions (max 256x256 pixels)",
+      "required": ["width", "height"],
+      "properties": {
+        "width": {
+          "type": "integer",
+          "description": "Image width in pixels",
+          "minimum": 1,
+          "maximum": 256
+        },
+        "height": {
+          "type": "integer",
+          "description": "Image height in pixels",
+          "minimum": 1,
+          "maximum": 256
+        }
+      }
+    }
+  }
+}
