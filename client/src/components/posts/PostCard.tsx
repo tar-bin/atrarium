@@ -111,7 +111,7 @@ export function PostCard({ post, canModerate, onHide }: PostCardProps) {
 
             {/* Reactions */}
             <div className="mb-3 flex items-center gap-2">
-              <ReactionBar postUri={post.uri} className="flex-1" />
+              <ReactionBar postUri={post.uri} communityId={post.communityId} className="flex-1" />
               <Button
                 size="sm"
                 variant="ghost"

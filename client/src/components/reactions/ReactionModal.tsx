@@ -26,7 +26,7 @@ export function ReactionModal({ postUri, isOpen, onClose }: ReactionModalProps) 
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['reactions', postUri, 'all'],
-    queryFn: () => listReactions(postUri, 100), // Fetch up to 100 emoji types
+    queryFn: () => listReactions(postUri), // Fetch all emoji types
     enabled: isOpen,
     staleTime: 10000,
   });
