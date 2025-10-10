@@ -76,4 +76,45 @@ app.post('/refresh', async (c) => {
   }
 });
 
+// ============================================================================
+// POST /pds-login
+// Login with PDS access token (for local development and testing)
+// Mounted at /api/auth, so full path is /api/auth/pds-login
+// ============================================================================
+
+app.post('/pds-login', async (c) => {
+  console.log('[AUTH] /pds-login endpoint reached');
+  try {
+    const body = await c.req.json();
+    console.log('[AUTH] Request body:', JSON.stringify(body));
+    const { accessJwt, did, handle } = body;
+
+    if (!accessJwt || !did || !handle) {
+      return c.json(
+        {
+          error: 'InvalidRequest',
+          message: 'Missing required fields: accessJwt, did, handle',
+        },
+        400
+      );
+    }
+
+    // TODO: Verify PDS JWT validity (optional for development)
+    // For now, trust the provided DID and handle
+
+    const authService = new AuthService(c.env);
+    const atriumAccessJwt = await authService.createDashboardJWT(did, handle);
+    const atriumRefreshJwt = await authService.createRefreshJWT(did, handle);
+
+    return c.json({
+      accessJwt: atriumAccessJwt,
+      refreshJwt: atriumRefreshJwt,
+      did,
+      handle,
+    });
+  } catch (_err) {
+    return c.json({ error: 'InternalServerError', message: 'PDS login failed' }, 500);
+  }
+});
+
 export default app;

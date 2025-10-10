@@ -165,7 +165,7 @@ emoji.post('/communities/:id/approve', async (c) => {
     // TODO: Extract shortcode from emojiURI
 
     const status = approve ? 'approved' : 'rejected';
-    const _ = 'mock_'; // Extract from emojiURI
+    // const _mockShortcode = 'mock_'; // Extract from emojiURI - TODO: Implement extraction
 
     // T009: Create approval record
     // const atprotoService = new ATProtoService();

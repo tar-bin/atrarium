@@ -9,8 +9,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 describe('GET /api/posts/{uri}', () => {
-  let _testPostUri: string;
-
   beforeAll(async () => {
     // Setup: Create test post (implementation pending)
     // testPostUri = 'at://did:plc:xxx/net.atrarium.community.post/yyy';

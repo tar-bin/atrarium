@@ -5,12 +5,6 @@ import { env } from 'cloudflare:test';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 describe('POST /api/reactions/add', () => {
-  let _authToken: string;
-
-  beforeAll(() => {
-    _authToken = 'mock-jwt-token';
-  });
-
   it('should return 401 Unauthorized without auth token', async () => {
     const resp = await env.WORKER.fetch('http://test/api/reactions/add', {
       method: 'POST',

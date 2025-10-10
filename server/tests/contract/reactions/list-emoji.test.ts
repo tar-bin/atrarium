@@ -5,8 +5,6 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { unstable_dev } from 'wrangler';
 
 describe('GET /api/emoji/list', () => {
-  let worker: UnstableDevWorker;
-
   beforeAll(async () => {
     worker = await unstable_dev('src/index.ts', {
       experimental: { disableExperimentalWarning: true },

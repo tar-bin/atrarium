@@ -141,7 +141,7 @@ export class ATProtoService {
 
     return {
       $type: 'blob',
-      ref: response.data.blob.ref,
+      ref: { $link: response.data.blob.ref.toString() },
       mimeType: response.data.blob.mimeType,
       size: response.data.blob.size,
     };
@@ -1103,8 +1103,6 @@ export class ATProtoService {
   }> {
     // Validate post URI
     validateATUri(postUri);
-
-    const _agent = await this.getAgent();
 
     // In production: Query PDS for reactions using listRecords with filter
     // For MVP: Return empty array (reactions will be cached in Durable Objects)

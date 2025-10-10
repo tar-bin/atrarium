@@ -34,12 +34,98 @@ app.use('*', async (c, next) => {
 
 app.get('/', async (c) => {
   try {
-    // TODO: Implement PDS-based community listing
-    // - Query PDS for user's membership records
-    // - Fetch community configs from PDS
-    return c.json({ data: [] });
-  } catch (_err) {
-    return c.json({ error: 'InternalServerError', message: 'Failed to list communities' }, 500);
+    const userDid = c.get('userDid') as string;
+    const pdsUrl = c.env.PDS_URL || 'http://pds:3000';
+
+    // Query PDS for user's membership records (public endpoint, no auth needed)
+    const membershipsUrl = `${pdsUrl}/xrpc/com.atproto.repo.listRecords?repo=${userDid}&collection=net.atrarium.community.membership&limit=100`;
+    const membershipsResponse = await fetch(membershipsUrl);
+
+    if (!membershipsResponse.ok) {
+      throw new Error(`Failed to fetch memberships: ${membershipsResponse.statusText}`);
+    }
+
+    const membershipsData = (await membershipsResponse.json()) as {
+      records: Array<{
+        uri: string;
+        value: {
+          community: string;
+          role: string;
+          status: string;
+          active: boolean;
+        };
+      }>;
+    };
+
+    // Filter active memberships
+    const activeMemberships = membershipsData.records.filter(
+      (record) => record.value.active && record.value.status === 'active'
+    );
+
+    // Fetch community configs for each membership
+    const communities = await Promise.all(
+      activeMemberships.map(async (membership) => {
+        try {
+          const communityUri = membership.value.community;
+
+          // Parse community URI: at://did:plc:xxx/net.atrarium.community.config/rkey
+          const parts = communityUri.replace('at://', '').split('/');
+          const ownerDid = parts[0];
+          const collection = parts[1];
+          const rkey = parts[2];
+
+          if (!ownerDid || !rkey || !collection) {
+            throw new Error(`Invalid community URI: ${communityUri}`);
+          }
+
+          // Fetch community config from owner's PDS
+          const configUrl = `${pdsUrl}/xrpc/com.atproto.repo.getRecord?repo=${ownerDid}&collection=${collection}&rkey=${rkey}`;
+          const configResponse = await fetch(configUrl);
+
+          if (!configResponse.ok) {
+            throw new Error(`Failed to fetch community config: ${configResponse.statusText}`);
+          }
+
+          const configData = (await configResponse.json()) as {
+            value: {
+              name: string;
+              description?: string;
+              stage: string;
+              createdAt: string;
+            };
+          };
+
+          return {
+            id: rkey,
+            name: configData.value.name,
+            description: configData.value.description || null,
+            stage: configData.value.stage,
+            parentId: null, // TODO: Extract from parent relationship if exists
+            memberCount: 0, // TODO: Query stats from Durable Object
+            postCount: 0, // TODO: Query stats from Durable Object
+            createdAt: Math.floor(new Date(configData.value.createdAt).getTime() / 1000),
+          };
+        } catch (err) {
+          console.error('[Communities] Failed to fetch community config:', err);
+          return null;
+        }
+      })
+    );
+
+    // Filter out failed fetches
+    const validCommunities = communities.filter((c) => c !== null);
+
+    return c.json({ data: validCommunities });
+  } catch (err) {
+    console.error('[Communities] List communities error:', err);
+    return c.json(
+      {
+        error: 'InternalServerError',
+        message: 'Failed to list communities',
+        details: c.env.ENVIRONMENT === 'development' ? String(err) : undefined,
+      },
+      500
+    );
   }
 });
 
@@ -156,8 +242,16 @@ app.post('/', async (c) => {
     };
 
     return c.json(response, 201);
-  } catch (_err) {
-    return c.json({ error: 'InternalServerError', message: 'Failed to create community' }, 500);
+  } catch (err) {
+    console.error('[Communities] Create community error:', err);
+    return c.json(
+      {
+        error: 'InternalServerError',
+        message: 'Failed to create community',
+        details: c.env.ENVIRONMENT === 'development' ? String(err) : undefined,
+      },
+      500
+    );
   }
 });
 

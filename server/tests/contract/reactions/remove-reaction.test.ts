@@ -5,8 +5,6 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { unstable_dev } from 'wrangler';
 
 describe('DELETE /api/reactions/remove', () => {
-  let worker: UnstableDevWorker;
-
   beforeAll(async () => {
     worker = await unstable_dev('src/index.ts', {
       experimental: { disableExperimentalWarning: true },

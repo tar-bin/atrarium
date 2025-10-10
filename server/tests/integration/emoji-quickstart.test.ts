@@ -1,6 +1,6 @@
 import { AtpAgent } from '@atproto/api';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { renderMarkdown } from '../../../client/src/lib/markdown';
+// import { renderMarkdown } from '../../../client/src/lib/markdown';
 import { ATProtoService } from '../../src/services/atproto';
 import type { Env } from '../../src/types';
 

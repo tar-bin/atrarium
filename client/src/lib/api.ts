@@ -267,3 +267,35 @@ export async function approveEmoji(
 
   return response.json();
 }
+
+// ============================================================================
+// Community API helpers
+// ============================================================================
+
+/**
+ * List communities where user is a member
+ */
+export async function listCommunities(): Promise<{
+  data: Array<{
+    id: string;
+    name: string;
+    description: string | null;
+    stage: string;
+    parentId: string | null;
+    memberCount: number;
+    postCount: number;
+    createdAt: number;
+  }>;
+}> {
+  const response = await fetch(`${baseURL}/api/communities`, {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to list communities: ${response.statusText}`);
+  }
+
+  return response.json();
+}

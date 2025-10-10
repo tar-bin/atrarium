@@ -5,13 +5,13 @@
   "private": true,
   "main": "src/index.ts",
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "wrangler dev --port 8787",
     "deploy": "wrangler deploy",
     "build": "wrangler deploy --dry-run",
     "test": "vitest run",
     "test:watch": "vitest --watch",
     "test:pds": "vitest run --config vitest.pds.config.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --project tsconfig.build.json --noEmit",
     "codegen": "npx @atproto/lex-cli gen-api src/schemas/generated/ ../lexicons/*.json"
   },
   "dependencies": {

@@ -8,6 +8,26 @@ order: 3
 
 Quick reference for common tasks and operations.
 
+## Load Test Data (Local Development)
+
+```bash
+# Start all services (PDS + Server + Client)
+./start-dev.sh all
+
+# Load sample data (communities, posts, members)
+./scripts/load-test-data.sh
+
+# Access dashboard
+# URL: http://localhost:5173
+# Login: alice.test / test123
+```
+
+The test data script creates:
+- 3 communities (Design, Tech, Game)
+- 3 users (alice.test, bob.test, moderator.test)
+- ~7 sample posts across communities
+- Membership relationships with appropriate roles
+
 ## Create a Community
 
 ```bash

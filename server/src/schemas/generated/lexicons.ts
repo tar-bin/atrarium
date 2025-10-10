@@ -146,6 +146,7 @@ export const schemaDict = {
               description: 'Emoji shortcode (alphanumeric + underscore, case-insensitive)',
               minLength: 2,
               maxLength: 32,
+              // @ts-expect-error - pattern is valid Lexicon property but not in @atproto/lexicon types
               pattern: '^[a-zA-Z0-9_]+$',
             },
             imageBlobCid: {
@@ -285,6 +286,7 @@ export const schemaDict = {
               maxLength: 20,
               items: {
                 type: 'string',
+                // @ts-expect-error - pattern is valid Lexicon property
                 pattern: '^[a-z0-9_]+$',
                 maxLength: 32,
               },
@@ -293,6 +295,7 @@ export const schemaDict = {
               type: 'string',
               description:
                 'Community identifier (8-character hex, system-generated). Immutable across stage transitions.',
+              // @ts-expect-error - pattern is valid Lexicon property
               pattern: '^[0-9a-f]{8}$',
               maxLength: 8,
               minLength: 8,
@@ -384,6 +387,7 @@ export const schemaDict = {
               type: 'string',
               description:
                 'Registered shortcode in community namespace (unique per community). Must match the shortcode in the referenced custom emoji.',
+              // @ts-expect-error - pattern is valid Lexicon property
               pattern: '^[a-z0-9_]+$',
               maxLength: 32,
               minLength: 2,
@@ -398,6 +402,7 @@ export const schemaDict = {
               type: 'string',
               description:
                 'Community identifier (8-character hex). Defines the emoji namespace scope.',
+              // @ts-expect-error - pattern is valid Lexicon property
               pattern: '^[0-9a-f]{8}$',
               maxLength: 8,
               minLength: 8,
@@ -446,6 +451,7 @@ export const schemaDict = {
               type: 'string',
               description:
                 "Emoji shortcode identifier (e.g., 'my_emoji' for :my_emoji:). Used for insertion in posts.",
+              // @ts-expect-error - pattern is valid Lexicon property
               pattern: '^[a-z0-9_]+$',
               maxLength: 32,
               minLength: 2,

@@ -50,7 +50,7 @@ export async function checkRateLimit(
 
   // Check if limit exceeded
   if (recentTimestamps.length >= maxRequests) {
-    const oldestTimestamp = recentTimestamps[0];
+    const oldestTimestamp = recentTimestamps[0] || now;
     const retryAfter = Math.ceil((oldestTimestamp + windowMs - now) / 1000);
 
     return {
@@ -68,6 +68,7 @@ export async function checkRateLimit(
     key,
     { timestamps: recentTimestamps },
     {
+      // @ts-expect-error - expirationTtl is valid Durable Object Storage option
       expirationTtl: Math.ceil(windowMs / 1000),
     }
   );
@@ -112,7 +113,7 @@ export async function getRateLimitStatus(
   const recentTimestamps = allTimestamps.filter((ts) => ts > windowStart);
 
   const remaining = Math.max(0, maxRequests - recentTimestamps.length);
-  const resetAt = recentTimestamps.length > 0 ? recentTimestamps[0] + windowMs : now;
+  const resetAt = recentTimestamps.length > 0 ? (recentTimestamps[0] || now) + windowMs : now;
 
   return { remaining, resetAt };
 }

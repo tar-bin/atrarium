@@ -30,26 +30,51 @@ export function PDSProvider({ children }: { children: ReactNode }) {
         const storedSessionData = JSON.parse(storedSessionStr);
         // Attempt to resume session with stored session data
         resumeSession(storedSessionData)
-          .then((agent) => {
+          .then(async (agent) => {
             const did = getSessionDID(agent);
             const handle = getSessionHandle(agent);
-            if (did && handle) {
+            if (did && handle && agent.session) {
               setSession({
                 agent,
                 did,
                 handle,
                 isAuthenticated: true,
               });
+
+              // Re-exchange PDS JWT for fresh Atrarium JWT
+              try {
+                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+                const response = await fetch(`${apiUrl}/api/auth/pds-login`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    accessJwt: agent.session.accessJwt,
+                    did,
+                    handle,
+                  }),
+                });
+
+                if (response.ok) {
+                  const { accessJwt } = await response.json();
+                  localStorage.setItem('auth_token', accessJwt);
+                }
+              } catch (_error) {
+                // Continue with session even if JWT exchange fails
+                // User can re-login if needed
+              }
             } else {
               // Session data is invalid, clear it
               localStorage.removeItem(SESSION_STORAGE_KEY);
+              localStorage.removeItem('auth_token');
             }
           })
           .catch((_error) => {
             localStorage.removeItem(SESSION_STORAGE_KEY);
+            localStorage.removeItem('auth_token');
           });
       } catch (_error) {
         localStorage.removeItem(SESSION_STORAGE_KEY);
+        localStorage.removeItem('auth_token');
       }
     }
   }, []);
@@ -74,6 +99,25 @@ export function PDSProvider({ children }: { children: ReactNode }) {
 
     // Store full session data for resumeSession
     localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(agent.session));
+
+    // Exchange PDS JWT for Atrarium JWT
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+    const response = await fetch(`${apiUrl}/api/auth/pds-login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        accessJwt: agent.session.accessJwt,
+        did,
+        handle: sessionHandle,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to exchange PDS JWT for Atrarium JWT');
+    }
+
+    const { accessJwt } = await response.json();
+    localStorage.setItem('auth_token', accessJwt);
   };
 
   const logout = () => {
@@ -84,6 +128,7 @@ export function PDSProvider({ children }: { children: ReactNode }) {
       isAuthenticated: false,
     });
     localStorage.removeItem(SESSION_STORAGE_KEY);
+    localStorage.removeItem('auth_token');
   };
 
   return (

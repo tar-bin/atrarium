@@ -18,6 +18,7 @@ new_classes = ["CommunityFeedGenerator", "FirehoseReceiver"]
 # Environment Variables
 [vars]
 ENVIRONMENT = "development"
+PDS_URL = "http://pds:3000"
 
 # Cron Triggers (for post deletion sync)
 [triggers]

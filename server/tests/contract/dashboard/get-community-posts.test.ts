@@ -149,7 +149,7 @@ describe('GET /api/communities/{communityId}/posts', () => {
 
     expect(response.status).toBe(200);
 
-    const _data = await response.json();
+    await response.json();
     // Moderators can see hidden posts (if any exist)
     // This is a smoke test - actual hidden posts require setup
   });

@@ -10,6 +10,7 @@ export interface Env {
   BLUESKY_HANDLE?: string;
   BLUESKY_APP_PASSWORD?: string;
   ENVIRONMENT?: string;
+  PDS_URL?: string;
   // Durable Objects bindings (006-pds-1-db)
   COMMUNITY_FEED: DurableObjectNamespace;
   FIREHOSE_RECEIVER: DurableObjectNamespace;

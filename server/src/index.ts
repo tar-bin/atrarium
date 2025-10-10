@@ -12,13 +12,13 @@ import { generateOpenAPISpec } from './openapi';
 // Import oRPC router
 import { router } from './router';
 import authRoutes from './routes/auth';
+import communityRoutes from './routes/communities'; // Temporarily re-enabled for testing
 import emojiRoutes from './routes/emoji'; // 015-markdown-pds: Emoji Management
 // Import routes (legacy, to be migrated)
 import feedGeneratorRoutes from './routes/feed-generator';
 import lexiconRoutes from './routes/lexicon';
 import membershipRoutes from './routes/memberships';
 import moderationRoutes from './routes/moderation';
-// import communityRoutes from './routes/communities'; // Migrated to oRPC
 // import themeFeedRoutes from './routes/theme-feeds'; // TODO: Migrate to PDS-first
 import postRoutes from './routes/posts'; // 014-bluesky: Custom Lexicon Posts
 import reactionRoutes from './routes/reactions'; // 016-slack-mastodon-misskey: Reactions
@@ -118,10 +118,29 @@ app.get('/api/docs', (c) => {
   return c.html(html);
 });
 
+// Test endpoint to debug routing
+app.get('/api/auth/test', (c) => {
+  return c.json({ message: 'Auth route works!' });
+});
+
+// Auth routes (before oRPC handler to avoid middleware conflicts)
+app.route('/api/auth', authRoutes);
+
+// Community routes (before oRPC handler - temporary fix)
+app.route('/api/communities', communityRoutes);
+
 // oRPC middleware for API routes
 app.use('/api/*', async (c, next) => {
-  // Skip docs and openapi.json endpoints
-  if (c.req.path === '/api/docs' || c.req.path === '/api/openapi.json') {
+  const path = c.req.path;
+
+  // Skip docs, openapi.json, auth, and communities endpoints
+  if (
+    path === '/api/docs' ||
+    path === '/api/openapi.json' ||
+    path.startsWith('/api/auth') ||
+    path.startsWith('/api/communities')
+  ) {
+    // Always skip - no environment check
     return next();
   }
 
@@ -149,6 +168,11 @@ app.use('/api/*', async (c, next) => {
     context,
   });
 
+  // Debug log
+  if (c.env.ENVIRONMENT === 'development') {
+    console.log(`[oRPC] Path: ${path}, Matched: ${matched}`);
+  }
+
   if (matched) {
     return c.newResponse(response.body, response);
   }
@@ -163,8 +187,8 @@ app.route('/', feedGeneratorRoutes);
 app.route('/', lexiconRoutes);
 
 // Dashboard API (legacy routes, to be migrated to oRPC)
-app.route('/api/auth', authRoutes);
-// app.route('/api/communities', communityRoutes); // Migrated to oRPC
+// Note: Auth and Community routes already registered before oRPC middleware
+// app.route('/api/communities', communityRoutes); // Moved before oRPC middleware (line 130)
 // app.route('/api/communities', themeFeedRoutes); // TODO: Migrate to PDS-first
 app.route('/api', postRoutes); // 014-bluesky: Custom Lexicon Posts
 app.route('/api/emoji', emojiRoutes); // 015-markdown-pds: Emoji Management (T024-T030)

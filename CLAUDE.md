@@ -406,6 +406,60 @@ pnpm --filter server test:pds
 # Environment variable: PDS_URL=http://pds:3000
 ```
 
+### Development Server Startup (start-dev.sh)
+```bash
+# Start all services (PDS + Server + Client)
+./start-dev.sh all
+
+# Start only specific services
+./start-dev.sh client    # Client only (default)
+./start-dev.sh server    # Server only
+./start-dev.sh pds       # Local PDS only
+
+# The script automatically:
+# - Starts Docker Compose for local PDS
+# - Creates test accounts (alice.test, bob.test, moderator.test)
+# - Runs server in background, client in foreground
+# - Server logs: tail -f /tmp/atrarium-server.log
+
+# Services:
+# - PDS:    http://localhost:3000 (real Bluesky PDS)
+# - Client: http://localhost:5173 (Vite dev server)
+# - Server: http://localhost:8787 (Miniflare with real Durable Objects/Queue)
+
+# Note: MSW is NOT used during development
+# - Development uses real server (Miniflare) and real PDS
+# - MSW is only used in client component tests (pnpm --filter client test)
+```
+
+### Load Test Data (scripts/load-test-data.sh)
+```bash
+# Load sample communities and posts into local environment
+# Prerequisites: PDS and Server must be running
+./scripts/load-test-data.sh
+
+# The script automatically:
+# - Verifies PDS (localhost:3000) and Server (localhost:8787) are running
+# - Logs in as test accounts (alice.test, bob.test, moderator.test)
+# - Creates 3 communities (Design, Tech, Game)
+# - Adds members with appropriate roles
+# - Creates ~7 sample posts across communities
+
+# Test accounts and roles:
+# - alice.test: Owner of Design & Tech communities
+# - bob.test: Owner of Game community, member of others
+# - moderator.test: Moderator of Design community
+
+# Access the dashboard:
+# - URL: http://localhost:5173
+# - Login: alice.test / test123 (or bob.test, moderator.test)
+
+# To reset data:
+# 1. Restart PDS: docker compose -f .devcontainer/docker-compose.yml restart pds
+# 2. Restart server: Ctrl+C and pnpm --filter server dev
+# 3. Run script again: ./scripts/load-test-data.sh
+```
+
 ### Code Quality and Pre-commit Validation
 
 **Automated quality gates** (enforced by pre-commit hooks):
@@ -439,19 +493,24 @@ pnpm -r typecheck      # Type check all workspaces
 # Run all workspace tests
 pnpm -r test
 
-# Server tests
+# Server tests (uses @cloudflare/vitest-pool-workers)
 pnpm --filter server test           # Run all server tests
 pnpm --filter server test:watch     # Watch mode
-pnpm --filter server test:pds       # PDS integration tests
+pnpm --filter server test:pds       # PDS integration tests (requires local PDS)
 
-# Dashboard tests
-pnpm --filter client test        # Run dashboard tests
+# Client tests (uses MSW for API mocking)
+pnpm --filter client test           # Run component tests with MSW
+pnpm --filter client test:watch     # Watch mode
+pnpm --filter client test:e2e       # E2E tests with Playwright (no MSW)
 
-# Run specific test file (in server)
+# Run specific test file
 pnpm --filter server exec vitest run tests/contract/feed-generator/get-feed-skeleton.test.ts
 
-# The test suite uses @cloudflare/vitest-pool-workers for Cloudflare Workers environment
-# PDS-specific tests use vitest.pds.config.ts for isolated PDS testing
+# Test environment differences:
+# - Server tests: Real Miniflare environment (Durable Objects, Queue)
+# - Client tests: MSW mocks API responses (client/tests/mocks/handlers.ts)
+# - PDS tests: Real Bluesky PDS via DevContainer (vitest.pds.config.ts)
+# - E2E tests: Real server + real PDS (Playwright)
 ```
 
 ### Deployment
@@ -698,7 +757,7 @@ This project uses `.specify/` slash commands for feature development workflow:
 4. `/implement` → executes tasks autonomously
 5. `/analyze` → validates consistency across spec.md, plan.md, tasks.md
 
-All outputs include Constitution Check section validating compliance with 7 principles.
+All outputs include Constitution Check section validating compliance with 10 principles.
 
 ### Critical Implementation Details (006-pds-1-db)
 - **Jetstream WebSocket URL**: `wss://jetstream2.us-east.bsky.network/subscribe` (Firehose alternative)
@@ -718,13 +777,30 @@ All outputs include Constitution Check section validating compliance with 7 prin
 - **Lexicon Publication** (010-lexicon): Schemas published at `/xrpc/net.atrarium.lexicon.get?nsid={nsid}` with ETag caching (SHA-256, 1-hour beta period)
 
 ### Testing Strategy
-Tests use `@cloudflare/vitest-pool-workers` to simulate Cloudflare Workers environment:
-- **Setup**: Durable Objects are auto-provisioned on first use (no schema migrations needed)
-- **Environment**: Durable Objects and Queue bindings configured in [wrangler.toml](wrangler.toml)
-- **Contract Tests**: API endpoint validation ([tests/contract/](tests/contract/))
-- **Integration Tests**: End-to-end workflows ([tests/integration/](tests/integration/))
-- **Unit Tests**: Isolated logic validation ([tests/unit/](tests/unit/))
-- **PDS Integration**: Real Bluesky PDS testing in DevContainer ([tests/integration/pds-posting.test.ts](tests/integration/pds-posting.test.ts))
+
+**Server Tests** (uses `@cloudflare/vitest-pool-workers`):
+- **Setup**: Durable Objects auto-provisioned on first use (no schema migrations)
+- **Environment**: Real Miniflare with Durable Objects and Queue bindings ([wrangler.toml](wrangler.toml))
+- **Mock Data**: Generated per-test in [tests/helpers/test-env.ts](tests/helpers/test-env.ts)
+- **Test Types**:
+  - Contract tests: API endpoint validation ([tests/contract/](tests/contract/))
+  - Integration tests: End-to-end workflows ([tests/integration/](tests/integration/))
+  - Unit tests: Isolated logic validation ([tests/unit/](tests/unit/))
+  - PDS tests: Real Bluesky PDS via DevContainer ([tests/integration/pds-posting.test.ts](tests/integration/pds-posting.test.ts))
+
+**Client Tests** (uses MSW + Testing Library):
+- **Setup**: MSW server started in [tests/setup.ts](client/tests/setup.ts)
+- **Mock Handlers**: API responses in [tests/mocks/handlers.ts](client/tests/mocks/handlers.ts)
+- **Mock Data**: Communities, feeds, posts predefined in handlers
+- **Test Types**:
+  - Component tests: React component behavior with mocked API
+  - E2E tests: Playwright with real server (no MSW)
+
+**Test Data Loading**:
+- **Development**: No pre-loaded data, use Dashboard UI or API to create test data
+- **Server Tests**: Mock data generated per-test (`createMockEnv()`, `createMockJWT()`)
+- **Client Tests**: MSW handlers return predefined mock data
+- **PDS Tests**: DevContainer setup script creates accounts (alice.test, bob.test, moderator.test)
 
 ### Local Development (006-pds-1-db)
 ```bash

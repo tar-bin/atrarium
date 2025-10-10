@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { listCommunities } from '@/lib/api';
 import type { Community } from '@/types';
 import { CommunityCard } from './CommunityCard';
 
@@ -16,14 +17,22 @@ export function CommunityBrowser({ onCommunitySelect }: CommunityBrowserProps) {
   );
   const [accessTypeFilter, setAccessTypeFilter] = useState<'all' | 'open' | 'invite-only'>('all');
 
-  // TODO: Replace with actual API call using TanStack Query
-  const { data: communities = [], isLoading } = useQuery<Community[]>({
-    queryKey: ['communities', stageFilter, accessTypeFilter],
-    queryFn: async () => {
-      // Placeholder - replace with actual API call
-      return [];
-    },
+  // Fetch communities from API
+  const { data, isLoading } = useQuery({
+    queryKey: ['communities'],
+    queryFn: listCommunities,
   });
+
+  const communities: Community[] = (data?.data || []).map((c) => ({
+    ...c,
+    ownerDid: '', // TODO: Extract from community config
+    feedMixOwn: 1.0,
+    feedMixParent: 0.0,
+    feedMixGlobal: 0.0,
+    graduatedAt: null,
+    archivedAt: null,
+    accessType: 'open' as const, // TODO: Get from community config
+  }));
 
   const filteredCommunities = communities.filter((community) => {
     const matchesSearch = community.name.toLowerCase().includes(searchQuery.toLowerCase());

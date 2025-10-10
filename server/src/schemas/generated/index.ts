@@ -13,6 +13,52 @@ import type * as NetAtrariumEmojiCustom from './types/net/atrarium/emoji/custom.
 import type * as NetAtrariumModerationAction from './types/net/atrarium/moderation/action.js';
 import type { OmitKey, Un$Typed } from './util.js';
 
+// Type definitions for com.atproto.repo.* methods
+namespace ComAtprotoRepoListRecords {
+  export interface QueryParams {
+    repo: string;
+    collection: string;
+    limit?: number;
+    cursor?: string;
+  }
+}
+
+namespace ComAtprotoRepoGetRecord {
+  export interface QueryParams {
+    repo: string;
+    collection: string;
+    rkey: string;
+  }
+}
+
+namespace ComAtprotoRepoCreateRecord {
+  export interface InputSchema {
+    repo: string;
+    collection: string;
+    rkey?: string;
+    validate?: boolean;
+    record: Record<string, unknown>;
+  }
+}
+
+namespace ComAtprotoRepoPutRecord {
+  export interface InputSchema {
+    repo: string;
+    collection: string;
+    rkey: string;
+    validate?: boolean;
+    record: Record<string, unknown>;
+  }
+}
+
+namespace ComAtprotoRepoDeleteRecord {
+  export interface InputSchema {
+    repo: string;
+    collection: string;
+    rkey: string;
+  }
+}
+
 export * as NetAtrariumCommunityConfig from './types/net/atrarium/community/config.js';
 export * as NetAtrariumCommunityEmoji from './types/net/atrarium/community/emoji.js';
 export * as NetAtrariumCommunityMembership from './types/net/atrarium/community/membership.js';

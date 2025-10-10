@@ -131,3 +131,26 @@ Task: "Integration test auth in tests/integration/test_auth.py"
 - [ ] Parallel tasks truly independent
 - [ ] Each task specifies exact file path
 - [ ] No task modifies same file as another [P] task
+
+## Completion Criteria (Constitution Principle 10)
+*Complete Implementation Over MVP Excuses*
+
+Each task MUST be fully completed before being marked as done:
+- [ ] All functionality specified in task description implemented (not partial/MVP)
+- [ ] All error handling paths implemented (not TODO comments)
+- [ ] All validation logic implemented (not deferred)
+- [ ] All UI components created and integrated (not placeholders)
+- [ ] All API endpoints implemented and tested (not mocked)
+- [ ] No "Phase 2" or "Future Enhancement" comments in completed task code
+- [ ] Integration tests passing for completed tasks (not skipped)
+
+**Acceptable Deferrals** (must be tracked as separate tasks):
+- Performance optimizations (if core functionality works)
+- Non-critical edge cases (must be explicitly documented)
+- Features explicitly scoped out of current feature specification
+
+**Prohibited Patterns**:
+- ❌ "MVP implementation - full version in Phase 2"
+- ❌ "TODO: Complete this functionality later"
+- ❌ "Placeholder UI - design pending"
+- ❌ Marking task complete while tests are skipped/mocked
