@@ -47,6 +47,33 @@ fi
 echo -e "${GREEN}✅ Atrarium server is running at $API_URL${NC}"
 echo ""
 
+# Function to create account or login if already exists
+create_or_login_pds() {
+    local handle=$1
+    local password=$2
+    local email="${handle%%.*}@test.local"
+
+    # Try to create account first
+    local create_response=$(curl -s -X POST "$PDS_URL/xrpc/com.atproto.server.createAccount" \
+        -H "Content-Type: application/json" \
+        -d "{\"handle\":\"$handle\",\"email\":\"$email\",\"password\":\"$password\"}" 2>&1)
+
+    # Check if account was created or already exists
+    if echo "$create_response" | grep -q '"accessJwt"'; then
+        # Account created successfully
+        local pds_access_jwt=$(echo "$create_response" | grep -o '"accessJwt":"[^"]*"' | cut -d'"' -f4)
+        local did=$(echo "$create_response" | grep -o '"did":"[^"]*"' | cut -d'"' -f4)
+        echo "$pds_access_jwt|$did"
+    elif echo "$create_response" | grep -q 'already taken'; then
+        # Account already exists, login instead
+        login_pds "$handle" "$password"
+    else
+        echo -e "${RED}❌ Failed to create account $handle${NC}" >&2
+        echo "   Response: $create_response" >&2
+        exit 1
+    fi
+}
+
 # Function to login and get PDS JWT + DID
 login_pds() {
     local handle=$1
@@ -191,25 +218,25 @@ create_post_pds() {
 # Main test data loading
 # ============================================================================
 
-echo -e "${BLUE}👤 Logging in test accounts...${NC}"
+echo -e "${BLUE}👤 Creating/logging in test accounts...${NC}"
 
-# Login Alice
-ALICE_AUTH=$(login_pds "$ALICE_HANDLE" "$ALICE_PASSWORD")
+# Create or login Alice
+ALICE_AUTH=$(create_or_login_pds "$ALICE_HANDLE" "$ALICE_PASSWORD")
 ALICE_JWT=$(echo "$ALICE_AUTH" | cut -d'|' -f1)
 ALICE_DID=$(echo "$ALICE_AUTH" | cut -d'|' -f2)
-echo -e "${GREEN}✅ Alice logged in${NC} (DID: $ALICE_DID)"
+echo -e "${GREEN}✅ Alice ready${NC} (DID: $ALICE_DID)"
 
-# Login Bob
-BOB_AUTH=$(login_pds "$BOB_HANDLE" "$BOB_PASSWORD")
+# Create or login Bob
+BOB_AUTH=$(create_or_login_pds "$BOB_HANDLE" "$BOB_PASSWORD")
 BOB_JWT=$(echo "$BOB_AUTH" | cut -d'|' -f1)
 BOB_DID=$(echo "$BOB_AUTH" | cut -d'|' -f2)
-echo -e "${GREEN}✅ Bob logged in${NC} (DID: $BOB_DID)"
+echo -e "${GREEN}✅ Bob ready${NC} (DID: $BOB_DID)"
 
-# Login Moderator
-MOD_AUTH=$(login_pds "$MODERATOR_HANDLE" "$MODERATOR_PASSWORD")
+# Create or login Moderator
+MOD_AUTH=$(create_or_login_pds "$MODERATOR_HANDLE" "$MODERATOR_PASSWORD")
 MOD_JWT=$(echo "$MOD_AUTH" | cut -d'|' -f1)
 MOD_DID=$(echo "$MOD_AUTH" | cut -d'|' -f2)
-echo -e "${GREEN}✅ Moderator logged in${NC} (DID: $MOD_DID)"
+echo -e "${GREEN}✅ Moderator ready${NC} (DID: $MOD_DID)"
 
 echo ""
 echo -e "${BLUE}🏘️  Creating communities and themes...${NC}"
@@ -439,7 +466,7 @@ if [ -n "$DESIGN_ID" ] && [ -n "$DESIGN_URI" ]; then
 
     if [ -n "$POST_URI" ] && [ -n "$POST_CID" ]; then
         # Moderator hides a post for spam
-        local now=$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")
+        now=$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")
         curl -s -X POST "$PDS_URL/xrpc/com.atproto.repo.createRecord" \
             -H "Authorization: Bearer $MOD_JWT" \
             -H "Content-Type: application/json" \
@@ -478,7 +505,7 @@ if [ -n "$DESIGN_ID" ]; then
 
     if [ -n "$FIRST_POST_URI" ]; then
         # Alice adds thumbs up reaction
-        local now=$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")
+        now=$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")
         curl -s -X POST "$PDS_URL/xrpc/com.atproto.repo.createRecord" \
             -H "Authorization: Bearer $ALICE_JWT" \
             -H "Content-Type: application/json" \
