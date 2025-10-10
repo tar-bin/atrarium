@@ -7,7 +7,7 @@ import {
   ValidationError,
   type ValidationResult,
 } from '@atproto/lexicon';
-import { is$typed, maybe$typed } from './util.js';
+import { type $Typed, is$typed, maybe$typed } from './util.js';
 
 export const schemaDict = {
   NetAtrariumCommunityConfig: {
@@ -122,78 +122,6 @@ export const schemaDict = {
       },
     },
   },
-  NetAtrariumCommunityEmoji: {
-    lexicon: 1,
-    id: 'net.atrarium.community.emoji',
-    defs: {
-      main: {
-        type: 'record',
-        description: 'A community-specific custom emoji.',
-        key: 'tid',
-        record: {
-          type: 'object',
-          required: [
-            'shortcode',
-            'imageBlobCid',
-            'communityId',
-            'createdBy',
-            'createdAt',
-            'approvalStatus',
-          ],
-          properties: {
-            shortcode: {
-              type: 'string',
-              description: 'Emoji shortcode (alphanumeric + underscore, case-insensitive)',
-              minLength: 2,
-              maxLength: 32,
-              // @ts-expect-error - pattern is valid Lexicon property but not in @atproto/lexicon types
-              pattern: '^[a-zA-Z0-9_]+$',
-            },
-            imageBlobCid: {
-              type: 'string',
-              format: 'cid',
-              description: 'AT Protocol blob CID for the emoji image',
-            },
-            communityId: {
-              type: 'string',
-              description: 'Community where the emoji is available',
-              maxLength: 128,
-            },
-            createdBy: {
-              type: 'string',
-              format: 'did',
-              description: 'DID of the user who uploaded the emoji',
-            },
-            createdAt: {
-              type: 'string',
-              format: 'datetime',
-              description: 'Timestamp when the emoji was created',
-            },
-            approvalStatus: {
-              type: 'string',
-              enum: ['pending', 'approved', 'rejected', 'revoked'],
-              description: 'Moderation status of the emoji',
-            },
-            approvedBy: {
-              type: 'string',
-              format: 'did',
-              description: 'DID of the owner/moderator who approved the emoji (optional)',
-            },
-            approvedAt: {
-              type: 'string',
-              format: 'datetime',
-              description: 'Timestamp when the emoji was approved (optional)',
-            },
-            rejectionReason: {
-              type: 'string',
-              description: 'Reason for rejection (if status is rejected, optional)',
-              maxLength: 500,
-            },
-          },
-        },
-      },
-    },
-  },
   NetAtrariumCommunityMembership: {
     lexicon: 1,
     id: 'net.atrarium.community.membership',
@@ -286,7 +214,6 @@ export const schemaDict = {
               maxLength: 20,
               items: {
                 type: 'string',
-                // @ts-expect-error - pattern is valid Lexicon property
                 pattern: '^[a-z0-9_]+$',
                 maxLength: 32,
               },
@@ -295,7 +222,6 @@ export const schemaDict = {
               type: 'string',
               description:
                 'Community identifier (8-character hex, system-generated). Immutable across stage transitions.',
-              // @ts-expect-error - pattern is valid Lexicon property
               pattern: '^[0-9a-f]{8}$',
               maxLength: 8,
               minLength: 8,
@@ -387,7 +313,6 @@ export const schemaDict = {
               type: 'string',
               description:
                 'Registered shortcode in community namespace (unique per community). Must match the shortcode in the referenced custom emoji.',
-              // @ts-expect-error - pattern is valid Lexicon property
               pattern: '^[a-z0-9_]+$',
               maxLength: 32,
               minLength: 2,
@@ -402,7 +327,6 @@ export const schemaDict = {
               type: 'string',
               description:
                 'Community identifier (8-character hex). Defines the emoji namespace scope.',
-              // @ts-expect-error - pattern is valid Lexicon property
               pattern: '^[0-9a-f]{8}$',
               maxLength: 8,
               minLength: 8,
@@ -451,7 +375,6 @@ export const schemaDict = {
               type: 'string',
               description:
                 "Emoji shortcode identifier (e.g., 'my_emoji' for :my_emoji:). Used for insertion in posts.",
-              // @ts-expect-error - pattern is valid Lexicon property
               pattern: '^[a-z0-9_]+$',
               maxLength: 32,
               minLength: 2,
@@ -645,7 +568,6 @@ export function validate(
 
 export const ids = {
   NetAtrariumCommunityConfig: 'net.atrarium.community.config',
-  NetAtrariumCommunityEmoji: 'net.atrarium.community.emoji',
   NetAtrariumCommunityMembership: 'net.atrarium.community.membership',
   NetAtrariumCommunityPost: 'net.atrarium.community.post',
   NetAtrariumCommunityReaction: 'net.atrarium.community.reaction',

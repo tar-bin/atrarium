@@ -2,9 +2,9 @@
  * GENERATED CODE - DO NOT MODIFY
  */
 import { type FetchHandler, type FetchHandlerOptions, XrpcClient } from '@atproto/xrpc';
+import { CID } from 'multiformats/cid';
 import { schemas } from './lexicons.js';
 import type * as NetAtrariumCommunityConfig from './types/net/atrarium/community/config.js';
-import type * as NetAtrariumCommunityEmoji from './types/net/atrarium/community/emoji.js';
 import type * as NetAtrariumCommunityMembership from './types/net/atrarium/community/membership.js';
 import type * as NetAtrariumCommunityPost from './types/net/atrarium/community/post.js';
 import type * as NetAtrariumCommunityReaction from './types/net/atrarium/community/reaction.js';
@@ -13,54 +13,7 @@ import type * as NetAtrariumEmojiCustom from './types/net/atrarium/emoji/custom.
 import type * as NetAtrariumModerationAction from './types/net/atrarium/moderation/action.js';
 import type { OmitKey, Un$Typed } from './util.js';
 
-// Type definitions for com.atproto.repo.* methods
-namespace ComAtprotoRepoListRecords {
-  export interface QueryParams {
-    repo: string;
-    collection: string;
-    limit?: number;
-    cursor?: string;
-  }
-}
-
-namespace ComAtprotoRepoGetRecord {
-  export interface QueryParams {
-    repo: string;
-    collection: string;
-    rkey: string;
-  }
-}
-
-namespace ComAtprotoRepoCreateRecord {
-  export interface InputSchema {
-    repo: string;
-    collection: string;
-    rkey?: string;
-    validate?: boolean;
-    record: Record<string, unknown>;
-  }
-}
-
-namespace ComAtprotoRepoPutRecord {
-  export interface InputSchema {
-    repo: string;
-    collection: string;
-    rkey: string;
-    validate?: boolean;
-    record: Record<string, unknown>;
-  }
-}
-
-namespace ComAtprotoRepoDeleteRecord {
-  export interface InputSchema {
-    repo: string;
-    collection: string;
-    rkey: string;
-  }
-}
-
 export * as NetAtrariumCommunityConfig from './types/net/atrarium/community/config.js';
-export * as NetAtrariumCommunityEmoji from './types/net/atrarium/community/emoji.js';
 export * as NetAtrariumCommunityMembership from './types/net/atrarium/community/membership.js';
 export * as NetAtrariumCommunityPost from './types/net/atrarium/community/post.js';
 export * as NetAtrariumCommunityReaction from './types/net/atrarium/community/reaction.js';
@@ -109,7 +62,6 @@ export class NetAtrariumNS {
 export class NetAtrariumCommunityNS {
   _client: XrpcClient;
   config: NetAtrariumCommunityConfigRecord;
-  emoji: NetAtrariumCommunityEmojiRecord;
   membership: NetAtrariumCommunityMembershipRecord;
   post: NetAtrariumCommunityPostRecord;
   reaction: NetAtrariumCommunityReactionRecord;
@@ -117,7 +69,6 @@ export class NetAtrariumCommunityNS {
   constructor(client: XrpcClient) {
     this._client = client;
     this.config = new NetAtrariumCommunityConfigRecord(client);
-    this.emoji = new NetAtrariumCommunityEmojiRecord(client);
     this.membership = new NetAtrariumCommunityMembershipRecord(client);
     this.post = new NetAtrariumCommunityPostRecord(client);
     this.reaction = new NetAtrariumCommunityReactionRecord(client);
@@ -192,79 +143,6 @@ export class NetAtrariumCommunityConfigRecord {
       'com.atproto.repo.deleteRecord',
       undefined,
       { collection: 'net.atrarium.community.config', ...params },
-      { headers }
-    );
-  }
-}
-
-export class NetAtrariumCommunityEmojiRecord {
-  _client: XrpcClient;
-
-  constructor(client: XrpcClient) {
-    this._client = client;
-  }
-
-  async list(params: OmitKey<ComAtprotoRepoListRecords.QueryParams, 'collection'>): Promise<{
-    cursor?: string;
-    records: { uri: string; value: NetAtrariumCommunityEmoji.Record }[];
-  }> {
-    const res = await this._client.call('com.atproto.repo.listRecords', {
-      collection: 'net.atrarium.community.emoji',
-      ...params,
-    });
-    return res.data;
-  }
-
-  async get(params: OmitKey<ComAtprotoRepoGetRecord.QueryParams, 'collection'>): Promise<{
-    uri: string;
-    cid: string;
-    value: NetAtrariumCommunityEmoji.Record;
-  }> {
-    const res = await this._client.call('com.atproto.repo.getRecord', {
-      collection: 'net.atrarium.community.emoji',
-      ...params,
-    });
-    return res.data;
-  }
-
-  async create(
-    params: OmitKey<ComAtprotoRepoCreateRecord.InputSchema, 'collection' | 'record'>,
-    record: Un$Typed<NetAtrariumCommunityEmoji.Record>,
-    headers?: Record<string, string>
-  ): Promise<{ uri: string; cid: string }> {
-    const collection = 'net.atrarium.community.emoji';
-    const res = await this._client.call(
-      'com.atproto.repo.createRecord',
-      undefined,
-      { collection, ...params, record: { ...record, $type: collection } },
-      { encoding: 'application/json', headers }
-    );
-    return res.data;
-  }
-
-  async put(
-    params: OmitKey<ComAtprotoRepoPutRecord.InputSchema, 'collection' | 'record'>,
-    record: Un$Typed<NetAtrariumCommunityEmoji.Record>,
-    headers?: Record<string, string>
-  ): Promise<{ uri: string; cid: string }> {
-    const collection = 'net.atrarium.community.emoji';
-    const res = await this._client.call(
-      'com.atproto.repo.putRecord',
-      undefined,
-      { collection, ...params, record: { ...record, $type: collection } },
-      { encoding: 'application/json', headers }
-    );
-    return res.data;
-  }
-
-  async delete(
-    params: OmitKey<ComAtprotoRepoDeleteRecord.InputSchema, 'collection'>,
-    headers?: Record<string, string>
-  ): Promise<void> {
-    await this._client.call(
-      'com.atproto.repo.deleteRecord',
-      undefined,
-      { collection: 'net.atrarium.community.emoji', ...params },
       { headers }
     );
   }
