@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { listCommunities } from '@/lib/api';
-import type { Community } from '@/types';
+import type { Community, CommunityStage } from '@/types';
 import { CommunityCard } from './CommunityCard';
 
 interface CommunityBrowserProps {
@@ -25,6 +25,7 @@ export function CommunityBrowser({ onCommunitySelect }: CommunityBrowserProps) {
 
   const communities: Community[] = (data?.data || []).map((c) => ({
     ...c,
+    stage: c.stage as CommunityStage, // Cast from string to CommunityStage
     ownerDid: '', // TODO: Extract from community config
     feedMixOwn: 1.0,
     feedMixParent: 0.0,
