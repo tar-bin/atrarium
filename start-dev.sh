@@ -44,11 +44,11 @@ start_pds() {
 
     if curl -sf http://localhost:3000/xrpc/_health > /dev/null 2>&1; then
         echo -e "${GREEN}✅ PDS is running at http://localhost:3000${NC}"
+        echo ""
 
-        # Check if test accounts exist
-        if bash .devcontainer/setup-pds.sh > /dev/null 2>&1; then
-            echo -e "${GREEN}✅ Test accounts configured${NC}"
-        fi
+        # Create test accounts
+        echo -e "${BLUE}👤 Setting up test accounts...${NC}"
+        bash .devcontainer/setup-pds.sh
     else
         echo -e "${YELLOW}⚠️  PDS may still be starting up...${NC}"
     fi
