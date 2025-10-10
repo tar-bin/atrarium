@@ -35,13 +35,26 @@ function CommunityDetailPage() {
     // TODO: Implement feed creation
   };
 
+  // Map API response to Community type with missing fields
+  const communityWithDefaults = {
+    ...community,
+    parentId: null,
+    ownerDid: '', // TODO: Get from community config
+    feedMixOwn: 1.0,
+    feedMixParent: 0.0,
+    feedMixGlobal: 0.0,
+    graduatedAt: null,
+    archivedAt: null,
+    accessType: 'open' as const,
+  };
+
   return (
     <div className="container mx-auto py-8">
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         {/* Left Column: Community Info */}
         <div className="lg:col-span-1">
           <CommunityDetail
-            community={community}
+            community={communityWithDefaults}
             feeds={feeds}
             loading={false}
             error={null}
