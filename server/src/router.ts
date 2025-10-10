@@ -27,15 +27,21 @@ export const router = {
       const communities = await atproto.listCommunitiesByOwner(userDid || '');
 
       return {
-        data: communities.map((community) => ({
-          id: community.uri,
-          name: community.name,
-          description: community.description || null,
-          stage: community.stage,
-          memberCount: 0, // TODO: Calculate from stats
-          postCount: 0, // TODO: Calculate from Durable Object
-          createdAt: new Date(community.createdAt).getTime(),
-        })),
+        data: communities.map((community) => {
+          // Extract rkey from AT-URI for URL routing
+          // Format: at://did:plc:xxx/collection/rkey → rkey
+          const rkey = community.uri.split('/').pop() || community.uri;
+
+          return {
+            id: rkey, // Use rkey instead of full AT-URI for URL routing
+            name: community.name,
+            description: community.description || null,
+            stage: community.stage,
+            memberCount: 0, // TODO: Calculate from stats
+            postCount: 0, // TODO: Calculate from Durable Object
+            createdAt: new Date(community.createdAt).getTime(),
+          };
+        }),
       };
     }),
 
@@ -110,11 +116,40 @@ export const router = {
       };
     }),
 
-    get: contract.communities.get.handler(async () => {
-      // TODO: Implement PDS-based community retrieval
-      throw new ORPCError('NOT_IMPLEMENTED', {
-        message: 'PDS-based retrieval not yet implemented',
-      });
+    get: contract.communities.get.handler(async ({ input, context }) => {
+      const { env, userDid } = context as ServerContext;
+      const { ATProtoService } = await import('./services/atproto');
+      const atproto = new ATProtoService(env);
+
+      // Convert rkey to AT-URI
+      // If input.id is already a full AT-URI (starts with "at://"), use it as-is
+      // Otherwise, construct AT-URI from userDid and rkey
+      let communityUri: string;
+      if (input.id.startsWith('at://')) {
+        communityUri = input.id;
+      } else {
+        // Construct AT-URI: at://did:plc:xxx/net.atrarium.community.config/rkey
+        communityUri = `at://${userDid}/net.atrarium.community.config/${input.id}`;
+      }
+
+      // Fetch community config from PDS
+      const community = await atproto.getCommunityConfig(communityUri);
+
+      // Fetch community stats (memberCount, pendingRequestCount)
+      const stats = await atproto.getCommunityStats(communityUri);
+
+      // Extract rkey from AT-URI for response
+      const rkey = communityUri.split('/').pop() || communityUri;
+
+      return {
+        id: rkey, // Return rkey for URL routing consistency
+        name: community.name,
+        description: community.description || null,
+        stage: community.stage,
+        memberCount: stats.memberCount,
+        postCount: 0, // TODO: Calculate from Durable Object
+        createdAt: new Date(community.createdAt).getTime(),
+      };
     }),
   },
 

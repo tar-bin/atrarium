@@ -24,8 +24,9 @@ export function useCommunity(communityId: string) {
   return useQuery({
     queryKey: ['community', communityId],
     queryFn: async () => {
-      // TODO: Replace with actual oRPC call
-      return null;
+      const apiClient = (await import('./api')).apiClient;
+      const result = await apiClient.communities.get({ id: communityId });
+      return result;
     },
   });
 }
