@@ -396,8 +396,8 @@ pnpm --filter server codegen      # Generate TypeScript types from lexicons/*.js
 # Open project in DevContainer (VS Code)
 # This automatically starts a local Bluesky PDS for testing
 
-# Setup test accounts (run after DevContainer starts)
-.devcontainer/setup-pds.sh
+# Load test data (creates accounts + communities + posts)
+./scripts/load-test-data.sh
 
 # Run PDS integration tests (from server directory)
 pnpm --filter server test:pds

@@ -44,18 +44,19 @@ This will:
 - Install npm dependencies
 - Forward port 3000
 
-### 2. Setup PDS Test Accounts
+### 2. Load Test Data
 
-Once the DevContainer is running:
+Once the DevContainer is running and you've started the dev server:
 
 ```bash
-bash .devcontainer/setup-pds.sh
+./scripts/load-test-data.sh
 ```
 
-This creates three test accounts:
-- `alice.test` / `test123`
-- `bob.test` / `test123`
-- `moderator.test` / `test123`
+This script:
+- Creates three test accounts (alice.test, bob.test, moderator.test)
+- Creates sample communities (Design, Tech, Game) with themes
+- Generates sample posts, reactions, and moderation actions
+- Provides a complete working environment for development
 
 ### 3. Verify PDS is Running
 
@@ -119,10 +120,7 @@ const post = await agent.post({
 **Note**: Account creation via API (not docker exec, as PDS runs in a separate Docker daemon):
 
 ```bash
-# Use the setup script (recommended)
-bash .devcontainer/setup-pds.sh
-
-# Or create manually via API
+# Create manually via API
 curl -X POST http://pds:3000/xrpc/com.atproto.server.createAccount \
   -H "Content-Type: application/json" \
   -d '{
@@ -130,6 +128,9 @@ curl -X POST http://pds:3000/xrpc/com.atproto.server.createAccount \
     "handle": "yourhandle.test",
     "password": "yourpassword"
   }'
+
+# Or use the load-test-data.sh script to recreate all test data
+./scripts/load-test-data.sh
 ```
 
 ### Viewing PDS Logs
@@ -174,9 +175,9 @@ docker ps | grep pds
 
 ### Test Account Login Fails
 
-Re-run setup script to recreate accounts:
+Re-run load-test-data.sh to recreate accounts and data:
 ```bash
-bash .devcontainer/setup-pds.sh
+./scripts/load-test-data.sh
 ```
 
 **Note**: `pdsadmin` CLI is not available from DevContainer (Docker-in-Docker limitation). Use the API instead.
@@ -224,7 +225,7 @@ timeout 30 bash -c 'until curl -sf http://localhost:3000/xrpc/_health; do sleep 
 
 - **devcontainer.json**: DevContainer configuration
 - **docker-compose.yml**: Multi-service setup (app + PDS)
-- **setup-pds.sh**: Test account creation script
+- **../scripts/load-test-data.sh**: Test data loader (accounts + communities + posts)
 
 ## Environment Variables
 

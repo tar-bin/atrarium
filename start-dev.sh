@@ -7,6 +7,7 @@ set -e
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
+RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 show_help() {
@@ -46,9 +47,19 @@ start_pds() {
         echo -e "${GREEN}✅ PDS is running at http://localhost:3000${NC}"
         echo ""
 
-        # Create test accounts
-        echo -e "${BLUE}👤 Setting up test accounts...${NC}"
-        bash .devcontainer/setup-pds.sh
+        # Check if test accounts exist
+        echo -e "${BLUE}👤 Checking test accounts...${NC}"
+        if curl -sf http://localhost:3000/xrpc/com.atproto.server.createSession \
+            -H "Content-Type: application/json" \
+            -d '{"identifier":"alice.test","password":"test123"}' > /dev/null 2>&1; then
+            echo -e "${GREEN}✅ Test accounts exist${NC}"
+            echo -e "${YELLOW}💡 Load test data: ./scripts/load-test-data.sh${NC}"
+        else
+            echo -e "${RED}❌ Test accounts not found${NC}"
+            echo -e "${YELLOW}💡 Run: ./scripts/load-test-data.sh${NC}"
+            echo -e "${YELLOW}   This will create accounts and load test communities/posts${NC}"
+            exit 1
+        fi
     else
         echo -e "${YELLOW}⚠️  PDS may still be starting up...${NC}"
     fi
