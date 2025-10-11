@@ -96,37 +96,37 @@ This document provides executable tasks for implementing the hierarchical group 
 
 ## Phase 3.4: PDS Service Extensions
 
-- [ ] **T015** Add `createChildGroup()` method in `server/src/services/atproto.ts`
+- [x] **T015** Add `createChildGroup()` method in `server/src/services/atproto.ts`
   - Query parent group from PDS (validate stage === 'graduated')
   - Create child record with `stage: 'theme'` and `parentGroup: parentAtUri` (immutable)
   - Return created child config (includes parent AT-URI)
   - **Validation**: Parent must be Graduated, user must be owner
 
-- [ ] **T016** Add `upgradeGroupStage()` method in `server/src/services/atproto.ts`
+- [x] **T016** Add `upgradeGroupStage()` method in `server/src/services/atproto.ts`
   - Fetch current group config from PDS
   - Query member count: `getMemberCount(groupId)` (counts active memberships)
   - Validate stage transition rules (Dunbar thresholds: ~15 for Community, ~50 for Graduated)
   - Update group record with new stage (putRecord)
   - **Validation**: Owner only, member count thresholds, valid stage transitions
 
-- [ ] **T017** Add `downgradeGroupStage()` method in `server/src/services/atproto.ts`
+- [x] **T017** Add `downgradeGroupStage()` method in `server/src/services/atproto.ts`
   - Fetch current group config from PDS
   - Validate downgrade rules (Graduated → Community → Theme)
   - Update group record with downgraded stage
   - **Note**: `parentGroup` field retained (immutable)
 
-- [ ] **T018** Add `listChildGroups()` method in `server/src/services/atproto.ts`
+- [x] **T018** Add `listChildGroups()` method in `server/src/services/atproto.ts`
   - Query Durable Objects Storage: `storage.get<string[]>(\`children:${parentId}\`)`
   - Fallback to PDS query if cache miss: `listRecords({ collection: 'net.atrarium.group.config', filter: parentGroup === parentAtUri })`
   - Return array of child GroupConfig objects
 
-- [ ] **T019** Add `getParentGroup()` method in `server/src/services/atproto.ts`
+- [x] **T019** Add `getParentGroup()` method in `server/src/services/atproto.ts`
   - Query Durable Objects Storage: `storage.get<string>(\`parent:${childId}\`)`
   - Fallback to PDS query if cache miss: fetch child record, extract `parentGroup` AT-URI
   - Resolve parent AT-URI → fetch parent GroupConfig
   - Return parent GroupConfig or null
 
-- [ ] **T020** Add `getMemberCount()` method in `server/src/services/atproto.ts`
+- [x] **T020** Add `getMemberCount()` method in `server/src/services/atproto.ts`
   - Query PDS: `listRecords({ collection: 'net.atrarium.group.membership', repo: userDid })`
   - Filter memberships: `membership.group === groupAtUri && membership.active === true`
   - Return count of active memberships
