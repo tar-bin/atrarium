@@ -13,7 +13,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { apiClient } from '@/lib/api';
+import { uploadEmoji } from '@/lib/api';
 
 const emojiUploadSchema = z.object({
   shortcode: z
@@ -82,11 +82,8 @@ export function EmojiUploadForm({ onSuccess, onError }: EmojiUploadFormProps) {
       });
       URL.revokeObjectURL(imageUrl);
 
-      // Upload emoji via oRPC
-      const result = await apiClient.emoji.upload({
-        file: data.file,
-        shortcode: data.shortcode,
-      });
+      // Upload emoji via legacy API
+      const result = await uploadEmoji(data.shortcode, data.file);
 
       // Reset form and preview
       form.reset();
@@ -94,7 +91,7 @@ export function EmojiUploadForm({ onSuccess, onError }: EmojiUploadFormProps) {
 
       // Notify success
       if (onSuccess) {
-        onSuccess(result.emojiURI);
+        onSuccess(result.emojiUri);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to upload emoji';

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { apiClient } from '@/lib/api';
+import { listEmojis } from '@/lib/api';
 
 interface EmojiMetadata {
   emojiURI: string;
@@ -26,11 +26,18 @@ export function EmojiPicker({ communityId, onEmojiSelect, trigger }: EmojiPicker
       setIsLoading(true);
       setError(null);
 
-      const result = await apiClient.emoji.registry({
-        communityId,
-      });
+      const result = await listEmojis(communityId);
 
-      setEmojiRegistry(result.emoji);
+      // Convert array to registry object
+      const registry: Record<string, EmojiMetadata> = {};
+      for (const emoji of result.emojis) {
+        registry[emoji.shortcode] = {
+          emojiURI: '', // Not available in legacy API
+          blobURI: emoji.imageUrl,
+          animated: emoji.animated,
+        };
+      }
+      setEmojiRegistry(registry);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load emoji');
     } finally {
