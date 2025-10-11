@@ -1,14 +1,14 @@
 {
   "lexicon": 1,
-  "id": "net.atrarium.community.reaction",
+  "id": "net.atrarium.group.reaction",
   "defs": {
     "main": {
       "type": "record",
-      "description": "A user's emoji reaction to a post within a community.",
+      "description": "A user's emoji reaction to a post within a group.",
       "key": "tid",
       "record": {
         "type": "object",
-        "required": ["reactorDid", "postUri", "emoji", "communityId", "createdAt"],
+        "required": ["reactorDid", "postUri", "emoji", "groupId", "createdAt"],
         "properties": {
           "reactorDid": {
             "type": "string",
@@ -25,9 +25,9 @@
             "ref": "#emoji",
             "description": "Emoji identifier (Unicode or custom)"
           },
-          "communityId": {
+          "groupId": {
             "type": "string",
-            "description": "Community where the reaction was added",
+            "description": "Group where the reaction was added",
             "maxLength": 128
           },
           "createdAt": {
