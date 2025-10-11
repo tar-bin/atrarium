@@ -21,6 +21,7 @@
     "@atproto/xrpc": "^0.7.5",
     "@atproto/xrpc-server": "^0.7.4",
     "@atrarium/contracts": "workspace:*",
+    "@atrarium/utils": "workspace:*",
     "@orpc/openapi": "^1.9.3",
     "@orpc/server": "^1.9.3",
     "@orpc/zod": "^1.9.3",

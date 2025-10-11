@@ -61,7 +61,13 @@ dashboard/
 │   ├── lib/                 # Utilities and clients
 │   │   ├── api.ts           # oRPC API client
 │   │   ├── pds.ts           # PDS utilities
-│   │   ├── hashtag.ts       # Hashtag formatting
+│   │   ├── hashtag.ts       # Hashtag formatting (re-exports @atrarium/utils)
+│   │   ├── hooks/           # React Query hooks (split by feature)
+│   │   │   ├── useCommunities.ts  # Community hooks
+│   │   │   ├── useMemberships.ts  # Membership hooks
+│   │   │   ├── useModeration.ts   # Moderation hooks
+│   │   │   ├── useGroupHierarchy.ts # Hierarchy hooks
+│   │   │   └── index.ts            # Barrel export
 │   │   ├── date.ts          # Date formatting (i18n)
 │   │   └── queryClient.ts   # TanStack Query config
 │   ├── types/               # TypeScript type definitions

@@ -82,15 +82,16 @@ server/
 │   ├── workers/              # Queue Consumer Workers
 │   │   └── firehose-processor.ts        # Queue → CommunityFeedGenerator
 │   ├── services/             # Business logic
-│   │   ├── atproto.ts        # AT Protocol client (PDS read/write)
+│   │   ├── atproto/          # AT Protocol client (split by domain)
+│   │   │   ├── base.ts       # Core ATProtoService class (agent, profile methods)
+│   │   │   └── index.ts      # Barrel export
 │   │   └── auth.ts           # JWT authentication
 │   ├── schemas/              # Validation schemas
 │   │   ├── generated/        # Auto-generated TypeScript from lexicons/
 │   │   ├── validation.ts     # Zod schemas
 │   │   └── lexicon.ts        # AT Protocol Lexicon validation
 │   ├── utils/                # Utilities
-│   │   ├── did.ts            # DID resolution
-│   │   └── hashtag.ts        # Feed hashtag generation
+│   │   └── did.ts            # DID resolution
 │   └── types.ts              # TypeScript type definitions
 ├── tests/                    # Test suite
 │   ├── contract/             # API contract tests

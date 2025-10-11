@@ -57,5 +57,11 @@ This project is a monorepo containing multiple components:
 - **[lexicons/](lexicons/README.md)** - AT Protocol Lexicon schemas (`net.atrarium.*`)
 - **[server/](server/README.md)** - Cloudflare Workers backend (Feed Generator API, Durable Objects)
 - **[client/](client/README.md)** - React web dashboard (community management UI)
+- **shared/** - Shared utilities across server and client
+  - **contracts/** - oRPC API contracts (`@atrarium/contracts`)
+  - **utils/** - Common validation utilities (`@atrarium/utils`)
+    - `emoji.ts` - Emoji validation functions
+    - `hashtag.ts` - Hashtag generation and validation
+    - `validation.ts` - DID validation and other utilities
 
 For detailed setup and usage instructions, see the respective README files in each directory.

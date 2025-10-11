@@ -1,0 +1,16 @@
+{
+  "name": "@atrarium/utils",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    "./emoji": "./src/emoji.ts",
+    "./hashtag": "./src/hashtag.ts",
+    "./validation": "./src/validation.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}
