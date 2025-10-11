@@ -38,7 +38,7 @@ app.get('/', async (c) => {
     const pdsUrl = c.env.PDS_URL || 'http://pds:3000';
 
     // Query PDS for user's membership records (public endpoint, no auth needed)
-    const membershipsUrl = `${pdsUrl}/xrpc/com.atproto.repo.listRecords?repo=${userDid}&collection=net.atrarium.community.membership&limit=100`;
+    const membershipsUrl = `${pdsUrl}/xrpc/com.atproto.repo.listRecords?repo=${userDid}&collection=net.atrarium.group.membership&limit=100`;
     const membershipsResponse = await fetch(membershipsUrl);
 
     if (!membershipsResponse.ok) {
@@ -68,7 +68,7 @@ app.get('/', async (c) => {
         try {
           const communityUri = membership.value.community;
 
-          // Parse community URI: at://did:plc:xxx/net.atrarium.community.config/rkey
+          // Parse community URI: at://did:plc:xxx/net.atrarium.group.config/rkey
           const parts = communityUri.replace('at://', '').split('/');
           const ownerDid = parts[0];
           const collection = parts[1];
@@ -182,7 +182,7 @@ app.post('/', async (c) => {
     const now = new Date().toISOString();
 
     const pdsResult = await atproto.createCommunityConfig({
-      $type: 'net.atrarium.community.config',
+      $type: 'net.atrarium.group.config',
       name: validation.data.name,
       description: validation.data.description || '',
       hashtag,
@@ -274,8 +274,8 @@ app.get('/:id', async (c) => {
     if (communityId.startsWith('at://')) {
       communityUri = communityId;
     } else {
-      // Construct AT-URI: at://did:plc:xxx/net.atrarium.community.config/rkey
-      communityUri = `at://${userDid}/net.atrarium.community.config/${communityId}`;
+      // Construct AT-URI: at://did:plc:xxx/net.atrarium.group.config/rkey
+      communityUri = `at://${userDid}/net.atrarium.group.config/${communityId}`;
     }
 
     // Fetch community config from PDS

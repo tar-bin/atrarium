@@ -10,292 +10,6 @@ import {
 import { type $Typed, is$typed, maybe$typed } from './util.js';
 
 export const schemaDict = {
-  NetAtrariumCommunityConfig: {
-    lexicon: 1,
-    id: 'net.atrarium.community.config',
-    defs: {
-      main: {
-        type: 'record',
-        description:
-          "Community configuration record stored in the owner's Personal Data Server (PDS). Defines community metadata, moderation settings, and feed mixing ratios.",
-        key: 'tid',
-        record: {
-          type: 'object',
-          required: ['name', 'hashtag', 'stage', 'createdAt'],
-          properties: {
-            name: {
-              type: 'string',
-              description: 'Community display name',
-              maxLength: 200,
-              maxGraphemes: 100,
-            },
-            description: {
-              type: 'string',
-              description: 'Community description or purpose statement',
-              maxLength: 2000,
-              maxGraphemes: 1000,
-            },
-            hashtag: {
-              type: 'string',
-              description:
-                'System-generated unique hashtag for feed identification (format: #atrarium_[8-hex])',
-              maxLength: 20,
-            },
-            stage: {
-              type: 'string',
-              description: 'Community development stage',
-              enum: ['theme', 'community', 'graduated'],
-            },
-            accessType: {
-              type: 'string',
-              description:
-                "Community access control: 'open' allows immediate join, 'invite-only' requires admin approval",
-              enum: ['open', 'invite-only'],
-              default: 'open',
-            },
-            moderators: {
-              type: 'array',
-              description: 'List of moderator DIDs (includes owner)',
-              maxLength: 50,
-              items: {
-                type: 'string',
-                format: 'did',
-              },
-            },
-            blocklist: {
-              type: 'array',
-              description: 'List of blocked user DIDs',
-              maxLength: 1000,
-              items: {
-                type: 'string',
-                format: 'did',
-              },
-            },
-            feedMix: {
-              type: 'ref',
-              ref: 'lex:net.atrarium.community.config#feedMixConfig',
-              description: 'Feed content mixing ratios (own/parent/global)',
-            },
-            parentCommunity: {
-              type: 'string',
-              format: 'at-uri',
-              description:
-                'Parent community URI (for child communities in theme → community progression)',
-            },
-            createdAt: {
-              type: 'string',
-              format: 'datetime',
-              description: 'Community creation timestamp (ISO 8601)',
-            },
-            updatedAt: {
-              type: 'string',
-              format: 'datetime',
-              description: 'Last update timestamp (ISO 8601)',
-            },
-          },
-        },
-      },
-      feedMixConfig: {
-        type: 'object',
-        description: 'Feed content mixing ratios (must sum to 100)',
-        required: ['own', 'parent', 'global'],
-        properties: {
-          own: {
-            type: 'integer',
-            description: 'Percentage of posts from own community (0-100)',
-            minimum: 0,
-            maximum: 100,
-          },
-          parent: {
-            type: 'integer',
-            description: 'Percentage of posts from parent community (0-100)',
-            minimum: 0,
-            maximum: 100,
-          },
-          global: {
-            type: 'integer',
-            description: 'Percentage of posts from global Bluesky feed (0-100)',
-            minimum: 0,
-            maximum: 100,
-          },
-        },
-      },
-    },
-  },
-  NetAtrariumCommunityMembership: {
-    lexicon: 1,
-    id: 'net.atrarium.community.membership',
-    defs: {
-      main: {
-        type: 'record',
-        description:
-          "Membership record stored in the member's Personal Data Server (PDS). Represents a user's membership in a specific community with associated role and status.",
-        key: 'tid',
-        record: {
-          type: 'object',
-          required: ['community', 'role', 'joinedAt'],
-          properties: {
-            community: {
-              type: 'string',
-              format: 'at-uri',
-              description:
-                'AT-URI of the community config record (at://did:plc:owner/net.atrarium.community.config/rkey)',
-            },
-            role: {
-              type: 'string',
-              description: 'Membership role within the community',
-              enum: ['owner', 'moderator', 'member'],
-            },
-            status: {
-              type: 'string',
-              description:
-                "Membership status: 'active' for approved members, 'pending' for join requests awaiting approval",
-              enum: ['active', 'pending'],
-              default: 'active',
-            },
-            joinedAt: {
-              type: 'string',
-              format: 'datetime',
-              description: 'Membership start timestamp (ISO 8601)',
-            },
-            active: {
-              type: 'boolean',
-              description: 'Whether membership is currently active (false = left community)',
-              default: true,
-            },
-            invitedBy: {
-              type: 'string',
-              format: 'did',
-              description: 'DID of user who invited this member (optional)',
-            },
-            customTitle: {
-              type: 'string',
-              description: 'Custom role title displayed in community (optional)',
-              maxLength: 100,
-              maxGraphemes: 50,
-            },
-          },
-        },
-      },
-    },
-  },
-  NetAtrariumCommunityPost: {
-    lexicon: 1,
-    id: 'net.atrarium.community.post',
-    defs: {
-      main: {
-        type: 'record',
-        description:
-          "A post in an Atrarium community timeline. Posts are stored in the user's Personal Data Server (PDS) and indexed via AT Protocol Firehose. CommunityId is immutable and survives stage transitions (theme → community → graduated).",
-        key: 'tid',
-        record: {
-          type: 'object',
-          required: ['text', 'communityId', 'createdAt'],
-          properties: {
-            text: {
-              type: 'string',
-              description:
-                'Post text content (plain text fallback, required even if markdown is provided)',
-              maxLength: 3000,
-              maxGraphemes: 300,
-              minLength: 1,
-            },
-            markdown: {
-              type: 'string',
-              description:
-                'Optional Markdown-formatted content (extended syntax: tables, strikethrough, task lists). If provided, clients should render this instead of plain text. Raw HTML is blocked.',
-              maxLength: 3000,
-              maxGraphemes: 300,
-            },
-            emojiShortcodes: {
-              type: 'array',
-              description:
-                'Optional array of emoji shortcodes used in this post (for indexing and caching). Community-approved emoji only.',
-              maxLength: 20,
-              items: {
-                type: 'string',
-                pattern: '^[a-z0-9_]+$',
-                maxLength: 32,
-              },
-            },
-            communityId: {
-              type: 'string',
-              description:
-                'Community identifier (8-character hex, system-generated). Immutable across stage transitions.',
-              pattern: '^[0-9a-f]{8}$',
-              maxLength: 8,
-              minLength: 8,
-            },
-            createdAt: {
-              type: 'string',
-              format: 'datetime',
-              description: 'Post creation timestamp (ISO 8601)',
-            },
-          },
-        },
-      },
-    },
-  },
-  NetAtrariumCommunityReaction: {
-    lexicon: 1,
-    id: 'net.atrarium.community.reaction',
-    defs: {
-      main: {
-        type: 'record',
-        description: "A user's emoji reaction to a post within a community.",
-        key: 'tid',
-        record: {
-          type: 'object',
-          required: ['reactorDid', 'postUri', 'emoji', 'communityId', 'createdAt'],
-          properties: {
-            reactorDid: {
-              type: 'string',
-              format: 'did',
-              description: 'DID of the user who reacted',
-            },
-            postUri: {
-              type: 'string',
-              format: 'at-uri',
-              description: 'AT Protocol URI of the target post',
-            },
-            emoji: {
-              type: 'ref',
-              ref: 'lex:net.atrarium.community.reaction#emoji',
-              description: 'Emoji identifier (Unicode or custom)',
-            },
-            communityId: {
-              type: 'string',
-              description: 'Community where the reaction was added',
-              maxLength: 128,
-            },
-            createdAt: {
-              type: 'string',
-              format: 'datetime',
-              description: 'Timestamp when the reaction was created',
-            },
-          },
-        },
-      },
-      emoji: {
-        type: 'object',
-        description: 'Emoji identifier (Unicode or custom)',
-        required: ['type', 'value'],
-        properties: {
-          type: {
-            type: 'string',
-            enum: ['unicode', 'custom'],
-            description: 'Type of emoji',
-          },
-          value: {
-            type: 'string',
-            description:
-              'Unicode codepoint (e.g., U+1F44D) or custom emoji shortcode (e.g., partyblob)',
-            maxLength: 128,
-          },
-        },
-      },
-    },
-  },
   NetAtrariumEmojiApproval: {
     lexicon: 1,
     id: 'net.atrarium.emoji.approval',
@@ -440,6 +154,291 @@ export const schemaDict = {
       },
     },
   },
+  NetAtrariumGroupConfig: {
+    lexicon: 1,
+    id: 'net.atrarium.group.config',
+    defs: {
+      main: {
+        type: 'record',
+        description:
+          "Group configuration record stored in the owner's Personal Data Server (PDS). Defines group metadata, moderation settings, and feed mixing ratios.",
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: ['name', 'hashtag', 'stage', 'createdAt'],
+          properties: {
+            name: {
+              type: 'string',
+              description: 'Group display name',
+              maxLength: 200,
+              maxGraphemes: 100,
+            },
+            description: {
+              type: 'string',
+              description: 'Group description or purpose statement',
+              maxLength: 2000,
+              maxGraphemes: 1000,
+            },
+            hashtag: {
+              type: 'string',
+              description:
+                'System-generated unique hashtag for feed identification (format: #atrarium_[8-hex])',
+              maxLength: 20,
+            },
+            stage: {
+              type: 'string',
+              description: 'Group development stage',
+              enum: ['theme', 'community', 'graduated'],
+            },
+            accessType: {
+              type: 'string',
+              description:
+                "Group access control: 'open' allows immediate join, 'invite-only' requires admin approval",
+              enum: ['open', 'invite-only'],
+              default: 'open',
+            },
+            moderators: {
+              type: 'array',
+              description: 'List of moderator DIDs (includes owner)',
+              maxLength: 50,
+              items: {
+                type: 'string',
+                format: 'did',
+              },
+            },
+            blocklist: {
+              type: 'array',
+              description: 'List of blocked user DIDs',
+              maxLength: 1000,
+              items: {
+                type: 'string',
+                format: 'did',
+              },
+            },
+            feedMix: {
+              type: 'ref',
+              ref: 'lex:net.atrarium.group.config#feedMixConfig',
+              description: 'Feed content mixing ratios (own/parent/global)',
+            },
+            parentGroup: {
+              type: 'string',
+              format: 'at-uri',
+              description: 'Parent group URI (for child groups in theme → community progression)',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+              description: 'Group creation timestamp (ISO 8601)',
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'datetime',
+              description: 'Last update timestamp (ISO 8601)',
+            },
+          },
+        },
+      },
+      feedMixConfig: {
+        type: 'object',
+        description: 'Feed content mixing ratios (must sum to 100)',
+        required: ['own', 'parent', 'global'],
+        properties: {
+          own: {
+            type: 'integer',
+            description: 'Percentage of posts from own group (0-100)',
+            minimum: 0,
+            maximum: 100,
+          },
+          parent: {
+            type: 'integer',
+            description: 'Percentage of posts from parent group (0-100)',
+            minimum: 0,
+            maximum: 100,
+          },
+          global: {
+            type: 'integer',
+            description: 'Percentage of posts from global Bluesky feed (0-100)',
+            minimum: 0,
+            maximum: 100,
+          },
+        },
+      },
+    },
+  },
+  NetAtrariumGroupMembership: {
+    lexicon: 1,
+    id: 'net.atrarium.group.membership',
+    defs: {
+      main: {
+        type: 'record',
+        description:
+          "Membership record stored in the member's Personal Data Server (PDS). Represents a user's membership in a specific group with associated role and status.",
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: ['group', 'role', 'joinedAt'],
+          properties: {
+            group: {
+              type: 'string',
+              format: 'at-uri',
+              description:
+                'AT-URI of the group config record (at://did:plc:owner/net.atrarium.group.config/rkey)',
+            },
+            role: {
+              type: 'string',
+              description: 'Membership role within the group',
+              enum: ['owner', 'moderator', 'member'],
+            },
+            status: {
+              type: 'string',
+              description:
+                "Membership status: 'active' for approved members, 'pending' for join requests awaiting approval",
+              enum: ['active', 'pending'],
+              default: 'active',
+            },
+            joinedAt: {
+              type: 'string',
+              format: 'datetime',
+              description: 'Membership start timestamp (ISO 8601)',
+            },
+            active: {
+              type: 'boolean',
+              description: 'Whether membership is currently active (false = left group)',
+              default: true,
+            },
+            invitedBy: {
+              type: 'string',
+              format: 'did',
+              description: 'DID of user who invited this member (optional)',
+            },
+            customTitle: {
+              type: 'string',
+              description: 'Custom role title displayed in group (optional)',
+              maxLength: 100,
+              maxGraphemes: 50,
+            },
+          },
+        },
+      },
+    },
+  },
+  NetAtrariumGroupPost: {
+    lexicon: 1,
+    id: 'net.atrarium.group.post',
+    defs: {
+      main: {
+        type: 'record',
+        description:
+          "A post in an Atrarium group timeline. Posts are stored in the user's Personal Data Server (PDS) and indexed via AT Protocol Firehose. GroupId is immutable and survives stage transitions (theme → group → graduated).",
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: ['text', 'groupId', 'createdAt'],
+          properties: {
+            text: {
+              type: 'string',
+              description:
+                'Post text content (plain text fallback, required even if markdown is provided)',
+              maxLength: 3000,
+              maxGraphemes: 300,
+              minLength: 1,
+            },
+            markdown: {
+              type: 'string',
+              description:
+                'Optional Markdown-formatted content (extended syntax: tables, strikethrough, task lists). If provided, clients should render this instead of plain text. Raw HTML is blocked.',
+              maxLength: 3000,
+              maxGraphemes: 300,
+            },
+            emojiShortcodes: {
+              type: 'array',
+              description:
+                'Optional array of emoji shortcodes used in this post (for indexing and caching). Group-approved emoji only.',
+              maxLength: 20,
+              items: {
+                type: 'string',
+                pattern: '^[a-z0-9_]+$',
+                maxLength: 32,
+              },
+            },
+            groupId: {
+              type: 'string',
+              description:
+                'Group identifier (8-character hex, system-generated). Immutable across stage transitions.',
+              pattern: '^[0-9a-f]{8}$',
+              maxLength: 8,
+              minLength: 8,
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+              description: 'Post creation timestamp (ISO 8601)',
+            },
+          },
+        },
+      },
+    },
+  },
+  NetAtrariumGroupReaction: {
+    lexicon: 1,
+    id: 'net.atrarium.group.reaction',
+    defs: {
+      main: {
+        type: 'record',
+        description: "A user's emoji reaction to a post within a group.",
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: ['reactorDid', 'postUri', 'emoji', 'groupId', 'createdAt'],
+          properties: {
+            reactorDid: {
+              type: 'string',
+              format: 'did',
+              description: 'DID of the user who reacted',
+            },
+            postUri: {
+              type: 'string',
+              format: 'at-uri',
+              description: 'AT Protocol URI of the target post',
+            },
+            emoji: {
+              type: 'ref',
+              ref: 'lex:net.atrarium.group.reaction#emoji',
+              description: 'Emoji identifier (Unicode or custom)',
+            },
+            groupId: {
+              type: 'string',
+              description: 'Group where the reaction was added',
+              maxLength: 128,
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+              description: 'Timestamp when the reaction was created',
+            },
+          },
+        },
+      },
+      emoji: {
+        type: 'object',
+        description: 'Emoji identifier (Unicode or custom)',
+        required: ['type', 'value'],
+        properties: {
+          type: {
+            type: 'string',
+            enum: ['unicode', 'custom'],
+            description: 'Type of emoji',
+          },
+          value: {
+            type: 'string',
+            description:
+              'Unicode codepoint (e.g., U+1F44D) or custom emoji shortcode (e.g., partyblob)',
+            maxLength: 128,
+          },
+        },
+      },
+    },
+  },
   NetAtrariumModerationAction: {
     lexicon: 1,
     id: 'net.atrarium.moderation.action',
@@ -567,11 +566,11 @@ export function validate(
 }
 
 export const ids = {
-  NetAtrariumCommunityConfig: 'net.atrarium.community.config',
-  NetAtrariumCommunityMembership: 'net.atrarium.community.membership',
-  NetAtrariumCommunityPost: 'net.atrarium.community.post',
-  NetAtrariumCommunityReaction: 'net.atrarium.community.reaction',
   NetAtrariumEmojiApproval: 'net.atrarium.emoji.approval',
   NetAtrariumEmojiCustom: 'net.atrarium.emoji.custom',
+  NetAtrariumGroupConfig: 'net.atrarium.group.config',
+  NetAtrariumGroupMembership: 'net.atrarium.group.membership',
+  NetAtrariumGroupPost: 'net.atrarium.group.post',
+  NetAtrariumGroupReaction: 'net.atrarium.group.reaction',
   NetAtrariumModerationAction: 'net.atrarium.moderation.action',
 } as const;

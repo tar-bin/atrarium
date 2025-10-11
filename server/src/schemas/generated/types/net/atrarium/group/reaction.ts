@@ -8,17 +8,17 @@ import { is$typed as _is$typed, type $Typed, type OmitKey } from '../../../../ut
 
 const is$typed = _is$typed,
   validate = _validate;
-const id = 'net.atrarium.community.reaction';
+const id = 'net.atrarium.group.reaction';
 
 export interface Record {
-  $type: 'net.atrarium.community.reaction';
+  $type: 'net.atrarium.group.reaction';
   /** DID of the user who reacted */
   reactorDid: string;
   /** AT Protocol URI of the target post */
   postUri: string;
   emoji: Emoji;
-  /** Community where the reaction was added */
-  communityId: string;
+  /** Group where the reaction was added */
+  groupId: string;
   /** Timestamp when the reaction was created */
   createdAt: string;
   [k: string]: unknown;
@@ -36,7 +36,7 @@ export function validateRecord<V>(v: V) {
 
 /** Emoji identifier (Unicode or custom) */
 export interface Emoji {
-  $type?: 'net.atrarium.community.reaction#emoji';
+  $type?: 'net.atrarium.group.reaction#emoji';
   /** Type of emoji */
   type: 'unicode' | 'custom';
   /** Unicode codepoint (e.g., U+1F44D) or custom emoji shortcode (e.g., partyblob) */

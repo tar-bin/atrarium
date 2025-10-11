@@ -57,7 +57,7 @@ export const router = {
       const atproto = new ATProtoService(env);
 
       const pdsResult = await atproto.createCommunityConfig({
-        $type: 'net.atrarium.community.config',
+        $type: 'net.atrarium.group.config',
         name: input.name,
         description: input.description || '',
         hashtag,
@@ -128,8 +128,8 @@ export const router = {
       if (input.id.startsWith('at://')) {
         communityUri = input.id;
       } else {
-        // Construct AT-URI: at://did:plc:xxx/net.atrarium.community.config/rkey
-        communityUri = `at://${userDid}/net.atrarium.community.config/${input.id}`;
+        // Construct AT-URI: at://did:plc:xxx/net.atrarium.group.config/rkey
+        communityUri = `at://${userDid}/net.atrarium.group.config/${input.id}`;
       }
 
       // Fetch community config from PDS
@@ -228,7 +228,7 @@ export const router = {
       // Create membership record
       const result = await atproto.createMembershipRecord(
         {
-          $type: 'net.atrarium.community.membership',
+          $type: 'net.atrarium.group.membership',
           community: input.communityUri,
           role: 'member',
           status,

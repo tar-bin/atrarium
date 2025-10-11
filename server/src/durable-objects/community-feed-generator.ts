@@ -11,7 +11,7 @@ interface PostEvent {
   text: string;
   createdAt: string;
   hashtags: string[]; // Legacy: extracted from text
-  communityId?: string; // NEW (014-bluesky): from net.atrarium.community.post
+  communityId?: string; // NEW (014-bluesky): from net.atrarium.group.post
 }
 
 interface PostMetadata {

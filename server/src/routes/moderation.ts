@@ -101,7 +101,7 @@ app.post('/hide', async (c) => {
 
     const atproto = new ATProtoService(c.env);
 
-    const communityUri = `at://did:plc:system/net.atrarium.community.config/${communityId}`;
+    const communityUri = `at://did:plc:system/net.atrarium.group.config/${communityId}`;
 
     // Check admin permission
     const permissionCheck = await checkAdminPermission(atproto, userDid, communityUri);
@@ -180,7 +180,7 @@ app.post('/unhide', async (c) => {
 
     const atproto = new ATProtoService(c.env);
 
-    const communityUri = `at://did:plc:system/net.atrarium.community.config/${communityId}`;
+    const communityUri = `at://did:plc:system/net.atrarium.group.config/${communityId}`;
 
     // Check admin permission
     const permissionCheck = await checkAdminPermission(atproto, userDid, communityUri);
@@ -259,7 +259,7 @@ app.post('/block', async (c) => {
 
     const atproto = new ATProtoService(c.env);
 
-    const communityUri = `at://did:plc:system/net.atrarium.community.config/${communityId}`;
+    const communityUri = `at://did:plc:system/net.atrarium.group.config/${communityId}`;
 
     // Check admin permission
     const permissionCheck = await checkAdminPermission(atproto, userDid, communityUri);
@@ -336,7 +336,7 @@ app.post('/unblock', async (c) => {
 
     const atproto = new ATProtoService(c.env);
 
-    const communityUri = `at://did:plc:system/net.atrarium.community.config/${communityId}`;
+    const communityUri = `at://did:plc:system/net.atrarium.group.config/${communityId}`;
 
     // Check admin permission
     const permissionCheck = await checkAdminPermission(atproto, userDid, communityUri);
@@ -399,7 +399,7 @@ app.get('/:communityId/history', async (c) => {
 
     const atproto = new ATProtoService(c.env);
 
-    const communityUri = `at://did:plc:system/net.atrarium.community.config/${communityId}`;
+    const communityUri = `at://did:plc:system/net.atrarium.group.config/${communityId}`;
 
     // Check admin permission
     const permissionCheck = await checkAdminPermission(atproto, userDid, communityUri);

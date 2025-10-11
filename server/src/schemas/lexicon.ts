@@ -9,10 +9,10 @@ import { z } from 'zod';
 
 /**
  * Community configuration record (stored in owner's PDS)
- * Lexicon: net.atrarium.community.config
+ * Lexicon: net.atrarium.group.config
  */
 export interface CommunityConfig {
-  $type: 'net.atrarium.community.config';
+  $type: 'net.atrarium.group.config';
   name: string;
   description?: string;
   hashtag: string; // Format: #atrarium_[8-hex]
@@ -32,10 +32,10 @@ export interface CommunityConfig {
 
 /**
  * Membership record (stored in member's PDS)
- * Lexicon: net.atrarium.community.membership
+ * Lexicon: net.atrarium.group.membership
  */
 export interface MembershipRecord {
-  $type: 'net.atrarium.community.membership';
+  $type: 'net.atrarium.group.membership';
   community: string; // AT-URI of CommunityConfig
   role: 'owner' | 'moderator' | 'member';
   status: 'active' | 'pending'; // NEW (T004)
@@ -69,12 +69,12 @@ export interface UserTarget {
 
 /**
  * Community post record (stored in user's PDS)
- * Lexicon: net.atrarium.community.post
+ * Lexicon: net.atrarium.group.post
  * Feature: 014-bluesky (Custom Lexicon Posts)
  * Feature: 015-markdown-pds (Markdown + Emoji support)
  */
 export interface CommunityPost {
-  $type: 'net.atrarium.community.post';
+  $type: 'net.atrarium.group.post';
   text: string; // Post text content (max 300 graphemes)
   markdown?: string; // Optional Markdown-formatted content (015-markdown-pds)
   emojiShortcodes?: string[]; // Optional emoji shortcodes used in post (015-markdown-pds)
@@ -141,11 +141,11 @@ export type EmojiReference =
 
 /**
  * Reaction record (stored in user's PDS)
- * Lexicon: net.atrarium.community.reaction
+ * Lexicon: net.atrarium.group.reaction
  * Feature: 016-slack-mastodon-misskey
  */
 export interface Reaction {
-  $type: 'net.atrarium.community.reaction';
+  $type: 'net.atrarium.group.reaction';
   postUri: string; // AT-URI of post being reacted to
   emoji: EmojiReference; // Emoji (Unicode or custom)
   communityId: string; // Community ID (8-character hex)
@@ -213,7 +213,7 @@ const feedMixSchema = z
  * CommunityConfig validation schema
  */
 export const communityConfigSchema = z.object({
-  $type: z.literal('net.atrarium.community.config'),
+  $type: z.literal('net.atrarium.group.config'),
   name: z.string().min(1).max(100, 'name must not exceed 100 graphemes'),
   description: z.string().max(1000, 'description must not exceed 1000 graphemes').optional(),
   hashtag: hashtagSchema,
@@ -231,7 +231,7 @@ export const communityConfigSchema = z.object({
  * MembershipRecord validation schema
  */
 export const membershipRecordSchema = z.object({
-  $type: z.literal('net.atrarium.community.membership'),
+  $type: z.literal('net.atrarium.group.membership'),
   community: atUriSchema,
   role: z.enum(['owner', 'moderator', 'member']),
   status: z.enum(['active', 'pending']).default('active'), // NEW (T004)
@@ -272,7 +272,7 @@ export const moderationActionSchema = z.object({
  * CommunityPost validation schema (014-bluesky, 015-markdown-pds)
  */
 export const communityPostSchema = z.object({
-  $type: z.literal('net.atrarium.community.post'),
+  $type: z.literal('net.atrarium.group.post'),
   text: z.string().min(1, 'text must not be empty').max(300, 'text must not exceed 300 graphemes'),
   markdown: z.string().max(300, 'markdown must not exceed 300 graphemes').optional(),
   emojiShortcodes: z
@@ -361,7 +361,7 @@ export const emojiReferenceSchema = z.discriminatedUnion('type', [
  * Reaction validation schema (016-slack-mastodon-misskey)
  */
 export const reactionSchema = z.object({
-  $type: z.literal('net.atrarium.community.reaction'),
+  $type: z.literal('net.atrarium.group.reaction'),
   postUri: atUriSchema,
   emoji: emojiReferenceSchema,
   communityId: z

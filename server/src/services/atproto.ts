@@ -77,7 +77,7 @@ export class ATProtoService {
     // Create record in PDS using com.atproto.repo.createRecord
     const response = await agent.com.atproto.repo.createRecord({
       repo: agent.session?.did || '',
-      collection: 'net.atrarium.community.config',
+      collection: 'net.atrarium.group.config',
       record: validated,
     });
 
@@ -103,7 +103,7 @@ export class ATProtoService {
     // Create post record in user's PDS
     const response = await agent.com.atproto.repo.createRecord({
       repo: userDid, // Write to user's PDS
-      collection: 'net.atrarium.community.post',
+      collection: 'net.atrarium.group.post',
       record: validated,
     });
 
@@ -373,7 +373,7 @@ export class ATProtoService {
     // Create membership record in target user's PDS
     const response = await agent.com.atproto.repo.createRecord({
       repo: userDid, // Write to user's PDS
-      collection: 'net.atrarium.community.membership',
+      collection: 'net.atrarium.group.membership',
       record: validated,
     });
 
@@ -648,7 +648,7 @@ export class ATProtoService {
     // For now, query owner's PDS and count memberships pointing to this community
     const response = await agent.com.atproto.repo.listRecords({
       repo: ownerDid,
-      collection: 'net.atrarium.community.membership',
+      collection: 'net.atrarium.group.membership',
       limit: 100,
     });
 
@@ -694,7 +694,7 @@ export class ATProtoService {
     // Query PDS for membership records
     const response = await agent.com.atproto.repo.listRecords({
       repo: userDid,
-      collection: 'net.atrarium.community.membership',
+      collection: 'net.atrarium.group.membership',
       limit: 100,
     });
 
@@ -824,7 +824,7 @@ export class ATProtoService {
     // List all community.config records
     const response = await agent.com.atproto.repo.listRecords({
       repo: agent.session?.did || '',
-      collection: 'net.atrarium.community.config',
+      collection: 'net.atrarium.group.config',
       limit: 100,
     });
 
@@ -933,7 +933,7 @@ export class ATProtoService {
     // Query owner's PDS for community configs
     const response = await agent.com.atproto.repo.listRecords({
       repo: ownerDid,
-      collection: 'net.atrarium.community.config',
+      collection: 'net.atrarium.group.config',
       limit: 100,
     });
 
@@ -1031,7 +1031,7 @@ export class ATProtoService {
     const agent = await this.getAgent();
 
     const reactionRecord: Reaction = {
-      $type: 'net.atrarium.community.reaction',
+      $type: 'net.atrarium.group.reaction',
       postUri,
       emoji,
       communityId,
@@ -1044,7 +1044,7 @@ export class ATProtoService {
     // Create record in user's PDS
     const response = await agent.com.atproto.repo.createRecord({
       repo: agent.session?.did || '',
-      collection: 'net.atrarium.community.reaction',
+      collection: 'net.atrarium.group.reaction',
       record: validated,
     });
 
@@ -1066,20 +1066,20 @@ export class ATProtoService {
 
     const agent = await this.getAgent();
 
-    // Parse AT-URI: at://did:plc:xxx/net.atrarium.community.reaction/rkey
+    // Parse AT-URI: at://did:plc:xxx/net.atrarium.group.reaction/rkey
     const parts = reactionUri.split('/');
     const rkey = parts.pop() || '';
     const collection = parts.pop() || '';
     const did = parts.slice(2).join('/'); // Reconstruct DID
 
-    if (collection !== 'net.atrarium.community.reaction') {
-      throw new Error('Invalid reaction URI: must be net.atrarium.community.reaction collection');
+    if (collection !== 'net.atrarium.group.reaction') {
+      throw new Error('Invalid reaction URI: must be net.atrarium.group.reaction collection');
     }
 
     // Delete record from PDS
     await agent.com.atproto.repo.deleteRecord({
       repo: did,
-      collection: 'net.atrarium.community.reaction',
+      collection: 'net.atrarium.group.reaction',
       rkey,
     });
 

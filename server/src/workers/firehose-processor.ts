@@ -14,7 +14,7 @@ interface JetstreamEvent {
     record?: {
       $type?: string; // NEW (014-bluesky): Lexicon type
       text?: string;
-      communityId?: string; // NEW (014-bluesky): net.atrarium.community.post field
+      communityId?: string; // NEW (014-bluesky): net.atrarium.group.post field
       createdAt?: string;
       [key: string]: unknown;
     };
@@ -30,7 +30,7 @@ interface PostEvent {
   text: string;
   createdAt: string;
   hashtags: string[]; // Legacy: extracted from text
-  communityId?: string; // NEW (014-bluesky): from net.atrarium.community.post
+  communityId?: string; // NEW (014-bluesky): from net.atrarium.group.post
 }
 
 // Heavyweight filter: Extract all #atrarium_[8-hex] hashtags
@@ -49,8 +49,8 @@ function parsePostEvent(event: JetstreamEvent): PostEvent | null {
   const collection = event.commit?.collection;
   const record = event.commit?.record;
 
-  // Support both app.bsky.feed.post (legacy) and net.atrarium.community.post (custom)
-  if (collection !== 'app.bsky.feed.post' && collection !== 'net.atrarium.community.post') {
+  // Support both app.bsky.feed.post (legacy) and net.atrarium.group.post (custom)
+  if (collection !== 'app.bsky.feed.post' && collection !== 'net.atrarium.group.post') {
     return null;
   }
 
@@ -62,8 +62,8 @@ function parsePostEvent(event: JetstreamEvent): PostEvent | null {
   const uri = `at://${event.did}/${collection}/${event.commit.rkey}`;
   const createdAt = record.createdAt || new Date().toISOString();
 
-  // For net.atrarium.community.post: use native communityId field
-  if (collection === 'net.atrarium.community.post' && record.communityId) {
+  // For net.atrarium.group.post: use native communityId field
+  if (collection === 'net.atrarium.group.post' && record.communityId) {
     const communityId = record.communityId as string;
 
     // Validate communityId format (8-char hex)

@@ -8,28 +8,28 @@ import { is$typed as _is$typed, type $Typed, type OmitKey } from '../../../../ut
 
 const is$typed = _is$typed,
   validate = _validate;
-const id = 'net.atrarium.community.config';
+const id = 'net.atrarium.group.config';
 
 export interface Record {
-  $type: 'net.atrarium.community.config';
-  /** Community display name */
+  $type: 'net.atrarium.group.config';
+  /** Group display name */
   name: string;
-  /** Community description or purpose statement */
+  /** Group description or purpose statement */
   description?: string;
   /** System-generated unique hashtag for feed identification (format: #atrarium_[8-hex]) */
   hashtag: string;
-  /** Community development stage */
+  /** Group development stage */
   stage: 'theme' | 'community' | 'graduated';
-  /** Community access control: 'open' allows immediate join, 'invite-only' requires admin approval */
+  /** Group access control: 'open' allows immediate join, 'invite-only' requires admin approval */
   accessType: 'open' | 'invite-only';
   /** List of moderator DIDs (includes owner) */
   moderators?: string[];
   /** List of blocked user DIDs */
   blocklist?: string[];
   feedMix?: FeedMixConfig;
-  /** Parent community URI (for child communities in theme → community progression) */
-  parentCommunity?: string;
-  /** Community creation timestamp (ISO 8601) */
+  /** Parent group URI (for child groups in theme → community progression) */
+  parentGroup?: string;
+  /** Group creation timestamp (ISO 8601) */
   createdAt: string;
   /** Last update timestamp (ISO 8601) */
   updatedAt?: string;
@@ -48,10 +48,10 @@ export function validateRecord<V>(v: V) {
 
 /** Feed content mixing ratios (must sum to 100) */
 export interface FeedMixConfig {
-  $type?: 'net.atrarium.community.config#feedMixConfig';
-  /** Percentage of posts from own community (0-100) */
+  $type?: 'net.atrarium.group.config#feedMixConfig';
+  /** Percentage of posts from own group (0-100) */
   own: number;
-  /** Percentage of posts from parent community (0-100) */
+  /** Percentage of posts from parent group (0-100) */
   parent: number;
   /** Percentage of posts from global Bluesky feed (0-100) */
   global: number;

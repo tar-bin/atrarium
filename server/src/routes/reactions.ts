@@ -31,7 +31,7 @@ app.post('/add', authMiddleware, async (c) => {
   const { postUri, emoji } = validation.data;
 
   // Extract communityId from postUri
-  // Format: at://did:plc:xxx/net.atrarium.community.post/rkey
+  // Format: at://did:plc:xxx/net.atrarium.group.post/rkey
   // Community ID is embedded in the post record (not in URI)
   // For now, we require client to send communityId separately
   // TODO: Fetch post record from PDS to get communityId
