@@ -47,20 +47,21 @@ const router = {
     list: contract.posts.list.handler(async () => ({}) as any),
     get: contract.posts.get.handler(async () => ({}) as any),
   },
-  emoji: {
-    upload: contract.emoji.upload.handler(async () => ({}) as any),
-    list: contract.emoji.list.handler(async () => ({}) as any),
-    submit: contract.emoji.submit.handler(async () => ({}) as any),
-    listPending: contract.emoji.listPending.handler(async () => ({}) as any),
-    approve: contract.emoji.approve.handler(async () => ({}) as any),
-    revoke: contract.emoji.revoke.handler(async () => ({}) as any),
-    registry: contract.emoji.registry.handler(async () => ({}) as any),
-  },
-  reactions: {
-    add: contract.reactions.add.handler(async () => ({}) as any),
-    remove: contract.reactions.remove.handler(async () => ({}) as any),
-    list: contract.reactions.list.handler(async () => ({}) as any),
-  },
+  // TODO (018-api-orpc): Emoji and Reactions deferred - requires schema redesign
+  // emoji: {
+  //   upload: contract.emoji.upload.handler(async () => ({}) as any),
+  //   list: contract.emoji.list.handler(async () => ({}) as any),
+  //   submit: contract.emoji.submit.handler(async () => ({}) as any),
+  //   listPending: contract.emoji.listPending.handler(async () => ({}) as any),
+  //   approve: contract.emoji.approve.handler(async () => ({}) as any),
+  //   revoke: contract.emoji.revoke.handler(async () => ({}) as any),
+  //   registry: contract.emoji.registry.handler(async () => ({}) as any),
+  // },
+  // reactions: {
+  //   add: contract.reactions.add.handler(async () => ({}) as any),
+  //   remove: contract.reactions.remove.handler(async () => ({}) as any),
+  //   list: contract.reactions.list.handler(async () => ({}) as any),
+  // },
 };
 
 // Export client-compatible router type
