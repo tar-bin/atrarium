@@ -20,11 +20,11 @@ This document provides executable tasks for implementing the hierarchical group 
 
 ## Phase 3.1: Setup and Prerequisites
 
-- [ ] **T001** Validate existing project structure (monorepo with server/, client/, shared/contracts/)
-- [ ] **T002** [P] Review Lexicon schemas in `lexicons/net.atrarium.group.config.json` (verify `parentGroup` field exists)
-- [ ] **T003** [P] Verify PDS-first architecture constraints (no new databases, Durable Objects cache only)
-- [ ] **T004** [P] Confirm Biome linting/formatting configuration (Constitution Principle 7)
-- [ ] **T005** [P] Confirm TypeScript type checking configuration (Constitution Principle 7)
+- [x] **T001** Validate existing project structure (monorepo with server/, client/, shared/contracts/)
+- [x] **T002** [P] Review Lexicon schemas in `lexicons/net.atrarium.group.config.json` (verify `parentGroup` field exists)
+- [x] **T003** [P] Verify PDS-first architecture constraints (no new databases, Durable Objects cache only)
+- [x] **T004** [P] Confirm Biome linting/formatting configuration (Constitution Principle 7)
+- [x] **T005** [P] Confirm TypeScript type checking configuration (Constitution Principle 7)
 
 ---
 
@@ -34,38 +34,38 @@ This document provides executable tasks for implementing the hierarchical group 
 
 ### Backend Contract Tests (6 endpoints)
 
-- [ ] **T006** [P] Contract test `groups.createChild` in `server/tests/contract/hierarchy/create-child.test.ts`
+- [x] **T006** [P] Contract test `groups.createChild` in `server/tests/contract/hierarchy/create-child.test.ts`
   - Test: Graduated parent creates Theme child → success (child has parent AT-URI)
   - Test: Community parent creates child → 409 Conflict (only Graduated can create children)
   - Test: Non-owner attempts createChild → 403 Forbidden
   - Test: Child created with `stage: 'theme'` and immutable `parentGroup` field
 
-- [ ] **T007** [P] Contract test `groups.upgradeStage` in `server/tests/contract/hierarchy/upgrade-stage.test.ts`
+- [x] **T007** [P] Contract test `groups.upgradeStage` in `server/tests/contract/hierarchy/upgrade-stage.test.ts`
   - Test: Theme → Community with memberCount >= 15 → success
   - Test: Theme → Community with memberCount < 15 → 409 Conflict (threshold not met)
   - Test: Community → Graduated with memberCount >= 50 → success
   - Test: Community → Graduated with memberCount < 50 → 409 Conflict
   - Test: Invalid stage transitions (e.g., Theme → Graduated) → 400 Bad Request
 
-- [ ] **T008** [P] Contract test `groups.downgradeStage` in `server/tests/contract/hierarchy/downgrade-stage.test.ts`
+- [x] **T008** [P] Contract test `groups.downgradeStage` in `server/tests/contract/hierarchy/downgrade-stage.test.ts`
   - Test: Graduated → Community → success (moderation remains independent)
   - Test: Community → Theme → success (moderation switches to inherited)
   - Test: Graduated with children → Community → success (children retained, but cannot create more)
   - Test: Invalid downgrade (e.g., Theme → Graduated) → 400 Bad Request
 
-- [ ] **T009** [P] Contract test `groups.listChildren` in `server/tests/contract/hierarchy/list-children.test.ts`
+- [x] **T009** [P] Contract test `groups.listChildren` in `server/tests/contract/hierarchy/list-children.test.ts`
   - Test: Graduated parent with 3 children → returns all children
   - Test: Graduated parent with no children → returns empty array
   - Test: Community parent (no children capability) → returns empty array
   - Test: Pagination with cursor → returns correct page
 
-- [ ] **T010** [P] Contract test `groups.getParent` in `server/tests/contract/hierarchy/get-parent.test.ts`
+- [x] **T010** [P] Contract test `groups.getParent` in `server/tests/contract/hierarchy/get-parent.test.ts`
   - Test: Theme child with parent → returns Graduated parent
   - Test: Graduated group (no parent) → returns null
   - Test: Community group (no parent) → returns null
   - Test: Invalid child ID → 404 Not Found
 
-- [ ] **T011** [P] Contract test `groups.delete` (extended validation) in `server/tests/contract/hierarchy/delete-with-children.test.ts`
+- [x] **T011** [P] Contract test `groups.delete` (extended validation) in `server/tests/contract/hierarchy/delete-with-children.test.ts`
   - Test: Delete Graduated with 2 children → 409 Conflict (lists child names)
   - Test: Delete Graduated with no children → success
   - Test: Delete Theme child → success (does not affect parent)
