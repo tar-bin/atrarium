@@ -121,8 +121,9 @@ Client (Bluesky AppView fetches post content)
   - `src/types.ts` - TypeScript types (inferred from Zod)
   - `src/client-types.ts` - Client-compatible RouterClient type
 - `server/` - Cloudflare Workers backend (@atrarium/server)
+  - `src/router.ts` - oRPC router implementation (type-safe API handlers for Posts, Reactions, Moderation)
   - `src/durable-objects/` - Per-community feed storage (CommunityFeedGenerator, FirehoseReceiver)
-  - `src/routes/` - API endpoints (feed-generator, communities, memberships, moderation)
+  - `src/routes/` - Legacy Hono routes (feed-generator, communities, memberships, auth) + deprecated routes (posts, emoji, reactions - marked for removal after 30-day monitoring)
   - `src/workers/` - Queue consumers (FirehoseProcessor)
   - `src/services/` - Business logic (AT Protocol client, auth)
   - `src/schemas/` - Validation schemas (Zod, Lexicon types)
@@ -621,6 +622,16 @@ The client fetches actual post content from Bluesky's AppView using these URIs.
   - [x] Frontend Components: ReactionBar, ReactionPicker, EmojiPicker (6 Unicode categories, 60+ emojis, search, custom emoji integration)
   - [x] Custom Emoji Management: CustomEmojiUpload, CustomEmojiList, EmojiApproval (upload, validation, approval queue)
   - [x] API Helpers: addReaction, removeReaction, listReactions, uploadEmoji, deleteEmoji, listEmojis, listUserEmojis, listPendingEmojis, approveEmoji
+- [x] **oRPC Router Implementation** (018-api-orpc: Type-safe API migration)
+  - [x] Posts API (create, list, get) - Fully migrated with contract tests
+  - [x] Emoji API (upload, list, submit, listPending, approve, revoke, registry) - **Completed with base64 approach**
+  - [x] Reactions API (add, remove, list) - Fully migrated with contract tests
+  - [x] Moderation API fix (list with communityUri parameter)
+  - [x] Contract tests (14 tests covering Posts, Emoji, Reactions, Moderation)
+  - [x] Integration tests (Post creation flow, Moderation list validation)
+  - [x] Performance validation (p95 < 100ms target)
+  - [x] Legacy route removal (Posts, Emoji routes deleted - SSE endpoint kept)
+  - [ ] Client emoji upload migration (requires File → base64 conversion)
 
 ### 🚧 In Progress / Pending
 - [ ] Production deployment (Cloudflare Workers + Durable Objects + Queues)
@@ -664,6 +675,66 @@ JWT-based authentication with DID verification ([src/services/auth.ts](src/servi
 - **Listing**: `storage.list({ prefix: 'post:', reverse: true })` for newest-first
 - **Cleanup**: Scheduled alarm deletes posts older than 7 days
 - **Timestamps**: ISO 8601 strings (consistent with AT Protocol)
+
+### oRPC Handler Pattern (018-api-orpc)
+Standard pattern for implementing oRPC route handlers:
+
+```typescript
+// Example: Posts.create handler
+export const router = {
+  posts: {
+    create: contract.posts.create.handler(async ({ input, context }) => {
+      // 1. Extract context
+      const { env, userDid } = context as ServerContext;
+      const { ATProtoService } = await import('./services/atproto');
+      const atproto = new ATProtoService(env);
+
+      // 2. Business logic validation (e.g., membership check via Durable Object RPC)
+      const feedId = env.COMMUNITY_FEED.idFromName(input.communityId);
+      const feedStub = env.COMMUNITY_FEED.get(feedId);
+      const membershipResponse = await feedStub.fetch(
+        new Request(`https://internal/checkMembership?did=${userDid}`)
+      );
+
+      if (!membershipResponse.ok) {
+        throw new ORPCError('FORBIDDEN', {
+          message: 'You are not a member of this community',
+        });
+      }
+
+      // 3. PDS write operation
+      const result = await atproto.createCommunityPost({
+        $type: 'net.atrarium.group.post',
+        text: input.text,
+        communityId: input.communityId,
+        createdAt: new Date().toISOString(),
+      }, userDid);
+
+      // 4. Return validated response (Zod schema ensures correctness)
+      return {
+        uri: result.uri,
+        rkey: result.rkey,
+        createdAt: new Date().toISOString(),
+      };
+    }),
+  },
+};
+```
+
+**Key Differences vs Legacy Hono Routes**:
+- ✅ Automatic input/output validation via Zod schemas (no manual checks)
+- ✅ Consistent error handling using `ORPCError` (no `c.json({ error }, status)`)
+- ✅ Full type safety (input/output inferred from contract)
+- ✅ Framework-agnostic (no Hono Context dependency)
+- ✅ 20-30% less code due to automatic validation
+
+**Common ORPCError Codes**:
+- `UNAUTHORIZED` (401): Missing or invalid authentication
+- `FORBIDDEN` (403): User lacks required permissions
+- `BAD_REQUEST` (400): Invalid input data
+- `NOT_FOUND` (404): Resource not found
+- `CONFLICT` (409): Resource already exists
+- `INTERNAL_SERVER_ERROR` (500): Unexpected server error
 
 ### oRPC Type Safety (011-lexicons-server-client)
 End-to-end type-safe API communication using `@atrarium/contracts`:

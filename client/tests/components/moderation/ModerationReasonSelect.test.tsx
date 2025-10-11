@@ -18,7 +18,7 @@ vi.mock('react-i18next', () => ({
 describe.skip('ModerationReasonSelect Component', () => {
   it('should render dropdown with 17 options', () => {
     const onChange = vi.fn();
-    const { getByRole } = render(<ModerationReasonSelect value={undefined} onChange={onChange} />);
+    render(<ModerationReasonSelect value={undefined} onChange={onChange} />);
 
     // TODO: Verify dropdown renders
     // const dropdown = getByRole('combobox');

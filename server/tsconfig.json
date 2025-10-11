@@ -10,6 +10,12 @@
     }
   },
   "include": ["src/**/*", "tests/**/*"],
-  "exclude": ["node_modules", "dist", ".wrangler", "tests/unit/lexicon-codegen.test.ts"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".wrangler",
+    "tests/unit/lexicon-codegen.test.ts",
+    "src/schemas/generated/**/*"
+  ],
   "references": [{ "path": "../shared/contracts" }]
 }

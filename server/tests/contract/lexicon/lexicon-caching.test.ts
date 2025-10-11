@@ -55,7 +55,7 @@ describe('Lexicon Caching Contract', () => {
       // Second request: Conditional with If-None-Match
       const conditionalResponse = await fetch(`${BASE_URL}${LEXICON_ENDPOINT}?nsid=${TEST_NSID}`, {
         headers: {
-          'If-None-Match': etag!,
+          'If-None-Match': etag || '',
         },
       });
 
@@ -68,7 +68,7 @@ describe('Lexicon Caching Contract', () => {
 
       const conditionalResponse = await fetch(`${BASE_URL}${LEXICON_ENDPOINT}?nsid=${TEST_NSID}`, {
         headers: {
-          'If-None-Match': etag!,
+          'If-None-Match': etag || '',
         },
       });
 
@@ -83,7 +83,7 @@ describe('Lexicon Caching Contract', () => {
 
       const conditionalResponse = await fetch(`${BASE_URL}${LEXICON_ENDPOINT}?nsid=${TEST_NSID}`, {
         headers: {
-          'If-None-Match': etag!,
+          'If-None-Match': etag || '',
         },
       });
 

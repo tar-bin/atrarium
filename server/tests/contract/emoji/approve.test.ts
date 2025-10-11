@@ -133,7 +133,6 @@ describe('Contract: POST /api/communities/:id/emoji/approve', () => {
 
   it('approves emoji successfully', async () => {
     if (!emojiUri) {
-      console.warn('Skipping test (emoji upload failed)');
       return;
     }
 
@@ -153,7 +152,6 @@ describe('Contract: POST /api/communities/:id/emoji/approve', () => {
 
     // Skip if PDS unavailable
     if (response.status === 500) {
-      console.warn('Skipping test (PDS unavailable)');
       return;
     }
 

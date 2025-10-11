@@ -47,7 +47,7 @@ describe('Lexicon Publication Integration', () => {
     // Step 4: Test conditional request (If-None-Match)
     const cachedResponse = await fetch(`${BASE_URL}${LEXICON_ENDPOINT}?nsid=${nsid}`, {
       headers: {
-        'If-None-Match': etag!,
+        'If-None-Match': etag || '',
       },
     });
 

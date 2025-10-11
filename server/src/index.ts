@@ -13,15 +13,13 @@ import { generateOpenAPISpec } from './openapi';
 import { router } from './router';
 import authRoutes from './routes/auth';
 import communityRoutes from './routes/communities'; // Temporarily re-enabled for testing
-import emojiRoutes from './routes/emoji'; // 015-markdown-pds: Emoji Management
 // Import routes (legacy, to be migrated)
 import feedGeneratorRoutes from './routes/feed-generator';
 import lexiconRoutes from './routes/lexicon';
 import membershipRoutes from './routes/memberships';
 import moderationRoutes from './routes/moderation';
 // import themeFeedRoutes from './routes/theme-feeds'; // TODO: Migrate to PDS-first
-import postRoutes from './routes/posts'; // 014-bluesky: Custom Lexicon Posts
-import reactionRoutes from './routes/reactions'; // 016-slack-mastodon-misskey: Reactions
+import reactionRoutes from './routes/reactions'; // 016-slack-mastodon-misskey: SSE stream endpoint only
 import type { Env, HonoVariables } from './types';
 
 // ============================================================================
@@ -168,11 +166,6 @@ app.use('/api/*', async (c, next) => {
     context,
   });
 
-  // Debug log
-  if (c.env.ENVIRONMENT === 'development') {
-    console.log(`[oRPC] Path: ${path}, Matched: ${matched}`);
-  }
-
   if (matched) {
     return c.newResponse(response.body, response);
   }
@@ -190,9 +183,8 @@ app.route('/', lexiconRoutes);
 // Note: Auth and Community routes already registered before oRPC middleware
 // app.route('/api/communities', communityRoutes); // Moved before oRPC middleware (line 130)
 // app.route('/api/communities', themeFeedRoutes); // TODO: Migrate to PDS-first
-app.route('/api', postRoutes); // 014-bluesky: Custom Lexicon Posts
-app.route('/api/emoji', emojiRoutes); // 015-markdown-pds: Emoji Management (T024-T030)
-app.route('/api/reactions', reactionRoutes); // 016-slack-mastodon-misskey: Reactions (T019)
+// Posts, Emoji routes migrated to oRPC (018-api-orpc T049)
+app.route('/api/reactions', reactionRoutes); // 016-slack-mastodon-misskey: SSE stream endpoint only (oRPC does not support SSE)
 app.route('/api/memberships', membershipRoutes); // T029-T038
 app.route('/api/moderation', moderationRoutes); // T039-T043
 // Note: Feed stats endpoints (T044-T045) are in feedGeneratorRoutes

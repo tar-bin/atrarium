@@ -443,7 +443,7 @@ export const contract = {
   moderation: moderationContract,
   feeds: feedsContract,
   posts: postsContract,
-  // emoji: emojiContract, // TODO (018-api-orpc): Deferred - requires schema redesign
+  emoji: emojiContract, // Phase 3: Emoji Migration (T020-T026)
   reactions: reactionsContract, // Phase 4: Reactions Migration (T030-T039)
 };
 

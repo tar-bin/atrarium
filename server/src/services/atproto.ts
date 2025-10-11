@@ -119,25 +119,42 @@ export class ATProtoService {
   // ============================================================================
 
   /**
-   * Upload emoji blob to PDS (T007)
+   * Upload emoji blob to PDS (T007, updated for base64 support - 018-api-orpc)
    * @param agent AtpAgent instance
-   * @param file Emoji image file (Blob)
+   * @param fileData base64-encoded image data
+   * @param mimeType Image MIME type
+   * @param size File size in bytes
    * @returns BlobRef with CID and metadata
    */
-  async uploadEmojiBlob(agent: AtpAgent, file: Blob): Promise<BlobRef> {
+  async uploadEmojiBlob(
+    agent: AtpAgent,
+    fileData: string,
+    mimeType: string,
+    size: number
+  ): Promise<BlobRef> {
     // Validate file size (max 500KB = 512000 bytes)
-    if (file.size > 512000) {
+    if (size > 512000) {
       throw new Error('File size exceeds 500KB limit');
     }
 
     // Validate MIME type
     const allowedTypes = ['image/png', 'image/gif', 'image/webp'];
-    if (!allowedTypes.includes(file.type)) {
-      throw new Error(`Unsupported format: ${file.type}. Allowed: PNG, GIF, WEBP`);
+    if (!allowedTypes.includes(mimeType)) {
+      throw new Error(`Unsupported format: ${mimeType}. Allowed: PNG, GIF, WEBP`);
+    }
+
+    // Convert base64 to Uint8Array
+    // Decode base64 string to binary
+    const binaryString = atob(fileData);
+    const uint8Array = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      uint8Array[i] = binaryString.charCodeAt(i);
     }
 
     // Upload blob to PDS
-    const response = await agent.uploadBlob(file);
+    const response = await agent.uploadBlob(uint8Array, {
+      encoding: mimeType,
+    });
 
     return {
       $type: 'blob',

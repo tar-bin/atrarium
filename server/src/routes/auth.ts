@@ -83,10 +83,8 @@ app.post('/refresh', async (c) => {
 // ============================================================================
 
 app.post('/pds-login', async (c) => {
-  console.log('[AUTH] /pds-login endpoint reached');
   try {
     const body = await c.req.json();
-    console.log('[AUTH] Request body:', JSON.stringify(body));
     const { accessJwt, did, handle } = body;
 
     if (!accessJwt || !did || !handle) {

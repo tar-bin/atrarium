@@ -70,7 +70,6 @@ describe('Contract: GET /api/communities/:id/emoji/registry', () => {
 
     // Skip if PDS unavailable
     if (response.status === 500) {
-      console.warn('Skipping test (PDS unavailable)');
       return;
     }
 
@@ -106,7 +105,6 @@ describe('Contract: GET /api/communities/:id/emoji/registry', () => {
 
     // Skip if PDS unavailable
     if (response.status === 500) {
-      console.warn('Skipping test (PDS unavailable)');
       return;
     }
 
@@ -157,7 +155,6 @@ describe('Contract: GET /api/communities/:id/emoji/registry', () => {
 
     // Skip if PDS unavailable
     if (response.status === 500) {
-      console.warn('Skipping test (PDS unavailable)');
       return;
     }
 

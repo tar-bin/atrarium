@@ -145,7 +145,6 @@ describe('Contract: POST /api/communities/:id/emoji/revoke', () => {
 
   it('revokes approved emoji successfully', async () => {
     if (!emojiUri) {
-      console.warn('Skipping test (emoji upload failed)');
       return;
     }
 
@@ -165,7 +164,6 @@ describe('Contract: POST /api/communities/:id/emoji/revoke', () => {
 
     // Skip if PDS unavailable
     if (response.status === 500) {
-      console.warn('Skipping test (PDS unavailable)');
       return;
     }
 

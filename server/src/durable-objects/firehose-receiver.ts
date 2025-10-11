@@ -89,7 +89,9 @@ export class FirehoseReceiver extends DurableObject {
 
       this.ws = new WebSocket(urlWithCursor);
 
-      this.ws.addEventListener('open', () => {});
+      this.ws.addEventListener('open', () => {
+        // WebSocket connection opened
+      });
 
       this.ws.addEventListener('message', async (event) => {
         await this.handleMessage(event.data);
@@ -99,7 +101,9 @@ export class FirehoseReceiver extends DurableObject {
         this.scheduleReconnect();
       });
 
-      this.ws.addEventListener('error', (_error) => {});
+      this.ws.addEventListener('error', (_error) => {
+        // WebSocket error handled by reconnect logic
+      });
     } catch (_error) {
       this.scheduleReconnect();
     }
@@ -154,7 +158,9 @@ export class FirehoseReceiver extends DurableObject {
           }, this.BATCH_TIMEOUT_MS);
         }
       }
-    } catch (_error) {}
+    } catch (_error) {
+      // Send errors are non-fatal, queue will retry
+    }
   }
 
   private async flushBatch(): Promise<void> {

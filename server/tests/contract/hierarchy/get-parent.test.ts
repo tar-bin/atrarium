@@ -172,7 +172,7 @@ describe('GET /api/groups/:id/parent (getParent)', () => {
       expect(childData.parentGroup).toMatch(/^at:\/\//);
 
       // Extract parent ID from AT-URI (format: at://did:plc:xxx/net.atrarium.group.config/yyy)
-      const parentRkey = childData.parentGroup!.split('/').pop();
+      const parentRkey = childData.parentGroup?.split('/').pop();
 
       // Now, get the parent via getParent endpoint
       const parentResponse = await fetch(

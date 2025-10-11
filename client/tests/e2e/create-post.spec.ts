@@ -177,7 +177,7 @@ test.describe.skip('Create Post Workflow', () => {
  * Note: These tests require a local PDS to be running
  */
 test.describe('Create Post with PDS Integration', () => {
-  test.skip('should post to PDS after form submission', async ({ page }) => {
+  test.skip('should post to PDS after form submission', async ({ page: _page }) => {
     // TODO: Implement after backend API integration
     // This test requires:
     // 1. PDS login flow
@@ -185,11 +185,11 @@ test.describe('Create Post with PDS Integration', () => {
     // 3. Actual post submission to PDS
   });
 
-  test.skip('should show success message after posting', async ({ page }) => {
+  test.skip('should show success message after posting', async ({ page: _page }) => {
     // TODO: Implement after backend API integration
   });
 
-  test.skip('should show error message on posting failure', async ({ page }) => {
+  test.skip('should show error message on posting failure', async ({ page: _page }) => {
     // TODO: Implement after backend API integration
   });
 });

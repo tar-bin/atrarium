@@ -128,7 +128,6 @@ describe('Contract: POST /api/emoji/upload', () => {
 
     // Skip if PDS unavailable
     if (response.status === 500) {
-      console.warn('Skipping output schema test (PDS unavailable)');
       return;
     }
 

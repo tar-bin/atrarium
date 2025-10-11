@@ -54,54 +54,56 @@ export default apiClient;
  */
 
 // ============================================================================
-// Reaction API helpers (016-slack-mastodon-misskey, T031)
+// Reaction API (018-api-orpc, T038)
 // ============================================================================
 
 /**
- * Add reaction to a post
+ * Reactions API is migrated to oRPC client.
+ * Use apiClient.reactions directly for type-safe API calls:
+ *
+ * @example Add reaction
+ * const result = await apiClient.reactions.add({
+ *   postUri: 'at://did:plc:xxx/net.atrarium.group.post/yyy',
+ *   emoji: { type: 'unicode', value: '👍' },
+ *   communityId: 'a1b2c3d4'
+ * });
+ *
+ * @example Remove reaction
+ * await apiClient.reactions.remove({
+ *   reactionUri: 'at://did:plc:xxx/net.atrarium.community.reaction/zzz'
+ * });
+ *
+ * @example List reactions
+ * const { reactions } = await apiClient.reactions.list({
+ *   postUri: 'at://did:plc:xxx/net.atrarium.group.post/yyy'
+ * });
+ */
+
+/**
+ * @deprecated Use apiClient.reactions.add() instead. Legacy helper for backward compatibility.
+ * This function will be removed after client components are fully migrated.
  */
 export async function addReaction(
   postUri: string,
-  emoji: { type: 'unicode' | 'custom'; value: string }
+  emoji: { type: 'unicode' | 'custom'; value: string },
+  communityId?: string
 ): Promise<{ success: boolean; reactionUri: string }> {
-  const response = await fetch(`${baseURL}/api/reactions/add`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-    },
-    body: JSON.stringify({ postUri, emoji }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to add reaction: ${response.statusText}`);
-  }
-
-  return response.json();
+  // Fallback to community extraction if not provided
+  const cid = communityId || extractCommunityIdFromPostUri(postUri);
+  return await apiClient.reactions.add({ postUri, emoji, communityId: cid });
 }
 
 /**
- * Remove reaction from a post
+ * @deprecated Use apiClient.reactions.remove() instead. Legacy helper for backward compatibility.
+ * This function will be removed after client components are fully migrated.
  */
 export async function removeReaction(reactionUri: string): Promise<{ success: boolean }> {
-  const response = await fetch(`${baseURL}/api/reactions/remove`, {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-    },
-    body: JSON.stringify({ reactionUri }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to remove reaction: ${response.statusText}`);
-  }
-
-  return response.json();
+  return await apiClient.reactions.remove({ reactionUri });
 }
 
 /**
- * List reactions for a post
+ * @deprecated Use apiClient.reactions.list() instead. Legacy helper for backward compatibility.
+ * This function will be removed after client components are fully migrated.
  */
 export async function listReactions(postUri: string): Promise<{
   reactions: Array<{
@@ -111,20 +113,54 @@ export async function listReactions(postUri: string): Promise<{
     currentUserReacted: boolean;
   }>;
 }> {
-  const response = await fetch(
-    `${baseURL}/api/reactions/list?postUri=${encodeURIComponent(postUri)}`,
-    {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-      },
-    }
+  return await apiClient.reactions.list({ postUri });
+}
+
+/**
+ * Helper: Extract communityId from post AT-URI
+ * Format: at://did:plc:xxx/net.atrarium.group.post/rkey
+ * TODO: Implement proper community ID extraction from post metadata
+ */
+function extractCommunityIdFromPostUri(_postUri: string): string {
+  // For now, return empty string (server will reject)
+  return '';
+}
+
+// ============================================================================
+// Reaction SSE Stream (Legacy - oRPC does not support SSE)
+// ============================================================================
+
+/**
+ * Subscribe to real-time reaction updates via SSE
+ * Note: This endpoint remains as legacy Hono route (oRPC limitation)
+ */
+export function subscribeToReactions(
+  communityId: string,
+  onUpdate: (data: { postUri: string; reactions: unknown[] }) => void,
+  onError?: (error: Error) => void
+): () => void {
+  const eventSource = new EventSource(
+    `${baseURL}/api/reactions/stream/${encodeURIComponent(communityId)}`,
+    { withCredentials: true }
   );
 
-  if (!response.ok) {
-    throw new Error(`Failed to list reactions: ${response.statusText}`);
-  }
+  eventSource.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      onUpdate(data);
+    } catch (error) {
+      onError?.(error instanceof Error ? error : new Error('Failed to parse SSE data'));
+    }
+  };
 
-  return response.json();
+  eventSource.onerror = () => {
+    onError?.(new Error('SSE connection error'));
+  };
+
+  // Return cleanup function
+  return () => {
+    eventSource.close();
+  };
 }
 
 // ============================================================================

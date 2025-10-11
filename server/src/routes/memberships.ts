@@ -2,7 +2,6 @@
 // Membership management API (T029-T038)
 
 import { Hono } from 'hono';
-import type { Record as MembershipRecord } from '../schemas/generated/types/net/atrarium/group/membership';
 import { ATProtoService } from '../services/atproto';
 import { AuthService } from '../services/auth';
 import type { Env, HonoVariables } from '../types';
@@ -138,7 +137,8 @@ app.delete('/:communityId', async (c) => {
     }
 
     // Safe: memberships.length > 0 is guaranteed by the check above
-    const membership = memberships[0] as unknown as MembershipRecord & { uri: string };
+    // biome-ignore lint/style/noNonNullAssertion: Array length checked above
+    const membership = memberships[0]!;
 
     // Prevent owner from leaving (must transfer ownership first)
     if (membership.role === 'owner') {
@@ -306,7 +306,8 @@ app.patch('/:communityId/:did/role', async (c) => {
     }
 
     // Safe: targetMemberships.length > 0 is guaranteed by previous check
-    const targetMembership = targetMemberships[0] as unknown as MembershipRecord & { uri: string };
+    // biome-ignore lint/style/noNonNullAssertion: Array length checked above
+    const targetMembership = targetMemberships[0]!;
 
     // Prevent changing owner role (use transfer ownership instead)
     if (newRole === 'owner') {
@@ -389,7 +390,8 @@ app.delete('/:communityId/:did', async (c) => {
     }
 
     // Safe: targetMemberships.length > 0 is guaranteed by previous check
-    const targetMembership = targetMemberships[0] as unknown as MembershipRecord & { uri: string };
+    // biome-ignore lint/style/noNonNullAssertion: Array length checked above
+    const targetMembership = targetMemberships[0]!;
 
     // Prevent removing owner
     if (targetMembership.role === 'owner') {
@@ -622,9 +624,8 @@ app.post('/join-requests/:communityId/:did/approve', async (c) => {
     }
 
     // Safe: pendingMemberships.length > 0 is guaranteed by previous check
-    const pendingMembership = pendingMemberships[0] as unknown as MembershipRecord & {
-      uri: string;
-    };
+    // biome-ignore lint/style/noNonNullAssertion: Array length checked above
+    const pendingMembership = pendingMemberships[0]!;
 
     // Change status from 'pending' to 'active'
     await atproto.updateMembershipRecord(pendingMembership.uri as string, {
@@ -699,9 +700,8 @@ app.post('/join-requests/:communityId/:did/reject', async (c) => {
     }
 
     // Safe: pendingMemberships.length > 0 is guaranteed by previous check
-    const pendingMembership = pendingMemberships[0] as unknown as MembershipRecord & {
-      uri: string;
-    };
+    // biome-ignore lint/style/noNonNullAssertion: Array length checked above
+    const pendingMembership = pendingMemberships[0]!;
 
     // Delete membership record (reject join request)
     await atproto.deleteMembershipRecord(pendingMembership.uri);

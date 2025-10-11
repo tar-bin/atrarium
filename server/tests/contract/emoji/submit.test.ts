@@ -89,7 +89,6 @@ describe('Contract: POST /api/communities/:id/emoji/submit', () => {
 
   it('creates pending approval submission', async () => {
     if (!emojiUri) {
-      console.warn('Skipping test (emoji upload failed)');
       return;
     }
 
@@ -109,7 +108,6 @@ describe('Contract: POST /api/communities/:id/emoji/submit', () => {
 
     // Skip if PDS unavailable
     if (response.status === 500) {
-      console.warn('Skipping test (PDS unavailable)');
       return;
     }
 
@@ -164,7 +162,6 @@ describe('Contract: POST /api/communities/:id/emoji/submit', () => {
 
   it('rejects duplicate submission (idempotency)', async () => {
     if (!emojiUri) {
-      console.warn('Skipping test (emoji upload failed)');
       return;
     }
 
@@ -184,7 +181,6 @@ describe('Contract: POST /api/communities/:id/emoji/submit', () => {
     );
 
     if (!firstResponse.ok) {
-      console.warn('Skipping test (first submission failed)');
       return;
     }
 

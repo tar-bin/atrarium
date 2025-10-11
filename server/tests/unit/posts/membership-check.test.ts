@@ -11,7 +11,7 @@ describe('Unit: Membership Check in posts.create', () => {
   const mockEnv = {
     COMMUNITY_FEED: {
       idFromName: vi.fn((name: string) => ({ name })),
-      get: vi.fn((id: { name: string }) => ({
+      get: vi.fn((_id: { name: string }) => ({
         fetch: vi.fn(async (request: Request) => {
           const url = new URL(request.url);
           if (url.pathname === '/checkMembership') {
@@ -75,7 +75,7 @@ describe('Unit: Membership Check in posts.create', () => {
     const mockEnvWithError = {
       COMMUNITY_FEED: {
         idFromName: vi.fn((name: string) => ({ name })),
-        get: vi.fn((id: { name: string }) => ({
+        get: vi.fn((_id: { name: string }) => ({
           fetch: vi.fn(async () => {
             // Simulate DO RPC failure
             return new Response('Internal error', { status: 500 });

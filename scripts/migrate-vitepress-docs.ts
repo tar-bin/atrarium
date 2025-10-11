@@ -98,6 +98,8 @@ async function consolidateFiles(rule: ConsolidationRule): Promise<void> {
   }
 
   if (rule.strategy === 'merge' && rule.destination) {
+    const destination = rule.destination; // Type guard: destination is now string
+
     // Read all source files
     const contents = await Promise.all(
       rule.sources.map(async (src) => {
@@ -108,7 +110,7 @@ async function consolidateFiles(rule: ConsolidationRule): Promise<void> {
 
     // Simple merge: concatenate with separators
     // TODO: Implement intelligent section merging as per consolidation-strategy.md
-    let merged = `# ${path.basename(rule.destination!, '.md')}\n\n`;
+    let merged = `# ${path.basename(destination, '.md')}\n\n`;
     merged += `**Consolidated from**: ${rule.sources.join(', ')}\n\n`;
     merged += '---\n\n';
 
@@ -128,7 +130,7 @@ async function consolidateFiles(rule: ConsolidationRule): Promise<void> {
     const transformed = await transformContent(merged);
 
     // Write consolidated file
-    const fullDestPath = path.join(REPO_ROOT, rule.destination!);
+    const fullDestPath = path.join(REPO_ROOT, destination);
     await fs.mkdir(path.dirname(fullDestPath), { recursive: true });
     await fs.writeFile(fullDestPath, transformed, 'utf-8');
   }
@@ -188,10 +190,13 @@ async function main(): Promise<void> {
   if (dryRun) {
     for (const rule of CONSOLIDATION_RULES) {
       if (rule.strategy === 'merge') {
+        // Dry-run: would merge files
       } else {
+        // Dry-run: would delete files
       }
     }
     for (const [_source, _dest] of Object.entries(FILE_MAPPING)) {
+      // Dry-run: would migrate file
     }
     return;
   }

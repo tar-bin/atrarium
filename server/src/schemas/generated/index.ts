@@ -2,7 +2,6 @@
  * GENERATED CODE - DO NOT MODIFY
  */
 import { type FetchHandler, type FetchHandlerOptions, XrpcClient } from '@atproto/xrpc';
-import { CID } from 'multiformats/cid';
 import { schemas } from './lexicons.js';
 import type * as NetAtrariumEmojiApproval from './types/net/atrarium/emoji/approval.js';
 import type * as NetAtrariumEmojiCustom from './types/net/atrarium/emoji/custom.js';
