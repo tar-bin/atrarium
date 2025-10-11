@@ -1,8 +1,8 @@
 
-# Implementation Plan: Project File Organization
+# Implementation Plan: [FEATURE]
 
-**Branch**: `020-` | **Date**: 2025-10-11 | **Spec**: [spec.md](spec.md)
-**Input**: Feature specification from `/workspaces/atrarium/specs/020-/spec.md`
+**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
+**Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
 
 ## Execution Flow (/plan command scope)
 ```
@@ -31,66 +31,67 @@
 - Phase 3-4: Implementation execution (manual or via tools)
 
 ## Summary
-Reorganize Atrarium codebase by splitting large files (>500 lines) and grouping functionality by domain-driven design (DDD) boundaries across both server and client workspaces. Eliminate duplicate utilities by consolidating to `shared/` workspace. Breaking changes allowed for optimal structure with no git history preservation required.
+[Extract from feature spec: primary requirement + technical approach from research]
 
 ## Technical Context
-**Language/Version**: TypeScript 5.7 (Node.js via nodejs_compat for server, ES2020 for client)
-**Primary Dependencies**: React 19, Hono 4.6, TanStack Router/Query, @atproto/api 0.13, Biome (linter/formatter)
-**Storage**: N/A (code organization only, no data storage changes)
-**Testing**: Vitest (@cloudflare/vitest-pool-workers for server, Testing Library for client), Playwright (E2E)
-**Target Platform**: Cloudflare Workers (server), Browser (client), pnpm workspaces monorepo
-**Project Type**: Web (monorepo with server/, client/, shared/ workspaces)
-**Performance Goals**: No performance impact (refactoring only) - `pnpm -r typecheck` must complete without errors, `pnpm -r test` must pass
-**Constraints**: Breaking changes allowed for internal code, no backward compatibility requirement, accept git history loss
-**Scale/Scope**: ~7500 lines server code, ~2250 lines client code, 3 workspaces (server, client, shared/contracts)
+**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
+**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
+**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
+**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
+**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
+**Project Type**: [single/web/mobile - determines source structure]  
+**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
+**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
+**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
 
 ## Constitution Check
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
 **Simplicity Principles** (Principle 2):
-- ✅ No new projects (refactors existing server/, client/, shared/ workspaces)
-- ✅ No new databases (N/A - pure code reorganization)
-- ✅ No new services (N/A - pure code reorganization)
-- ✅ Minimal dependencies (no new dependencies added, uses existing Biome/TypeScript)
+- ✅ No new projects (extends existing application)
+- ✅ No new databases (or justification provided)
+- ✅ No new services (or justification provided)
+- ✅ Minimal dependencies (reuses existing stack)
 
 **Technology Choices** (Principle 1, 3):
-- ✅ Protocol-first architecture maintained (N/A - no protocol changes, organizational refactoring only)
-- ✅ Economic efficiency preserved (N/A - no infrastructure changes)
-- ✅ No framework proliferation (no new frameworks, uses existing TypeScript/React/Hono stack)
+- ✅ Protocol-first architecture maintained (Lexicon schemas as API contract)
+- ✅ Economic efficiency preserved (serverless/pay-per-use)
+- ✅ No framework proliferation
 
 **Data Ownership** (Principle 4, 5):
-- ✅ PDS-first architecture maintained (N/A - no data storage changes, organizational refactoring only)
-- ✅ Durable Objects used only as 7-day cache (N/A - no data storage changes)
-- ✅ No centralized user database created (N/A - no data storage changes)
+- ✅ PDS-first architecture maintained (user data in Personal Data Servers)
+- ✅ Durable Objects used only as 7-day cache (if applicable)
+- ✅ No centralized user database created
 
 **Code Quality** (Principle 7):
-- ✅ Biome linter checks configured and enforced (existing biome.json, will run post-refactoring)
-- ✅ Biome formatter checks configured and enforced (existing biome.json, will run post-refactoring)
-- ✅ TypeScript type checks configured and enforced (`pnpm -r typecheck` validation gate)
-- ✅ Pre-commit validation automated (existing husky hooks will validate after refactoring)
+- ✅ Biome linter checks configured and enforced
+- ✅ Biome formatter checks configured and enforced
+- ✅ TypeScript type checks configured and enforced
+- ✅ Pre-commit validation automated (CI/CD quality gates)
 
 **AT Protocol + PDS + Lexicon Constraints** (Principle 8):
-- ✅ Feature implementable using AT Protocol + PDS + Lexicon schemas only (N/A - no protocol changes, organizational refactoring only)
-- ✅ No separate databases (SQL/NoSQL/KV) introduced beyond Durable Objects cache (N/A - no data storage changes)
-- ✅ All persistent state resides in PDS using `net.atrarium.*` Lexicon records (N/A - no data storage changes)
-- ✅ Durable Objects Storage used only as 7-day ephemeral cache (N/A - no data storage changes)
-- ✅ No feature requires additional database infrastructure (confirmed - pure code organization)
+- ✅ Feature implementable using AT Protocol + PDS + Lexicon schemas only
+- ✅ No separate databases (SQL/NoSQL/KV) introduced beyond Durable Objects cache
+- ✅ All persistent state resides in PDS using `net.atrarium.*` Lexicon records
+- ✅ Durable Objects Storage used only as 7-day ephemeral cache (if applicable)
+- ✅ No feature requires additional database infrastructure
 
 **Git Workflow and Commit Integrity** (Principle 9):
-- ✅ Implementation plan includes complete commit strategy (refactor in single coherent commit after validation)
-- ✅ Pre-commit hooks will validate all changes (Biome + TypeScript will validate after refactoring)
-- ⚠️ Emergency bypass procedures documented (git history loss accepted per clarification - not a bypass, intentional design choice)
-- ✅ CI/CD validation independent of local hooks (GitHub Actions will validate PR)
+- ✅ Implementation plan includes complete commit strategy (no partial merges)
+- ✅ Pre-commit hooks will validate all changes (no --no-verify planned)
+- ✅ Emergency bypass procedures documented (if applicable)
+- ✅ CI/CD validation independent of local hooks
 
 **Complete Implementation Over MVP Excuses** (Principle 10):
-- ✅ Feature specification includes all required components (all 12 functional requirements defined, no deferrals)
-- ✅ Implementation plan covers all specified functionality (both server and client refactoring included)
-- ✅ All UI components will be created and integrated (N/A - no new UI, organizational refactoring only)
-- ✅ All API endpoints will be implemented and tested (N/A - no new APIs, organizational refactoring only)
-- ✅ Completion criteria clearly defined (`pnpm -r typecheck` passes, `pnpm -r test` passes, documentation updated)
-- ✅ Incremental delivery plan (if applicable) includes complete, usable increments (single-commit refactoring, atomic change)
+- ✅ Feature specification includes all required components (no "Phase 2" deferrals)
+- ✅ Implementation plan covers all specified functionality (not just "MVP subset")
+- ✅ All UI components will be created and integrated (not placeholders)
+- ✅ All API endpoints will be implemented and tested (not mocked)
+- ✅ Completion criteria clearly defined (no ambiguous "MVP" language)
+- ✅ Incremental delivery plan (if applicable) includes complete, usable increments
 
-**Conclusion**: ✅ PASS - Feature complies with all constitution principles (pure organizational refactoring with no architectural changes)
+**Conclusion**: ✅ PASS - Feature complies with all constitution principles
+(or ❌ FAIL with explicit justification and remediation plan)
 
 ## Project Structure
 
@@ -106,146 +107,122 @@ specs/[###-feature]/
 ```
 
 ### Source Code (repository root)
+<!--
+  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
+  for this feature. Delete unused options and expand the chosen structure with
+  real paths (e.g., apps/admin, packages/something). The delivered plan must
+  not include Option labels.
+-->
 ```
-# Current structure (before refactoring)
-server/
-├── src/
-│   ├── durable-objects/
-│   ├── routes/
-│   ├── schemas/
-│   ├── services/           # 🔴 Large files: atproto.ts (1606 lines)
-│   ├── utils/              # 🔴 Duplicate utilities (emoji, hashtag)
-│   ├── workers/
-│   ├── index.ts
-│   ├── router.ts
-│   └── types.ts
-└── tests/
-    ├── contract/
-    ├── integration/
-    └── unit/
+# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
+src/
+├── models/
+├── services/
+├── cli/
+└── lib/
 
-client/
-├── src/
-│   ├── components/         # ✅ Already organized by feature
-│   │   ├── communities/
-│   │   ├── emoji/
-│   │   ├── moderation/
-│   │   └── ...
-│   ├── lib/                # 🔴 Large files: hooks.ts (433 lines), api.ts (352 lines)
-│   ├── routes/
-│   ├── contexts/
-│   └── ...
-└── tests/
+tests/
+├── contract/
+├── integration/
+└── unit/
 
-shared/
-└── contracts/              # oRPC API contracts
-    └── src/
-
-# Target structure (after refactoring)
-server/
+# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
+backend/
 ├── src/
-│   ├── durable-objects/
-│   ├── routes/
-│   ├── schemas/
+│   ├── models/
 │   ├── services/
-│   │   ├── atproto/        # 🆕 Split by domain
-│   │   │   ├── index.ts
-│   │   │   ├── communities.ts
-│   │   │   ├── memberships.ts
-│   │   │   ├── emoji.ts
-│   │   │   └── moderation.ts
-│   │   └── auth.ts
-│   ├── utils/              # 🔥 Duplicates moved to shared/
-│   ├── workers/
-│   └── ...
+│   └── api/
 └── tests/
 
-client/
+frontend/
 ├── src/
-│   ├── components/         # ✅ Keep existing organization
-│   ├── lib/
-│   │   ├── hooks/          # 🆕 Split by feature domain
-│   │   │   ├── index.ts
-│   │   │   ├── useCommunities.ts
-│   │   │   ├── useMemberships.ts
-│   │   │   └── useModeration.ts
-│   │   ├── api.ts
-│   │   └── ...
-│   └── ...
+│   ├── components/
+│   ├── pages/
+│   └── services/
 └── tests/
 
-shared/
-├── contracts/
-└── utils/                  # 🆕 Shared utilities (emoji, hashtag validation)
-    ├── emoji.ts
-    ├── hashtag.ts
-    └── validation.ts
+# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
+api/
+└── [same as backend above]
+
+ios/ or android/
+└── [platform-specific structure: feature modules, UI flows, platform tests]
 ```
 
-**Structure Decision**: Web application (monorepo) with server/, client/, shared/ workspaces. Refactoring focuses on:
-1. **Server**: Split `atproto.ts` (1606 lines) into domain-specific modules under `services/atproto/`
-2. **Client**: Split `hooks.ts` (433 lines) into feature-specific hooks under `lib/hooks/`
-3. **Shared**: Move duplicate utilities (emoji, hashtag validation) from server/client to `shared/utils/`
+**Structure Decision**: [Document the selected structure and reference the real
+directories captured above]
 
 ## Phase 0: Outline & Research
-✅ **COMPLETED**
+1. **Extract unknowns from Technical Context** above:
+   - For each NEEDS CLARIFICATION → research task
+   - For each dependency → best practices task
+   - For each integration → patterns task
 
-1. **Extract unknowns from Technical Context**: All clarified (no NEEDS CLARIFICATION markers)
-2. **Research best practices**: 6 research questions addressed
-3. **Consolidate findings**: Generated `/workspaces/atrarium/specs/020-/research.md`
+2. **Generate and dispatch research agents**:
+   ```
+   For each unknown in Technical Context:
+     Task: "Research {unknown} for {feature context}"
+   For each technology choice:
+     Task: "Find best practices for {tech} in {domain}"
+   ```
 
-**Key Decisions**:
-- Feature-based organization with barrel exports (domain-driven design)
-- DDD boundaries over strict line counts (500 lines as guideline)
-- Feature-based React hooks with TanStack Query patterns
-- TypeScript LSP + compiler validation for import path updates
-- Shared utilities workspace (`@atrarium/utils`) for code deduplication
-- Mirror test structure to match source organization
+3. **Consolidate findings** in `research.md` using format:
+   - Decision: [what was chosen]
+   - Rationale: [why chosen]
+   - Alternatives considered: [what else evaluated]
 
-**Output**: ✅ [research.md](research.md) completed
+**Output**: research.md with all NEEDS CLARIFICATION resolved
 
 ## Phase 1: Design & Contracts
-✅ **COMPLETED**
+*Prerequisites: research.md complete*
 
-1. **Extract entities from feature spec**: 5 entities defined in `data-model.md`
-   - SourceFile, Module, SharedUtility, ImportDependency, RefactoringTask
-2. **Generate refactoring contracts**: Validation contract created in `/contracts/refactoring-contract.md`
-   - Pre-conditions, during-refactoring checks, post-conditions, rollback contract
-3. **Extract test scenarios**: 10-step quickstart guide with validation commands
-4. **Update agent context**: CLAUDE.md updated with TypeScript 5.7, React 19, pnpm workspaces context
+1. **Extract entities from feature spec** → `data-model.md`:
+   - Entity name, fields, relationships
+   - Validation rules from requirements
+   - State transitions if applicable
 
-**Key Artifacts**:
-- ✅ [data-model.md](data-model.md) - 5 entities with attributes, relationships, validation rules
-- ✅ [contracts/refactoring-contract.md](contracts/refactoring-contract.md) - 8 POST-conditions, rollback procedures
-- ✅ [quickstart.md](quickstart.md) - 10-step validation guide with bash commands
-- ✅ CLAUDE.md - Updated agent context (language, framework, project type)
+2. **Generate API contracts** from functional requirements:
+   - For each user action → endpoint
+   - Use standard REST/GraphQL patterns
+   - Output OpenAPI/GraphQL schema to `/contracts/`
 
-**Output**: All Phase 1 artifacts generated
+3. **Generate contract tests** from contracts:
+   - One test file per endpoint
+   - Assert request/response schemas
+   - Tests must fail (no implementation yet)
+
+4. **Extract test scenarios** from user stories:
+   - Each story → integration test scenario
+   - Quickstart test = story validation steps
+
+5. **Update agent file incrementally** (O(1) operation):
+   - Run `.specify/scripts/bash/update-agent-context.sh claude`
+     **IMPORTANT**: Execute it exactly as specified above. Do not add or remove any arguments.
+   - If exists: Add only NEW tech from current plan
+   - Preserve manual additions between markers
+   - Update recent changes (keep last 3)
+   - Keep under 150 lines for token efficiency
+   - Output to repository root
+
+**Output**: data-model.md, /contracts/*, failing tests, quickstart.md, agent-specific file
 
 ## Phase 2: Task Planning Approach
 *This section describes what the /tasks command will do - DO NOT execute during /plan*
 
 **Task Generation Strategy**:
 - Load `.specify/templates/tasks-template.md` as base
-- Generate tasks from Phase 1 design docs (data-model.md, quickstart.md, contracts/)
-- Each quickstart step → implementation task
-- Each entity (RefactoringTask) → concrete refactoring operation
-- Validation tasks from refactoring-contract.md POST-conditions
-
-**Task Categories**:
-1. **Preparation** (T001-T003): Baseline validation, candidate identification, backup creation
-2. **Shared Utilities** (T004-T007): Create `@atrarium/utils`, consolidate duplicates, update imports
-3. **Server Refactoring** (T008-T012): Split `atproto.ts`, update imports, validate
-4. **Client Refactoring** (T013-T017): Split `hooks.ts`, update imports, validate
-5. **Documentation** (T018-T020): Update README files, CLAUDE.md
-6. **Final Validation** (T021-T025): Full test suite, linting, commit
+- Generate tasks from Phase 1 design docs (contracts, data model, quickstart)
+- Each contract → contract test task [P]
+- Each entity → model creation task [P] 
+- Each user story → integration test task
+- Implementation tasks to make tests pass
 
 **Ordering Strategy**:
-- Sequential execution (dependencies between tasks)
-- Preparation → Shared → Server → Client → Documentation → Validation
-- No parallel tasks (refactoring requires sequential imports validation)
+- TDD order: Tests before implementation 
+- Dependency order: Models before services before UI
+- Mark [P] for parallel execution (independent files)
 
-**Estimated Output**: 25 numbered, ordered tasks in tasks.md
+**Estimated Output**: 25-30 numbered, ordered tasks in tasks.md
 
 **IMPORTANT**: This phase is executed by the /tasks command, NOT by /plan
 
@@ -259,31 +236,28 @@ shared/
 ## Complexity Tracking
 *Fill ONLY if Constitution Check has violations that must be justified*
 
-**No violations detected**. This feature is a pure organizational refactoring with no architectural changes:
-- No new projects, databases, or services added (Principle 2 ✅)
-- No protocol or infrastructure changes (Principles 1, 3 ✅)
-- No data storage changes (Principles 4, 5, 8 ✅)
-- Code quality enforced via existing tooling (Principle 7 ✅)
-- Git history loss is intentional design choice per clarification, not a violation (Principle 9 ⚠️ acceptable)
-- Complete implementation planned (Principle 10 ✅)
+| Violation | Why Needed | Simpler Alternative Rejected Because |
+|-----------|------------|-------------------------------------|
+| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
+| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
 
 
 ## Progress Tracking
 *This checklist is updated during execution flow*
 
 **Phase Status**:
-- [x] Phase 0: Research complete (/plan command) - ✅ research.md generated
-- [x] Phase 1: Design complete (/plan command) - ✅ data-model.md, contracts/, quickstart.md, CLAUDE.md updated
-- [x] Phase 2: Task planning complete (/plan command - describe approach only) - ✅ Approach documented above
-- [ ] Phase 3: Tasks generated (/tasks command) - 🔜 Ready for `/tasks` command
+- [ ] Phase 0: Research complete (/plan command)
+- [ ] Phase 1: Design complete (/plan command)
+- [ ] Phase 2: Task planning complete (/plan command - describe approach only)
+- [ ] Phase 3: Tasks generated (/tasks command)
 - [ ] Phase 4: Implementation complete
 - [ ] Phase 5: Validation passed
 
 **Gate Status**:
-- [x] Initial Constitution Check: PASS (no violations, N/A for most principles - organizational refactoring only)
-- [x] Post-Design Constitution Check: PASS (no new violations introduced)
-- [x] All NEEDS CLARIFICATION resolved (all clarified in Technical Context)
-- [x] Complexity deviations documented (N/A - no deviations, simple refactoring)
+- [ ] Initial Constitution Check: PASS
+- [ ] Post-Design Constitution Check: PASS
+- [ ] All NEEDS CLARIFICATION resolved
+- [ ] Complexity deviations documented
 
 ---
 *Based on Constitution v1.5.0 - See `.specify/memory/constitution.md`*

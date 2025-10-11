@@ -2,7 +2,8 @@
 
 **Feature Branch**: `020-`
 **Created**: 2025-10-11
-**Status**: Draft
+**Status**: Completed (2025-10-11)
+**Commit**: 11b5e72 - refactor: reorganize codebase by domain-driven design
 **Input**: User description: "ファイルが増えてきたのでファイルを整理する（肥大化や階層などの整理）"
 
 ## Execution Flow (main)
@@ -86,6 +87,11 @@ As a developer working on the Atrarium codebase, I need well-organized source fi
 
 **FR-001**: System MUST identify files exceeding 500 lines as candidates for splitting, with domain-driven design (DDD) domain boundaries taking precedence over strict line count (e.g., split by feature domains like emoji, moderation, communities even if under 500 lines when domains are clearly separable)
 
+**DDD Precedence Rules**:
+- Split 300-line file if it contains 2+ clearly separable domains (e.g., emoji validation + hashtag generation in single file)
+- Keep 600-line file if it represents a single cohesive domain with tight coupling (e.g., community hierarchy logic with parent/child relationships)
+- Exception: Files >1000 lines MUST be split regardless of domain boundaries (maintainability threshold)
+
 **FR-002**: System MUST group related functionality into cohesive modules based on domain responsibility (e.g., emoji operations, moderation actions, hierarchy management)
 
 **FR-003**: System MAY break internal import paths within server/ and client/ workspaces to achieve optimal domain structure (breaking changes allowed for internal refactoring)
@@ -96,6 +102,8 @@ As a developer working on the Atrarium codebase, I need well-organized source fi
 
 **FR-006**: System MUST organize server utilities/services into feature-based subdirectories and split large server files (e.g., atproto.ts 1606 lines)
 
+**Implementation Note (2025-10-11)**: Server refactoring completed with design modification. Original plan to split `atproto.ts` (1606 lines) into domain-specific files (communities.ts, memberships.ts, emoji.ts, moderation.ts) was deferred due to TypeScript technical constraints (no partial classes, shared state dependencies). Implemented solution: Consolidated `ATProtoService` class in `base.ts` (1337 lines, -16.5% reduction) with section comments for logical grouping. This approach maintains single bounded context (PDS Client) per DDD principles while achieving measurable optimization.
+
 **FR-007**: System MUST separate React hooks by feature domain rather than keeping all hooks in a single file, covering both server and client codebases
 
 **FR-008**: System MUST ensure all TypeScript imports resolve correctly after reorganization (verified by `pnpm -r typecheck`)
@@ -105,6 +113,11 @@ As a developer working on the Atrarium codebase, I need well-organized source fi
 **FR-010**: System MUST document the new organizational structure in relevant README files
 
 **FR-011**: System MUST identify and eliminate duplicate utility functions across server and client (e.g., hashtag validation, emoji validation) by moving them to `shared/` workspace for reuse
+
+**Duplicate Detection Criteria**:
+- Functions are considered duplicates if they have identical signatures (name, parameters, return type) AND equivalent implementations
+- Equivalent implementations: Same core logic with allowable minor stylistic differences (e.g., variable naming, formatting, code comments)
+- Non-duplicates: Functions with same name but different signatures, or different business logic (e.g., server-side validation with DB check vs client-side format validation)
 
 **FR-012**: System MAY reorganize files without preserving git history (accept history loss for cleaner structure - git blame tracking not required)
 
