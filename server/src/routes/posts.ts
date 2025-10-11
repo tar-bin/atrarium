@@ -1,5 +1,5 @@
 // Atrarium Post API Routes (014-bluesky: Custom Lexicon Posts)
-// Handles creation and retrieval of net.atrarium.community.post records
+// Handles creation and retrieval of net.atrarium.group.post records
 
 import { Hono } from 'hono';
 import { ATProtoService } from '../services/atproto';
@@ -66,7 +66,7 @@ posts.post('/communities/:communityId/posts', async (c) => {
     // Create post record in user's PDS
     const atprotoService = new ATProtoService(c.env);
     const postRecord = {
-      $type: 'net.atrarium.community.post',
+      $type: 'net.atrarium.group.post',
       text,
       communityId,
       createdAt: new Date().toISOString(),
@@ -181,11 +181,9 @@ posts.get('/posts/:uri', async (c) => {
 
   // Validate AT-URI format
   if (
-    !/^at:\/\/did:(plc|web):[a-zA-Z0-9._-]+\/net\.atrarium\.community\.post\/[a-zA-Z0-9]+$/.test(
-      uri
-    )
+    !/^at:\/\/did:(plc|web):[a-zA-Z0-9._-]+\/net\.atrarium\.group\.post\/[a-zA-Z0-9]+$/.test(uri)
   ) {
-    return c.json({ error: 'Invalid AT-URI format (must be net.atrarium.community.post)' }, 400);
+    return c.json({ error: 'Invalid AT-URI format (must be net.atrarium.group.post)' }, 400);
   }
 
   try {
@@ -221,7 +219,7 @@ posts.get('/posts/:uri', async (c) => {
       };
 
       // Validate that it's a community post
-      if (record.$type !== 'net.atrarium.community.post') {
+      if (record.$type !== 'net.atrarium.group.post') {
         return c.json({ error: 'Record is not a community post' }, 400);
       }
 

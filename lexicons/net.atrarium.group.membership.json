@@ -1,23 +1,23 @@
 {
   "lexicon": 1,
-  "id": "net.atrarium.community.membership",
+  "id": "net.atrarium.group.membership",
   "defs": {
     "main": {
       "type": "record",
-      "description": "Membership record stored in the member's Personal Data Server (PDS). Represents a user's membership in a specific community with associated role and status.",
+      "description": "Membership record stored in the member's Personal Data Server (PDS). Represents a user's membership in a specific group with associated role and status.",
       "key": "tid",
       "record": {
         "type": "object",
-        "required": ["community", "role", "joinedAt"],
+        "required": ["group", "role", "joinedAt"],
         "properties": {
-          "community": {
+          "group": {
             "type": "string",
             "format": "at-uri",
-            "description": "AT-URI of the community config record (at://did:plc:owner/net.atrarium.community.config/rkey)"
+            "description": "AT-URI of the group config record (at://did:plc:owner/net.atrarium.group.config/rkey)"
           },
           "role": {
             "type": "string",
-            "description": "Membership role within the community",
+            "description": "Membership role within the group",
             "enum": ["owner", "moderator", "member"]
           },
           "status": {
@@ -33,7 +33,7 @@
           },
           "active": {
             "type": "boolean",
-            "description": "Whether membership is currently active (false = left community)",
+            "description": "Whether membership is currently active (false = left group)",
             "default": true
           },
           "invitedBy": {
@@ -43,7 +43,7 @@
           },
           "customTitle": {
             "type": "string",
-            "description": "Custom role title displayed in community (optional)",
+            "description": "Custom role title displayed in group (optional)",
             "maxLength": 100,
             "maxGraphemes": 50
           }

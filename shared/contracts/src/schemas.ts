@@ -519,3 +519,79 @@ export const ListReactionsOutputSchema = z.object({
   reactions: z.array(ReactionAggregateSchema),
   cursor: z.string().optional(),
 });
+
+// ============================================================================
+// Hierarchical Group Schemas (017-1-1, T032)
+// ============================================================================
+
+// FeedMixConfig - content mixing ratios
+export const FeedMixConfigSchema = z
+  .object({
+    own: z.number().int().min(0).max(100), // Percentage from own group
+    parent: z.number().int().min(0).max(100), // Percentage from parent
+    global: z.number().int().min(0).max(100), // Percentage from global Bluesky
+  })
+  .refine(
+    (data) => data.own + data.parent + data.global === 100,
+    'Feed mix ratios must sum to 100'
+  );
+
+// POST /api/communities/:id/children (createChild)
+export const CreateChildInputSchema = z.object({
+  parentId: z.string().min(1), // Parent group ID (must be Graduated stage)
+  name: z.string().min(1).max(200), // Child theme name
+  description: z.string().max(2000).optional(), // Optional description
+  feedMix: FeedMixConfigSchema.optional(), // Optional feed mix ratios
+});
+
+// POST /api/communities/:id/upgrade (upgradeStage)
+export const UpgradeStageInputSchema = z.object({
+  groupId: z.string().min(1), // Group to upgrade
+  targetStage: z.enum(['community', 'graduated']), // Desired stage
+});
+
+// POST /api/communities/:id/downgrade (downgradeStage)
+export const DowngradeStageInputSchema = z.object({
+  groupId: z.string().min(1), // Group to downgrade
+  targetStage: z.enum(['theme', 'community']), // Desired lower stage
+});
+
+// GET /api/communities/:id/children (listChildren)
+export const ListChildrenInputSchema = z.object({
+  parentId: z.string().min(1), // Parent group ID
+  limit: z.number().int().min(1).max(100).optional().default(50), // Max results
+  cursor: z.string().optional(), // Pagination cursor
+});
+
+// GET /api/communities/:id/parent (getParent)
+export const GetParentInputSchema = z.object({
+  childId: z.string().min(1), // Child group ID
+});
+
+// Extended GroupResponse with hierarchy fields
+export const GroupResponseSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  stage: z.enum(['theme', 'community', 'graduated']),
+  hashtag: z.string(),
+  parentGroup: z.string().optional(), // AT-URI of parent group
+  children: z.array(z.string()).optional(), // Array of child IDs
+  memberCount: z.number().int().min(0),
+  postCount: z.number().int().min(0),
+  feedMix: FeedMixConfigSchema.optional(),
+  createdAt: z.number(), // Unix timestamp (seconds)
+  updatedAt: z.number().optional(), // Unix timestamp (seconds)
+});
+
+// List children response
+export const ListChildrenResponseSchema = z.object({
+  children: z.array(GroupResponseSchema),
+  cursor: z.string().optional(), // Next page cursor
+});
+
+// Delete response
+export const DeleteResponseSchema = z.object({
+  success: z.boolean(),
+  deletedId: z.string(),
+});

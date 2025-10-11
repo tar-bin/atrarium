@@ -1,14 +1,14 @@
 {
   "lexicon": 1,
-  "id": "net.atrarium.community.post",
+  "id": "net.atrarium.group.post",
   "defs": {
     "main": {
       "type": "record",
-      "description": "A post in an Atrarium community timeline. Posts are stored in the user's Personal Data Server (PDS) and indexed via AT Protocol Firehose. CommunityId is immutable and survives stage transitions (theme → community → graduated).",
+      "description": "A post in an Atrarium group timeline. Posts are stored in the user's Personal Data Server (PDS) and indexed via AT Protocol Firehose. GroupId is immutable and survives stage transitions (theme → group → graduated).",
       "key": "tid",
       "record": {
         "type": "object",
-        "required": ["text", "communityId", "createdAt"],
+        "required": ["text", "groupId", "createdAt"],
         "properties": {
           "text": {
             "type": "string",
@@ -25,7 +25,7 @@
           },
           "emojiShortcodes": {
             "type": "array",
-            "description": "Optional array of emoji shortcodes used in this post (for indexing and caching). Community-approved emoji only.",
+            "description": "Optional array of emoji shortcodes used in this post (for indexing and caching). Group-approved emoji only.",
             "maxLength": 20,
             "items": {
               "type": "string",
@@ -33,9 +33,9 @@
               "maxLength": 32
             }
           },
-          "communityId": {
+          "groupId": {
             "type": "string",
-            "description": "Community identifier (8-character hex, system-generated). Immutable across stage transitions.",
+            "description": "Group identifier (8-character hex, system-generated). Immutable across stage transitions.",
             "pattern": "^[0-9a-f]{8}$",
             "maxLength": 8,
             "minLength": 8

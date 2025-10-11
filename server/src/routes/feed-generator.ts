@@ -3,7 +3,7 @@
 //
 // DEPRECATION NOTICE (014-bluesky):
 // This Feed Generator API is being deprecated in favor of Dashboard API-only feeds.
-// Reason: Bluesky AppView cannot render custom Lexicon posts (net.atrarium.community.post).
+// Reason: Bluesky AppView cannot render custom Lexicon posts (net.atrarium.group.post).
 // Timeline: Legacy app.bsky.feed.post indexing will continue during transition period.
 // Migration: All timeline fetching should use Dashboard API (/api/communities/{id}/posts).
 
@@ -220,7 +220,7 @@ app.get('/api/feeds/:communityId/stats', async (c) => {
     const communityId = c.req.param('communityId');
     const atproto = new ATProtoService(c.env);
 
-    const communityUri = `at://did:plc:system/net.atrarium.community.config/${communityId}`;
+    const communityUri = `at://did:plc:system/net.atrarium.group.config/${communityId}`;
 
     // Get community statistics from PDS (T028)
     const stats = await atproto.getCommunityStats(communityUri);

@@ -49,6 +49,7 @@ Client (Bluesky AppView fetches post content)
 
 **Durable Objects**:
 - `CommunityFeedGenerator` - Per-community feed index (isolated storage)
+  - Storage keys: `config:`, `member:`, `post:`, `moderation:`, `parent:`, `children:`, `reaction:`, `emoji_registry:`
 - `FirehoseReceiver` - Jetstream WebSocket connection + lightweight filtering
 
 **Queue Consumer Workers**:
@@ -279,6 +280,52 @@ List communities.
 
 **`GET /api/communities/:id`**
 Get community details.
+
+### Hierarchical Group System (017-1-1)
+
+**`POST /api/communities/:id/children`**
+Create child Theme group under Graduated parent.
+- Auth: Owner only
+- Input: `{ name: string, description?: string, feedMix?: object }`
+- Returns: `GroupResponse` (child with `stage: 'theme'`, `parentGroup: <parent-AT-URI>`)
+- Constraints: Parent must be Graduated, child always created as Theme
+
+**`POST /api/communities/:id/upgrade`**
+Upgrade group stage (Theme → Community → Graduated).
+- Auth: Owner only
+- Input: `{ targetStage: 'community' | 'graduated' }`
+- Returns: `GroupResponse` with updated stage
+- Validation: Dunbar thresholds (~15 for Community, ~50 for Graduated)
+
+**`POST /api/communities/:id/downgrade`**
+Downgrade group stage (Graduated → Community → Theme).
+- Auth: Owner only
+- Input: `{ targetStage: 'theme' | 'community' }`
+- Returns: `GroupResponse` with downgraded stage
+- Note: `parentGroup` field retained (immutable)
+
+**`GET /api/communities/:id/children`**
+List child groups of a parent.
+- Auth: Public (no auth required)
+- Returns: `{ data: GroupResponse[] }` (array of child groups)
+- Empty array if no children or group is not Graduated
+
+**`GET /api/communities/:id/parent`**
+Get parent group of a child.
+- Auth: Public (no auth required)
+- Returns: `GroupResponse | null` (parent group or null if no parent)
+
+**`DELETE /api/communities/:id`** (extended with hierarchy validation)
+Delete group (with children blocking).
+- Auth: Owner only
+- Returns: `409 Conflict` if group has active children (includes child names)
+- Success: Group deleted after all children removed
+
+**Stage Progression Rules**:
+- Theme groups target ~15 members (Dunbar threshold for Community upgrade)
+- Community groups target ~50 members (Dunbar threshold for Graduated upgrade)
+- Graduated groups can create child Theme groups (1-level hierarchy only)
+- Moderation inheritance: Theme groups inherit moderation from parent Graduated group
 
 ### Membership Management
 

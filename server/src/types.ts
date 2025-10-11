@@ -350,6 +350,47 @@ export interface ServiceJWTPayload {
 }
 
 // ============================================================================
+// Hierarchical Group System Types (017-1-1)
+// ============================================================================
+
+/**
+ * Hierarchy constraints for group system
+ */
+export interface HierarchyConstraints {
+  maxDepth: 1; // Only 1 level of hierarchy (Graduated → Theme)
+  allowedParentStages: ['graduated']; // Only Graduated can be parents
+  allowedChildStages: ['theme']; // Only Theme can be children
+}
+
+/**
+ * Stage transition request
+ * Used for upgrade/downgrade API endpoints
+ */
+export interface StageTransitionRequest {
+  groupId: string; // Group ID or AT-URI
+  fromStage: CommunityStage; // Current stage
+  toStage: CommunityStage; // Target stage
+  memberCount: number; // Active member count (for threshold validation)
+}
+
+/**
+ * Extended GroupConfig type with optional children array
+ * Used for API responses that include child group IDs
+ */
+export interface GroupConfigWithChildren {
+  id: string;
+  name: string;
+  description?: string;
+  stage: CommunityStage;
+  hashtag: string;
+  parentGroup?: string; // AT-URI of parent group
+  children?: string[]; // Array of child group IDs (for API responses)
+  memberCount: number;
+  createdAt: string; // ISO 8601
+  updatedAt?: string; // ISO 8601
+}
+
+// ============================================================================
 // Utility Types
 // ============================================================================
 

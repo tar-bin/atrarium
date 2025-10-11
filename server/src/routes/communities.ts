@@ -38,7 +38,7 @@ app.get('/', async (c) => {
     const pdsUrl = c.env.PDS_URL || 'http://pds:3000';
 
     // Query PDS for user's membership records (public endpoint, no auth needed)
-    const membershipsUrl = `${pdsUrl}/xrpc/com.atproto.repo.listRecords?repo=${userDid}&collection=net.atrarium.community.membership&limit=100`;
+    const membershipsUrl = `${pdsUrl}/xrpc/com.atproto.repo.listRecords?repo=${userDid}&collection=net.atrarium.group.membership&limit=100`;
     const membershipsResponse = await fetch(membershipsUrl);
 
     if (!membershipsResponse.ok) {
@@ -68,7 +68,7 @@ app.get('/', async (c) => {
         try {
           const communityUri = membership.value.community;
 
-          // Parse community URI: at://did:plc:xxx/net.atrarium.community.config/rkey
+          // Parse community URI: at://did:plc:xxx/net.atrarium.group.config/rkey
           const parts = communityUri.replace('at://', '').split('/');
           const ownerDid = parts[0];
           const collection = parts[1];
@@ -105,8 +105,7 @@ app.get('/', async (c) => {
             postCount: 0, // TODO: Query stats from Durable Object
             createdAt: Math.floor(new Date(configData.value.createdAt).getTime() / 1000),
           };
-        } catch (err) {
-          console.error('[Communities] Failed to fetch community config:', err);
+        } catch (_err) {
           return null;
         }
       })
@@ -117,7 +116,6 @@ app.get('/', async (c) => {
 
     return c.json({ data: validCommunities });
   } catch (err) {
-    console.error('[Communities] List communities error:', err);
     return c.json(
       {
         error: 'InternalServerError',
@@ -182,7 +180,7 @@ app.post('/', async (c) => {
     const now = new Date().toISOString();
 
     const pdsResult = await atproto.createCommunityConfig({
-      $type: 'net.atrarium.community.config',
+      $type: 'net.atrarium.group.config',
       name: validation.data.name,
       description: validation.data.description || '',
       hashtag,
@@ -243,7 +241,6 @@ app.post('/', async (c) => {
 
     return c.json(response, 201);
   } catch (err) {
-    console.error('[Communities] Create community error:', err);
     return c.json(
       {
         error: 'InternalServerError',
@@ -274,8 +271,8 @@ app.get('/:id', async (c) => {
     if (communityId.startsWith('at://')) {
       communityUri = communityId;
     } else {
-      // Construct AT-URI: at://did:plc:xxx/net.atrarium.community.config/rkey
-      communityUri = `at://${userDid}/net.atrarium.community.config/${communityId}`;
+      // Construct AT-URI: at://did:plc:xxx/net.atrarium.group.config/rkey
+      communityUri = `at://${userDid}/net.atrarium.group.config/${communityId}`;
     }
 
     // Fetch community config from PDS
@@ -333,6 +330,440 @@ app.post('/:id/close', async (c) => {
     );
   } catch (_err) {
     return c.json({ error: 'InternalServerError', message: 'Failed to close community' }, 500);
+  }
+});
+
+// ============================================================================
+// POST /api/communities/:id/children
+// Create child Theme group under Graduated parent (T026)
+// ============================================================================
+
+app.post('/:id/children', async (c) => {
+  try {
+    const parentId = c.req.param('id');
+    const userDid = c.get('userDid') as string;
+    const body = await c.req.json();
+
+    // Validate input
+    if (!body.name || typeof body.name !== 'string') {
+      return c.json({ error: 'InvalidRequest', message: 'name is required' }, 400);
+    }
+
+    if (body.name.length > 200) {
+      return c.json({ error: 'InvalidRequest', message: 'name exceeds 200 characters' }, 400);
+    }
+
+    if (body.description && typeof body.description !== 'string') {
+      return c.json({ error: 'InvalidRequest', message: 'description must be a string' }, 400);
+    }
+
+    if (body.description && body.description.length > 2000) {
+      return c.json(
+        { error: 'InvalidRequest', message: 'description exceeds 2000 characters' },
+        400
+      );
+    }
+
+    const { ATProtoService } = await import('../services/atproto');
+    const atproto = new ATProtoService(c.env);
+
+    // Verify user is owner of parent group
+    const parentUri = `at://${userDid}/net.atrarium.group.config/${parentId}`;
+    const parentConfig = await atproto.getCommunityConfig(parentUri);
+
+    if (!parentConfig) {
+      return c.json({ error: 'NotFound', message: 'Parent group not found' }, 404);
+    }
+
+    if (parentConfig.stage !== 'graduated') {
+      return c.json({ error: 'Conflict', message: 'Only Graduated groups can have children' }, 409);
+    }
+
+    // Create child group
+    const childConfig = await atproto.createChildGroup(
+      parentId,
+      body.name,
+      body.description,
+      body.feedMix
+    );
+
+    // Trigger Durable Object update via RPC (add to parent's children list)
+    if (!c.env.COMMUNITY_FEED) {
+      throw new Error('COMMUNITY_FEED Durable Object binding not found');
+    }
+
+    const parentDOId = c.env.COMMUNITY_FEED.idFromName(parentId);
+    const parentDOStub = c.env.COMMUNITY_FEED.get(parentDOId);
+
+    await parentDOStub.fetch(
+      new Request('http://fake-host/addChild', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ childId: childConfig.rkey }),
+      })
+    );
+
+    // Initialize child Durable Object
+    const childDOId = c.env.COMMUNITY_FEED.idFromName(childConfig.rkey);
+    const childDOStub = c.env.COMMUNITY_FEED.get(childDOId);
+
+    await childDOStub.fetch(
+      new Request('http://fake-host/updateConfig', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: childConfig.name,
+          description: childConfig.description,
+          hashtag: childConfig.hashtag,
+          stage: 'theme',
+          parentGroup: parentUri,
+          createdAt: childConfig.createdAt,
+        }),
+      })
+    );
+
+    return c.json(
+      {
+        id: childConfig.rkey,
+        name: childConfig.name,
+        description: childConfig.description || null,
+        stage: childConfig.stage,
+        parentGroup: childConfig.parentCommunity,
+        hashtag: childConfig.hashtag,
+        memberCount: 0,
+        postCount: 0,
+        createdAt: Math.floor(new Date(childConfig.createdAt).getTime() / 1000),
+      },
+      201
+    );
+  } catch (err) {
+    return c.json(
+      {
+        error: 'InternalServerError',
+        message: 'Failed to create child group',
+        details: c.env.ENVIRONMENT === 'development' ? String(err) : undefined,
+      },
+      500
+    );
+  }
+});
+
+// ============================================================================
+// POST /api/communities/:id/upgrade
+// Upgrade group stage (T027)
+// ============================================================================
+
+app.post('/:id/upgrade', async (c) => {
+  try {
+    const groupId = c.req.param('id');
+    const userDid = c.get('userDid') as string;
+    const body = await c.req.json();
+
+    // Validate input
+    if (!body.targetStage || !['community', 'graduated'].includes(body.targetStage)) {
+      return c.json(
+        { error: 'InvalidRequest', message: 'targetStage must be "community" or "graduated"' },
+        400
+      );
+    }
+
+    const { ATProtoService } = await import('../services/atproto');
+    const atproto = new ATProtoService(c.env);
+
+    // Verify user is owner
+    const groupUri = `at://${userDid}/net.atrarium.group.config/${groupId}`;
+    const memberships = await atproto.listMemberships(userDid, { communityUri: groupUri });
+    const ownerMembership = memberships.find((m) => m.role === 'owner');
+
+    if (!ownerMembership) {
+      return c.json({ error: 'Forbidden', message: 'Only owner can upgrade stage' }, 403);
+    }
+
+    // Upgrade stage
+    try {
+      const updatedConfig = await atproto.upgradeGroupStage(groupId, body.targetStage);
+
+      // Update Durable Object
+      if (!c.env.COMMUNITY_FEED) {
+        throw new Error('COMMUNITY_FEED Durable Object binding not found');
+      }
+
+      const doId = c.env.COMMUNITY_FEED.idFromName(groupId);
+      const doStub = c.env.COMMUNITY_FEED.get(doId);
+
+      await doStub.fetch(
+        new Request('http://fake-host/updateConfig', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            stage: updatedConfig.stage,
+            updatedAt: updatedConfig.updatedAt,
+          }),
+        })
+      );
+
+      return c.json({
+        id: groupId,
+        name: updatedConfig.name,
+        description: updatedConfig.description || null,
+        stage: updatedConfig.stage,
+        parentGroup: updatedConfig.parentCommunity,
+        memberCount: await atproto.getMemberCount(groupId),
+        postCount: 0,
+        updatedAt: Math.floor(new Date(updatedConfig.updatedAt || Date.now()).getTime() / 1000),
+      });
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('threshold')) {
+        return c.json({ error: 'Conflict', message: err.message }, 409);
+      }
+      throw err;
+    }
+  } catch (err) {
+    return c.json(
+      {
+        error: 'InternalServerError',
+        message: 'Failed to upgrade stage',
+        details: c.env.ENVIRONMENT === 'development' ? String(err) : undefined,
+      },
+      500
+    );
+  }
+});
+
+// ============================================================================
+// POST /api/communities/:id/downgrade
+// Downgrade group stage (T028)
+// ============================================================================
+
+app.post('/:id/downgrade', async (c) => {
+  try {
+    const groupId = c.req.param('id');
+    const userDid = c.get('userDid') as string;
+    const body = await c.req.json();
+
+    // Validate input
+    if (!body.targetStage || !['theme', 'community'].includes(body.targetStage)) {
+      return c.json(
+        { error: 'InvalidRequest', message: 'targetStage must be "theme" or "community"' },
+        400
+      );
+    }
+
+    const { ATProtoService } = await import('../services/atproto');
+    const atproto = new ATProtoService(c.env);
+
+    // Verify user is owner
+    const groupUri = `at://${userDid}/net.atrarium.group.config/${groupId}`;
+    const memberships = await atproto.listMemberships(userDid, { communityUri: groupUri });
+    const ownerMembership = memberships.find((m) => m.role === 'owner');
+
+    if (!ownerMembership) {
+      return c.json({ error: 'Forbidden', message: 'Only owner can downgrade stage' }, 403);
+    }
+
+    // Downgrade stage
+    const updatedConfig = await atproto.downgradeGroupStage(groupId, body.targetStage);
+
+    // Update Durable Object
+    if (!c.env.COMMUNITY_FEED) {
+      throw new Error('COMMUNITY_FEED Durable Object binding not found');
+    }
+
+    const doId = c.env.COMMUNITY_FEED.idFromName(groupId);
+    const doStub = c.env.COMMUNITY_FEED.get(doId);
+
+    await doStub.fetch(
+      new Request('http://fake-host/updateConfig', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          stage: updatedConfig.stage,
+          updatedAt: updatedConfig.updatedAt,
+        }),
+      })
+    );
+
+    return c.json({
+      id: groupId,
+      name: updatedConfig.name,
+      description: updatedConfig.description || null,
+      stage: updatedConfig.stage,
+      parentGroup: updatedConfig.parentCommunity,
+      memberCount: await atproto.getMemberCount(groupId),
+      postCount: 0,
+      updatedAt: Math.floor(new Date(updatedConfig.updatedAt || Date.now()).getTime() / 1000),
+    });
+  } catch (err) {
+    return c.json(
+      {
+        error: 'InternalServerError',
+        message: 'Failed to downgrade stage',
+        details: c.env.ENVIRONMENT === 'development' ? String(err) : undefined,
+      },
+      500
+    );
+  }
+});
+
+// ============================================================================
+// GET /api/communities/:id/children
+// List child groups (T029)
+// ============================================================================
+
+app.get('/:id/children', async (c) => {
+  try {
+    const parentId = c.req.param('id');
+    const limit = Number.parseInt(c.req.query('limit') || '50', 10);
+    const cursor = c.req.query('cursor');
+
+    const { ATProtoService } = await import('../services/atproto');
+    const atproto = new ATProtoService(c.env);
+
+    // List children
+    const result = await atproto.listChildGroups(parentId, limit, cursor);
+
+    // Transform to response format
+    const children = await Promise.all(
+      result.children.map(async (child) => {
+        const memberCount = await atproto.getMemberCount(child.hashtag.replace('#atr_', ''));
+        return {
+          id: child.hashtag.replace('#atr_', ''),
+          name: child.name,
+          description: child.description || null,
+          stage: child.stage,
+          parentGroup: child.parentCommunity,
+          hashtag: child.hashtag,
+          memberCount,
+          postCount: 0,
+          createdAt: Math.floor(new Date(child.createdAt).getTime() / 1000),
+        };
+      })
+    );
+
+    return c.json({ children, cursor: result.cursor });
+  } catch (err) {
+    return c.json(
+      {
+        error: 'InternalServerError',
+        message: 'Failed to list children',
+        details: c.env.ENVIRONMENT === 'development' ? String(err) : undefined,
+      },
+      500
+    );
+  }
+});
+
+// ============================================================================
+// GET /api/communities/:id/parent
+// Get parent group (T030)
+// ============================================================================
+
+app.get('/:id/parent', async (c) => {
+  try {
+    const childId = c.req.param('id');
+
+    const { ATProtoService } = await import('../services/atproto');
+    const atproto = new ATProtoService(c.env);
+
+    // Get parent
+    const parentConfig = await atproto.getParentGroup(childId);
+
+    if (!parentConfig) {
+      return c.json(null);
+    }
+
+    const memberCount = await atproto.getMemberCount(parentConfig.hashtag.replace('#atr_', ''));
+
+    return c.json({
+      id: parentConfig.hashtag.replace('#atr_', ''),
+      name: parentConfig.name,
+      description: parentConfig.description || null,
+      stage: parentConfig.stage,
+      hashtag: parentConfig.hashtag,
+      memberCount,
+      postCount: 0,
+      createdAt: Math.floor(new Date(parentConfig.createdAt).getTime() / 1000),
+    });
+  } catch (err) {
+    return c.json(
+      {
+        error: 'InternalServerError',
+        message: 'Failed to get parent',
+        details: c.env.ENVIRONMENT === 'development' ? String(err) : undefined,
+      },
+      500
+    );
+  }
+});
+
+// ============================================================================
+// DELETE /api/communities/:id
+// Delete group with children validation (T031)
+// ============================================================================
+
+app.delete('/:id', async (c) => {
+  try {
+    const groupId = c.req.param('id');
+    const userDid = c.get('userDid') as string;
+
+    const { ATProtoService } = await import('../services/atproto');
+    const atproto = new ATProtoService(c.env);
+
+    // Verify user is owner
+    const groupUri = `at://${userDid}/net.atrarium.group.config/${groupId}`;
+    const memberships = await atproto.listMemberships(userDid, { communityUri: groupUri });
+    const ownerMembership = memberships.find((m) => m.role === 'owner');
+
+    if (!ownerMembership) {
+      return c.json({ error: 'Forbidden', message: 'Only owner can delete group' }, 403);
+    }
+
+    // Check for children
+    const childrenResult = await atproto.listChildGroups(groupId);
+
+    if (childrenResult.children.length > 0) {
+      const childNames = childrenResult.children.map((c) => c.name).join(', ');
+      return c.json(
+        {
+          error: 'Conflict',
+          message: `Cannot delete group with ${childrenResult.children.length} active children. Delete children first: ${childNames}`,
+        },
+        409
+      );
+    }
+
+    // Delete group (using com.atproto.repo.deleteRecord)
+    const agent = await atproto.getAgent();
+    await agent.com.atproto.repo.deleteRecord({
+      repo: userDid,
+      collection: 'net.atrarium.group.config',
+      rkey: groupId,
+    });
+
+    // Delete Durable Object data
+    if (!c.env.COMMUNITY_FEED) {
+      throw new Error('COMMUNITY_FEED Durable Object binding not found');
+    }
+
+    const doId = c.env.COMMUNITY_FEED.idFromName(groupId);
+    const doStub = c.env.COMMUNITY_FEED.get(doId);
+
+    await doStub.fetch(
+      new Request('http://fake-host/delete', {
+        method: 'DELETE',
+      })
+    );
+
+    return c.json({ success: true, deletedId: groupId });
+  } catch (err) {
+    return c.json(
+      {
+        error: 'InternalServerError',
+        message: 'Failed to delete group',
+        details: c.env.ENVIRONMENT === 'development' ? String(err) : undefined,
+      },
+      500
+    );
   }
 });
 

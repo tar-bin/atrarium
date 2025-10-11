@@ -1,10 +1,10 @@
 {
   "lexicon": 1,
-  "id": "net.atrarium.community.config",
+  "id": "net.atrarium.group.config",
   "defs": {
     "main": {
       "type": "record",
-      "description": "Community configuration record stored in the owner's Personal Data Server (PDS). Defines community metadata, moderation settings, and feed mixing ratios.",
+      "description": "Group configuration record stored in the owner's Personal Data Server (PDS). Defines group metadata, moderation settings, and feed mixing ratios.",
       "key": "tid",
       "record": {
         "type": "object",
@@ -12,13 +12,13 @@
         "properties": {
           "name": {
             "type": "string",
-            "description": "Community display name",
+            "description": "Group display name",
             "maxLength": 200,
             "maxGraphemes": 100
           },
           "description": {
             "type": "string",
-            "description": "Community description or purpose statement",
+            "description": "Group description or purpose statement",
             "maxLength": 2000,
             "maxGraphemes": 1000
           },
@@ -29,12 +29,12 @@
           },
           "stage": {
             "type": "string",
-            "description": "Community development stage",
+            "description": "Group development stage",
             "enum": ["theme", "community", "graduated"]
           },
           "accessType": {
             "type": "string",
-            "description": "Community access control: 'open' allows immediate join, 'invite-only' requires admin approval",
+            "description": "Group access control: 'open' allows immediate join, 'invite-only' requires admin approval",
             "enum": ["open", "invite-only"],
             "default": "open"
           },
@@ -61,15 +61,15 @@
             "ref": "#feedMixConfig",
             "description": "Feed content mixing ratios (own/parent/global)"
           },
-          "parentCommunity": {
+          "parentGroup": {
             "type": "string",
             "format": "at-uri",
-            "description": "Parent community URI (for child communities in theme → community progression)"
+            "description": "Parent group URI (for child groups in theme → community progression)"
           },
           "createdAt": {
             "type": "string",
             "format": "datetime",
-            "description": "Community creation timestamp (ISO 8601)"
+            "description": "Group creation timestamp (ISO 8601)"
           },
           "updatedAt": {
             "type": "string",
@@ -86,13 +86,13 @@
       "properties": {
         "own": {
           "type": "integer",
-          "description": "Percentage of posts from own community (0-100)",
+          "description": "Percentage of posts from own group (0-100)",
           "minimum": 0,
           "maximum": 100
         },
         "parent": {
           "type": "integer",
-          "description": "Percentage of posts from parent community (0-100)",
+          "description": "Percentage of posts from parent group (0-100)",
           "minimum": 0,
           "maximum": 100
         },

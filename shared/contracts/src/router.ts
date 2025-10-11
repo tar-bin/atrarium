@@ -11,9 +11,12 @@ import {
   BlockUserInputSchema,
   CommunityListOutputSchema,
   CommunityOutputSchema,
+  CreateChildInputSchema,
   CreateCommunitySchema,
   CreatePostInputSchema,
   CreatePostOutputSchema,
+  DeleteResponseSchema,
+  DowngradeStageInputSchema,
   FeedListOutputSchema,
   FeedOutputSchema,
   GetCommunityInputSchema,
@@ -21,12 +24,16 @@ import {
   GetEmojiRegistryOutputSchema,
   GetFeedInputSchema,
   GetMembershipInputSchema,
+  GetParentInputSchema,
   GetPostInputSchema,
   GetPostsInputSchema,
+  GroupResponseSchema,
   HidePostInputSchema,
   JoinCommunityInputSchema,
   JoinRequestListOutputSchema,
   LeaveCommunityInputSchema,
+  ListChildrenInputSchema,
+  ListChildrenResponseSchema,
   ListEmojiInputSchema,
   ListEmojiOutputSchema,
   ListFeedsInputSchema,
@@ -52,6 +59,7 @@ import {
   UnblockUserInputSchema,
   UnhidePostInputSchema,
   UpdateMembershipInputSchema,
+  UpgradeStageInputSchema,
   UploadEmojiInputSchema,
   UploadEmojiOutputSchema,
 } from './schemas';
@@ -106,6 +114,55 @@ export const communitiesContract = {
     })
     .input(GetCommunityInputSchema)
     .output(CommunityOutputSchema),
+
+  // Hierarchy endpoints (017-1-1, T033)
+  createChild: authed
+    .route({
+      method: 'POST',
+      path: '/api/communities/:id/children',
+    })
+    .input(CreateChildInputSchema)
+    .output(GroupResponseSchema),
+
+  upgradeStage: authed
+    .route({
+      method: 'POST',
+      path: '/api/communities/:id/upgrade',
+    })
+    .input(UpgradeStageInputSchema)
+    .output(GroupResponseSchema),
+
+  downgradeStage: authed
+    .route({
+      method: 'POST',
+      path: '/api/communities/:id/downgrade',
+    })
+    .input(DowngradeStageInputSchema)
+    .output(GroupResponseSchema),
+
+  listChildren: pub
+    .route({
+      method: 'GET',
+      path: '/api/communities/:id/children',
+    })
+    .input(ListChildrenInputSchema)
+    .output(ListChildrenResponseSchema),
+
+  getParent: pub
+    .route({
+      method: 'GET',
+      path: '/api/communities/:id/parent',
+    })
+    .input(GetParentInputSchema)
+    .output(GroupResponseSchema.nullable()),
+
+  delete: authed
+    .route({
+      method: 'DELETE',
+      path: '/api/communities/:id',
+    })
+    .input(GetCommunityInputSchema)
+    .output(DeleteResponseSchema),
 };
 
 // ============================================================================

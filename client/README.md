@@ -516,13 +516,115 @@ Client → Workers API → GET /api/communities/:id/emoji/registry
 - Intercept API calls during tests
 - No real backend required
 
+### Hierarchical Group System (017-1-1)
+
+**Feature**: 1-level hierarchical group structure with Dunbar number-based stage progression.
+
+**Access**: Owner role only (create children, upgrade/downgrade stages)
+
+**Workflow**:
+
+1. **Stage Progression** (Theme → Community → Graduated):
+   - Navigate to community detail page
+   - View current stage and member count
+   - **Theme → Community** (at ~15 members):
+     - "Upgrade to Community" button appears when threshold met
+     - Click to upgrade (owner only)
+     - Moderation switches from inherited to independent
+   - **Community → Graduated** (at ~50 members):
+     - "Upgrade to Graduated" button appears when threshold met
+     - Click to upgrade (owner only)
+     - Unlocks ability to create child Theme groups
+
+2. **Create Child Theme** (Graduated groups only):
+   - Navigate to Graduated community detail page
+   - Click "Create Child Theme" button
+   - Fill in name and description
+   - Backend creates:
+     - **PDS record**: `net.atrarium.group.config` with `stage: 'theme'` and `parentGroup: <parent-AT-URI>`
+     - **Durable Object**: Child group cache with parent reference
+   - Child appears in "Child Themes" section
+
+3. **View Hierarchy**:
+   - **Parent view** (Graduated groups):
+     - "Child Themes" section lists all child groups
+     - Click child name to navigate to child detail page
+     - Tree view with stage badges and member counts
+   - **Child view** (Theme groups):
+     - Parent link displayed at top: "[Parent Name] > [Current Group]"
+     - Click parent name to navigate to parent detail page
+     - Moderation indicator: "Moderated by: [Parent Name] (inherited)"
+
+4. **Moderation Inheritance** (Theme groups):
+   - Theme groups inherit moderation from parent Graduated group
+   - Parent owner/moderators can moderate child Theme posts
+   - When Theme upgrades to Community, moderation becomes independent
+   - Inherited moderation indicator visible on Theme group pages
+
+5. **Deletion Blocking**:
+   - Graduated groups with children cannot be deleted
+   - Attempt to delete shows error: "Cannot delete group with N active children"
+   - Error message lists child names
+   - Must delete all children first, then parent can be deleted
+
+6. **Stage Downgrade** (Graduated → Community → Theme):
+   - Navigate to community settings
+   - Click "Downgrade Stage" button (owner only)
+   - Select target stage
+   - Confirm downgrade
+   - **Note**: `parentGroup` field retained (immutable), but downgrading Graduated to Community prevents creating new children
+
+**Data Flow**:
+```
+# Create Child
+Dashboard → Workers API → ATProtoService.createChildGroup()
+         → PDS (at://did:plc:owner/net.atrarium.group.config/rkey)
+         → CommunityFeedGenerator DO (update parent's children list)
+
+# Upgrade Stage
+Dashboard → Workers API → ATProtoService.upgradeGroupStage()
+         → PDS (update stage field)
+         → Member count validation (~15 for Community, ~50 for Graduated)
+
+# Hierarchy Query
+Dashboard → Workers API → GET /api/communities/:id/children
+         → CommunityFeedGenerator DO (children: cache key)
+         → Return child group configs
+```
+
+**Components**:
+- `GroupHierarchy.tsx` - Parent-child tree view with Radix UI Accordion
+- `StageUpgradeButton.tsx` - Stage progression button with Dunbar threshold display
+- `CreateChildTheme.tsx` - Child theme creation form (Graduated only)
+- `ParentLink.tsx` - Breadcrumb navigation to parent group
+- `InheritedModeration.tsx` - Moderation inheritance indicator for Theme groups
+
+**Constraints**:
+- **1-level hierarchy**: Only Graduated → Theme (no grandchildren)
+- **Immutable parent**: `parentGroup` field cannot be changed after creation
+- **Stage-specific rules**:
+  - Theme: Can have parent, cannot create children, inherits moderation
+  - Community: No parent, cannot create children, independent moderation
+  - Graduated: No parent, can create children, independent moderation
+- **Dunbar thresholds**: ~15 members for Community, ~50 members for Graduated
+
 ## Features Implemented
 
-**Phase 1 Complete** (PDS-first architecture + 013-join-leave-workflow + 015-markdown-pds):
+**Phase 1 Complete** (PDS-first architecture + 013-join-leave-workflow + 015-markdown-pds + 017-1-1):
 - ✅ PDS authentication via AtpAgent
 - ✅ Community management UI (create, list, view)
   - ✅ Access type support (open, invite-only)
   - ✅ Community browser with filters (stage, accessType)
+- ✅ **Hierarchical Group System** (017-1-1)
+  - ✅ Stage progression (Theme → Community → Graduated)
+  - ✅ Dunbar threshold validation (~15 for Community, ~50 for Graduated)
+  - ✅ Child Theme creation (Graduated groups only)
+  - ✅ Parent-child tree view (GroupHierarchy component)
+  - ✅ Stage upgrade/downgrade buttons
+  - ✅ Moderation inheritance (Theme inherits from parent Graduated)
+  - ✅ Deletion blocking (cannot delete parent with children)
+  - ✅ 1-level hierarchy constraint (no grandchildren)
+  - ✅ Immutable parent reference (parentGroup field)
 - ✅ Membership workflows
   - ✅ Join community (immediate for open, request for invite-only)
   - ✅ Leave community

@@ -2,7 +2,7 @@
 // Membership management API (T029-T038)
 
 import { Hono } from 'hono';
-import type { Record as MembershipRecord } from '../schemas/generated/types/net/atrarium/community/membership';
+import type { Record as MembershipRecord } from '../schemas/generated/types/net/atrarium/group/membership';
 import { ATProtoService } from '../services/atproto';
 import { AuthService } from '../services/auth';
 import type { Env, HonoVariables } from '../types';
@@ -53,7 +53,7 @@ app.post('/', async (c) => {
     const atproto = new ATProtoService(c.env);
 
     // Check for duplicate membership (FR-030)
-    const communityUri = `at://did:plc:system/net.atrarium.community.config/${communityId}`;
+    const communityUri = `at://did:plc:system/net.atrarium.group.config/${communityId}`;
     const existingMemberships = await atproto.listMemberships(userDid, { communityUri });
 
     if (existingMemberships.length > 0) {
@@ -69,7 +69,7 @@ app.post('/', async (c) => {
 
     const membershipResult = await atproto.createMembershipRecord(
       {
-        $type: 'net.atrarium.community.membership',
+        $type: 'net.atrarium.group.membership',
         community: communityUri,
         role: 'member',
         status,
@@ -127,7 +127,7 @@ app.delete('/:communityId', async (c) => {
     const atproto = new ATProtoService(c.env);
 
     // Get user's membership
-    const communityUri = `at://did:plc:system/net.atrarium.community.config/${communityId}`;
+    const communityUri = `at://did:plc:system/net.atrarium.group.config/${communityId}`;
     const memberships = await atproto.listMemberships(userDid, {
       communityUri,
       activeOnly: true,
@@ -214,7 +214,7 @@ app.get('/:communityId/members', async (c) => {
     const atproto = new ATProtoService(c.env);
 
     // Get community config to extract owner DID
-    const communityUri = `at://did:plc:system/net.atrarium.community.config/${communityId}`;
+    const communityUri = `at://did:plc:system/net.atrarium.group.config/${communityId}`;
     // Community config exists check (can throw if community not found)
     await atproto.getCommunityConfig(communityUri);
 
@@ -283,7 +283,7 @@ app.patch('/:communityId/:did/role', async (c) => {
 
     const atproto = new ATProtoService(c.env);
 
-    const communityUri = `at://did:plc:system/net.atrarium.community.config/${communityId}`;
+    const communityUri = `at://did:plc:system/net.atrarium.group.config/${communityId}`;
 
     // Check if requester is owner
     const requesterMemberships = await atproto.listMemberships(userDid, {
@@ -361,7 +361,7 @@ app.delete('/:communityId/:did', async (c) => {
 
     const atproto = new ATProtoService(c.env);
 
-    const communityUri = `at://did:plc:system/net.atrarium.community.config/${communityId}`;
+    const communityUri = `at://did:plc:system/net.atrarium.group.config/${communityId}`;
 
     // Check if requester is admin
     const requesterMemberships = await atproto.listMemberships(userDid, {
@@ -456,7 +456,7 @@ app.post('/:communityId/transfer', async (c) => {
 
     const atproto = new ATProtoService(c.env);
 
-    const communityUri = `at://did:plc:system/net.atrarium.community.config/${communityId}`;
+    const communityUri = `at://did:plc:system/net.atrarium.group.config/${communityId}`;
 
     // Check if requester is owner
     const requesterMemberships = await atproto.listMemberships(userDid, {
@@ -543,7 +543,7 @@ app.get('/join-requests/:communityId', async (c) => {
 
     const atproto = new ATProtoService(c.env);
 
-    const communityUri = `at://did:plc:system/net.atrarium.community.config/${communityId}`;
+    const communityUri = `at://did:plc:system/net.atrarium.group.config/${communityId}`;
 
     // Check if requester is admin
     const requesterMemberships = await atproto.listMemberships(userDid, {
@@ -594,7 +594,7 @@ app.post('/join-requests/:communityId/:did/approve', async (c) => {
 
     const atproto = new ATProtoService(c.env);
 
-    const communityUri = `at://did:plc:system/net.atrarium.community.config/${communityId}`;
+    const communityUri = `at://did:plc:system/net.atrarium.group.config/${communityId}`;
 
     // Check if approver is admin
     const approverMemberships = await atproto.listMemberships(userDid, {
@@ -671,7 +671,7 @@ app.post('/join-requests/:communityId/:did/reject', async (c) => {
 
     const atproto = new ATProtoService(c.env);
 
-    const communityUri = `at://did:plc:system/net.atrarium.community.config/${communityId}`;
+    const communityUri = `at://did:plc:system/net.atrarium.group.config/${communityId}`;
 
     // Check if rejector is admin
     const rejectorMemberships = await atproto.listMemberships(userDid, {
