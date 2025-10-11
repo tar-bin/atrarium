@@ -105,24 +105,24 @@
   - Reference: research.md lines 280-328 for implementation example
 
 ### 2.3 Integration Tests (Validate End-to-End)
-- [ ] **T009** Integration test: Post creation flow (Scenario 1 from quickstart.md)
+- [X] **T009** Integration test: Post creation flow (Scenario 1 from quickstart.md)
   - File: `/workspaces/atrarium/server/tests/integration/posts/create-post-flow.test.ts`
   - Test: Authenticate → Create community → Create post → Verify in feed
   - Validate PDS write → Firehose → Durable Object indexing
   - Reference: quickstart.md lines 36-120
 
-- [ ] **T010** [P] Unit test: Membership validation in posts.create
+- [X] **T010** [P] Unit test: Membership validation in posts.create
   - File: `/workspaces/atrarium/server/tests/unit/posts/membership-check.test.ts`
   - Test: Non-member rejected, member accepted
   - Mock Durable Object checkMembership RPC
 
 ### 2.4 Client & Deployment
-- [ ] **T011** Update client API calls to use apiClient.posts
+- [X] **T011** Update client API calls to use apiClient.posts
   - File: `/workspaces/atrarium/client/src/lib/api.ts`
   - Replace legacy Hono calls with `apiClient.posts.create()`, `.list()`, `.get()`
   - Verify MSW mock handlers updated (client/tests/mocks/handlers.ts)
 
-- [ ] **T012** Add deprecation notices to legacy posts route
+- [X] **T012** Add deprecation notices to legacy posts route
   - File: `/workspaces/atrarium/server/src/routes/posts.ts`
   - Add JSDoc comments: `@deprecated Use oRPC router.posts instead. Removal planned: 2025-12-31`
 
@@ -133,76 +133,56 @@
 ### 3.1 Contract Tests (Write Failing Tests First)
 **CRITICAL: These tests MUST be written and MUST FAIL before T020-T026 implementation**
 
-- [ ] **T013** [P] Contract test: POST /api/emoji/upload
+- [X] **T013** [P] Contract test: POST /api/emoji/upload
   - File: `/workspaces/atrarium/server/tests/contract/emoji/upload.test.ts`
   - Test FormData handling (multipart/form-data)
   - Validate shortcode format, image size, file type
 
-- [ ] **T014** [P] Contract test: GET /api/emoji/list
+- [X] **T014** [P] Contract test: GET /api/emoji/list
   - File: `/workspaces/atrarium/server/tests/contract/emoji/list.test.ts`
   - Test user's uploaded emojis returned
   - Validate pagination if applicable
 
-- [ ] **T015** [P] Contract test: POST /api/communities/:id/emoji/submit
+- [X] **T015** [P] Contract test: POST /api/communities/:id/emoji/submit
   - File: `/workspaces/atrarium/server/tests/contract/emoji/submit.test.ts`
   - Test emoji submission creates pending approval
   - Validate emojiUri format
 
-- [ ] **T016** [P] Contract test: GET /api/communities/:id/emoji/pending
+- [X] **T016** [P] Contract test: GET /api/communities/:id/emoji/pending
   - File: `/workspaces/atrarium/server/tests/contract/emoji/pending.test.ts`
   - Test owner-only permission enforced
   - Validate pending approval list
 
-- [ ] **T017** [P] Contract test: POST /api/communities/:id/emoji/approve
+- [X] **T017** [P] Contract test: POST /api/communities/:id/emoji/approve
   - File: `/workspaces/atrarium/server/tests/contract/emoji/approve.test.ts`
   - Test approval workflow
   - Validate owner-only permission
 
-- [ ] **T018** [P] Contract test: POST /api/communities/:id/emoji/revoke
+- [X] **T018** [P] Contract test: POST /api/communities/:id/emoji/revoke
   - File: `/workspaces/atrarium/server/tests/contract/emoji/revoke.test.ts`
   - Test revocation workflow
   - Validate owner-only permission
 
-- [ ] **T019** [P] Contract test: GET /api/communities/:id/emoji/registry
+- [X] **T019** [P] Contract test: GET /api/communities/:id/emoji/registry
   - File: `/workspaces/atrarium/server/tests/contract/emoji/registry.test.ts`
   - Test public endpoint (no auth required)
   - Validate approved emojis only
 
-### 3.2 Router Implementation (After Tests Are Failing)
-- [ ] **T020** Implement router.emoji.upload handler
-  - File: `/workspaces/atrarium/server/src/router.ts` (after Posts section)
-  - Add `emoji: { upload: contract.emoji.upload.handler(async ({ input, context }) => { ... }) }`
-  - Use `ATProtoService.uploadEmojiBlob()` and `createCustomEmoji()` (lines 127-197 in atproto.ts)
+### 3.2 Router Implementation (DEFERRED - Schema Redesign Required)
+- [ ] **T020** ⚠️ DEFERRED: Implement router.emoji.upload handler
+  - **Reason**: Emoji schemas require major redesign to align with existing PDS implementation
+  - **Blocker**: Input schema expects `file` (Blob), but server needs binary data handling
+  - **Dependencies**: Legacy emoji routes still active, requires careful migration strategy
 
-- [ ] **T021** Implement router.emoji.list handler
-  - File: `/workspaces/atrarium/server/src/router.ts` (after T020)
-  - Add `list: contract.emoji.list.handler(async ({ input, context }) => { ... })`
-  - Use `ATProtoService.listUserEmoji()` (lines 251-269 in atproto.ts)
+- [ ] **T021** ⚠️ DEFERRED: Implement router.emoji.list handler
+- [ ] **T022** ⚠️ DEFERRED: Implement router.emoji.submit handler
+- [ ] **T023** ⚠️ DEFERRED: Implement router.emoji.listPending handler
+- [ ] **T024** ⚠️ DEFERRED: Implement router.emoji.approve handler
+- [ ] **T025** ⚠️ DEFERRED: Implement router.emoji.revoke handler
+- [ ] **T026** ⚠️ DEFERRED: Implement router.emoji.registry handler
 
-- [ ] **T022** Implement router.emoji.submit handler
-  - File: `/workspaces/atrarium/server/src/router.ts` (after T021)
-  - Add `submit: contract.emoji.submit.handler(async ({ input, context }) => { ... })`
-  - Use `ATProtoService.createEmojiApproval()` (lines 209-243 in atproto.ts)
-
-- [ ] **T023** Implement router.emoji.listPending handler
-  - File: `/workspaces/atrarium/server/src/router.ts` (after T022)
-  - Add `listPending: contract.emoji.listPending.handler(async ({ input, context }) => { ... })`
-  - Use `ATProtoService.listCommunityApprovals()` (lines 278-311 in atproto.ts)
-
-- [ ] **T024** Implement router.emoji.approve handler
-  - File: `/workspaces/atrarium/server/src/router.ts` (after T023)
-  - Add `approve: contract.emoji.approve.handler(async ({ input, context }) => { ... })`
-  - Update PDS emoji record `approved` field
-
-- [ ] **T025** Implement router.emoji.revoke handler
-  - File: `/workspaces/atrarium/server/src/router.ts` (after T024)
-  - Add `revoke: contract.emoji.revoke.handler(async ({ input, context }) => { ... })`
-  - Remove from Durable Object emoji registry
-
-- [ ] **T026** Implement router.emoji.registry handler
-  - File: `/workspaces/atrarium/server/src/router.ts` (after T025)
-  - Add `registry: contract.emoji.registry.handler(async ({ input, context }) => { ... })`
-  - Return approved emojis from Durable Object (public endpoint, no auth)
+  **NOTE**: Emoji router commented out in contract (shared/contracts/src/router.ts:446)
+  **ACTION REQUIRED**: Separate feature ticket needed for emoji schema redesign
 
 ### 3.3 Integration Tests (Validate End-to-End)
 - [ ] **T027** Integration test: Emoji upload & approval flow (Scenario 3 from quickstart.md)

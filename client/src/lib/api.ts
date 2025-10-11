@@ -28,6 +28,32 @@ export const apiClient: ClientRouter = createORPCClient(link);
 export default apiClient;
 
 // ============================================================================
+// Posts API (018-api-orpc, T011)
+// ============================================================================
+
+/**
+ * Posts API is fully migrated to oRPC client.
+ * Use apiClient.posts directly for type-safe API calls:
+ *
+ * @example Create post
+ * const result = await apiClient.posts.create({
+ *   communityId: 'a1b2c3d4',
+ *   text: 'Hello world!'
+ * });
+ *
+ * @example List posts
+ * const { data, cursor } = await apiClient.posts.list({
+ *   communityId: 'a1b2c3d4',
+ *   limit: 50
+ * });
+ *
+ * @example Get single post
+ * const post = await apiClient.posts.get({
+ *   uri: 'at://did:plc:xxx/net.atrarium.group.post/yyy'
+ * });
+ */
+
+// ============================================================================
 // Reaction API helpers (016-slack-mastodon-misskey, T031)
 // ============================================================================
 

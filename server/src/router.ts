@@ -702,9 +702,38 @@ export const router = {
       // List moderation actions for this community
       const actions = await atproto.listModerationActions(input.communityUri, userDid || '');
 
+      // Map reason to enum or undefined
+      const validReasons = [
+        'spam',
+        'low_quality',
+        'duplicate',
+        'off_topic',
+        'wrong_community',
+        'guidelines_violation',
+        'terms_violation',
+        'copyright',
+        'harassment',
+        'hate_speech',
+        'violence',
+        'nsfw',
+        'illegal_content',
+        'bot_activity',
+        'impersonation',
+        'ban_evasion',
+        'other',
+      ] as const;
+
       return {
         data: actions.map((action) => ({
-          ...action,
+          uri: action.uri,
+          action: action.action,
+          target: action.target,
+          community: action.community,
+          reason:
+            action.reason && validReasons.includes(action.reason as (typeof validReasons)[number])
+              ? (action.reason as (typeof validReasons)[number])
+              : undefined,
+          createdAt: action.createdAt,
           moderatorDid: userDid || '',
         })),
       };

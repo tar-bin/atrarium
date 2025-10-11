@@ -443,8 +443,8 @@ export const contract = {
   moderation: moderationContract,
   feeds: feedsContract,
   posts: postsContract,
-  emoji: emojiContract,
-  reactions: reactionsContract,
+  // emoji: emojiContract, // TODO (018-api-orpc): Deferred - requires schema redesign
+  // reactions: reactionsContract, // TODO (018-api-orpc): Pending implementation
 };
 
 export type Contract = typeof contract;

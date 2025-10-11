@@ -1,5 +1,10 @@
 // Atrarium Post API Routes (014-bluesky: Custom Lexicon Posts)
 // Handles creation and retrieval of net.atrarium.group.post records
+//
+// **DEPRECATED**: All endpoints in this file are deprecated as of 2025-01-11.
+// Use oRPC router endpoints instead (server/src/router.ts - posts namespace).
+// Legacy routes will be removed after 30-day transition period (2025-12-31).
+// See: specs/018-api-orpc/plan.md for migration details.
 
 import { Hono } from 'hono';
 import { ATProtoService } from '../services/atproto';
@@ -14,6 +19,7 @@ posts.use('/*', authMiddleware);
 // ============================================================================
 // POST /api/communities/:communityId/posts
 // Create a new post in a community
+// @deprecated Use oRPC router.posts.create instead. Removal planned: 2025-12-31
 // ============================================================================
 
 posts.post('/communities/:communityId/posts', async (c) => {
@@ -97,6 +103,7 @@ posts.post('/communities/:communityId/posts', async (c) => {
 // ============================================================================
 // GET /api/communities/:communityId/posts
 // Get posts for a community timeline
+// @deprecated Use oRPC router.posts.list instead. Removal planned: 2025-12-31
 // ============================================================================
 
 posts.get('/communities/:communityId/posts', async (c) => {
@@ -173,6 +180,7 @@ posts.get('/communities/:communityId/posts', async (c) => {
 // ============================================================================
 // GET /api/posts/:uri
 // Get a single post by AT-URI
+// @deprecated Use oRPC router.posts.get instead. Removal planned: 2025-12-31
 // ============================================================================
 
 posts.get('/posts/:uri', async (c) => {
