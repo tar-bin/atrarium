@@ -1113,4 +1113,287 @@ export class ATProtoService {
       cursor: undefined,
     };
   }
+
+  // ============================================================================
+  // Hierarchical Group System Methods (017-1-1, T015-T020)
+  // ============================================================================
+
+  /**
+   * Create child Theme group under Graduated parent
+   * @param parentId Parent group ID or AT-URI
+   * @param name Child group name
+   * @param description Optional child group description
+   * @param feedMix Optional feed mix configuration
+   * @returns Created child group config with parent AT-URI
+   */
+  async createChildGroup(
+    parentId: string,
+    name: string,
+    description?: string,
+    feedMix?: { own: number; parent: number; global: number }
+  ): Promise<CommunityConfig & { uri: string; cid: string; rkey: string }> {
+    const agent = await this.getAgent();
+
+    // Step 1: Query parent group from PDS (validate stage === 'graduated')
+    const parentConfig = await this.getCommunityConfig(parentId);
+
+    if (!parentConfig) {
+      throw new Error(`Parent group not found: ${parentId}`);
+    }
+
+    if (parentConfig.stage !== 'graduated') {
+      throw new Error(
+        `Only Graduated-stage groups can have children. Parent stage: ${parentConfig.stage}`
+      );
+    }
+
+    // Validate parent cannot have its own parent (max depth 1 level)
+    if (parentConfig.parentCommunity) {
+      throw new Error('Parent group cannot have its own parent (max hierarchy depth is 1 level)');
+    }
+
+    // Step 2: Generate child group hashtag
+    const hashtag = `#atr_${Math.random().toString(16).substring(2, 10)}`;
+
+    // Step 3: Construct parent AT-URI
+    // Format: at://did:plc:xxx/net.atrarium.group.config/rkey
+    const parentAtUri = `at://${agent.session?.did}/net.atrarium.group.config/${parentId}`;
+
+    // Step 4: Create child record with stage='theme' and parentGroup=parentAtUri (immutable)
+    const childConfig: CommunityConfig = {
+      $type: 'net.atrarium.group.config',
+      name,
+      description,
+      hashtag,
+      stage: 'theme', // Always created as Theme
+      accessType: 'open',
+      parentCommunity: parentAtUri, // Immutable parent reference
+      feedMix: feedMix || { own: 0.7, parent: 0.3, global: 0.0 },
+      createdAt: new Date().toISOString(),
+    };
+
+    // Validate before creating
+    const validated = validateCommunityConfig(childConfig);
+
+    // Create record in PDS
+    const response = await agent.com.atproto.repo.createRecord({
+      repo: agent.session?.did || '',
+      collection: 'net.atrarium.group.config',
+      record: validated,
+    });
+
+    return {
+      ...validated,
+      uri: response.data.uri,
+      cid: response.data.cid,
+      rkey: response.data.uri.split('/').pop() || '',
+    };
+  }
+
+  /**
+   * Upgrade group stage with Dunbar threshold validation
+   * @param groupId Group ID or AT-URI
+   * @param targetStage Target stage ('community' or 'graduated')
+   * @returns Updated group config
+   */
+  async upgradeGroupStage(
+    groupId: string,
+    targetStage: 'community' | 'graduated'
+  ): Promise<CommunityConfig & { uri: string; cid: string }> {
+    const agent = await this.getAgent();
+
+    // Step 1: Fetch current group config from PDS
+    const currentConfig = await this.getCommunityConfig(groupId);
+
+    if (!currentConfig) {
+      throw new Error(`Group not found: ${groupId}`);
+    }
+
+    // Step 2: Query member count
+    const memberCount = await this.getMemberCount(groupId);
+
+    // Step 3: Validate stage transition rules (using imported validation functions)
+    const { validateStageUpgrade } = await import('../schemas/validation.js');
+    const validation = validateStageUpgrade(currentConfig.stage, targetStage, memberCount);
+
+    if (!validation.valid) {
+      throw new Error(validation.error || 'Invalid stage upgrade');
+    }
+
+    // Step 4: Update group record with new stage (putRecord)
+    const updatedConfig: CommunityConfig = {
+      ...currentConfig,
+      stage: targetStage,
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Validate before updating
+    const validated = validateCommunityConfig(updatedConfig);
+
+    // Update record in PDS
+    const response = await agent.com.atproto.repo.putRecord({
+      repo: agent.session?.did || '',
+      collection: 'net.atrarium.group.config',
+      rkey: groupId,
+      record: validated,
+    });
+
+    return {
+      ...validated,
+      uri: response.data.uri,
+      cid: response.data.cid,
+    };
+  }
+
+  /**
+   * Downgrade group stage (bidirectional transitions)
+   * @param groupId Group ID or AT-URI
+   * @param targetStage Target stage ('theme' or 'community')
+   * @returns Updated group config
+   */
+  async downgradeGroupStage(
+    groupId: string,
+    targetStage: 'theme' | 'community'
+  ): Promise<CommunityConfig & { uri: string; cid: string }> {
+    const agent = await this.getAgent();
+
+    // Step 1: Fetch current group config from PDS
+    const currentConfig = await this.getCommunityConfig(groupId);
+
+    if (!currentConfig) {
+      throw new Error(`Group not found: ${groupId}`);
+    }
+
+    // Step 2: Validate downgrade rules
+    const { validateStageDowngrade } = await import('../schemas/validation.js');
+    const validation = validateStageDowngrade(currentConfig.stage, targetStage);
+
+    if (!validation.valid) {
+      throw new Error(validation.error || 'Invalid stage downgrade');
+    }
+
+    // Step 3: Update group record with downgraded stage
+    // Note: parentGroup field is retained (immutable)
+    const updatedConfig: CommunityConfig = {
+      ...currentConfig,
+      stage: targetStage,
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Validate before updating
+    const validated = validateCommunityConfig(updatedConfig);
+
+    // Update record in PDS
+    const response = await agent.com.atproto.repo.putRecord({
+      repo: agent.session?.did || '',
+      collection: 'net.atrarium.group.config',
+      rkey: groupId,
+      record: validated,
+    });
+
+    return {
+      ...validated,
+      uri: response.data.uri,
+      cid: response.data.cid,
+    };
+  }
+
+  /**
+   * List child groups of a parent group
+   * @param parentId Parent group ID or AT-URI
+   * @param limit Maximum results (default 50)
+   * @param cursor Pagination cursor
+   * @returns Array of child group configs
+   */
+  async listChildGroups(
+    parentId: string,
+    limit = 50,
+    _cursor?: string
+  ): Promise<{
+    children: CommunityConfig[];
+    cursor?: string;
+  }> {
+    const agent = await this.getAgent();
+
+    // Construct parent AT-URI
+    const parentAtUri = `at://${agent.session?.did}/net.atrarium.group.config/${parentId}`;
+
+    // Query PDS for groups with parentCommunity === parentAtUri
+    // Note: AT Protocol listRecords does not support filtering, so we fetch all and filter client-side
+    const response = await agent.com.atproto.repo.listRecords({
+      repo: agent.session?.did || '',
+      collection: 'net.atrarium.group.config',
+      limit,
+    });
+
+    // Filter records where parentCommunity matches parent AT-URI
+    const children = response.data.records
+      .map((record) => record.value as CommunityConfig)
+      .filter((config) => config.parentCommunity === parentAtUri);
+
+    return {
+      children,
+      cursor: response.data.cursor,
+    };
+  }
+
+  /**
+   * Get parent group of a child group
+   * @param childId Child group ID or AT-URI
+   * @returns Parent group config or null if no parent
+   */
+  async getParentGroup(childId: string): Promise<CommunityConfig | null> {
+    // Step 1: Fetch child group config
+    const childConfig = await this.getCommunityConfig(childId);
+
+    if (!childConfig) {
+      throw new Error(`Group not found: ${childId}`);
+    }
+
+    // Step 2: Extract parentGroup AT-URI
+    if (!childConfig.parentCommunity) {
+      return null; // No parent
+    }
+
+    // Step 3: Resolve parent AT-URI → fetch parent GroupConfig
+    // Parse AT-URI: at://did:plc:xxx/net.atrarium.group.config/rkey
+    const parts = childConfig.parentCommunity.split('/');
+    const parentRkey = parts.pop() || '';
+
+    if (!parentRkey) {
+      throw new Error(`Invalid parent AT-URI: ${childConfig.parentCommunity}`);
+    }
+
+    // Fetch parent config
+    const parentConfig = await this.getCommunityConfig(parentRkey);
+
+    return parentConfig;
+  }
+
+  /**
+   * Get active member count for a group
+   * @param groupId Group ID or AT-URI
+   * @returns Count of active memberships
+   */
+  async getMemberCount(groupId: string): Promise<number> {
+    const agent = await this.getAgent();
+
+    // Construct group AT-URI
+    const groupAtUri = `at://${agent.session?.did}/net.atrarium.group.config/${groupId}`;
+
+    // Query PDS for membership records
+    // Note: AT Protocol does not support filtering, so we fetch all and filter client-side
+    const response = await agent.com.atproto.repo.listRecords({
+      repo: agent.session?.did || '',
+      collection: 'net.atrarium.group.membership',
+      limit: 100, // Reasonable limit for member count queries
+    });
+
+    // Filter memberships: membership.community === groupAtUri && membership.active === true
+    const activeMembers = response.data.records
+      .map((record) => record.value as MembershipRecord)
+      .filter((membership) => membership.community === groupAtUri && membership.active === true);
+
+    return activeMembers.length;
+  }
 }
