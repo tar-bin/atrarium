@@ -8,7 +8,7 @@ Atrarium is a community management system built on AT Protocol (Bluesky), design
 
 ### Project Constitution
 
-**All features MUST comply with the [Project Constitution](.specify/memory/constitution.md) v1.5.0.**
+**All features MUST comply with the Project Constitution.**
 
 Ten core principles govern all technical decisions:
 1. **Protocol-First Architecture**: Lexicon schemas are API contract, implementations are replaceable
@@ -22,7 +22,11 @@ Ten core principles govern all technical decisions:
 9. **Git Workflow and Commit Integrity**: All changes fully committed before merge, no --no-verify bypasses without approval
 10. **Complete Implementation Over MVP Excuses**: Features must be fully implemented per spec, no "MVP" labels to justify incomplete work
 
-See [constitution.md](.specify/memory/constitution.md) for detailed rules and rationale.
+### Language Policy
+
+- **Code & Documentation**: Write all code, comments, commit messages, and documentation in English
+- **Communication**: Respond to Japanese users in Japanese, others in their language
+- **Identifiers**: Use English for all variable names, function names, and class names
 
 ### Design Philosophy (Core Principles)
 
@@ -107,182 +111,21 @@ Client (Bluesky AppView fetches post content)
 ## Project Structure
 
 **Monorepo Organization** (pnpm workspaces):
-- Root: Workspace coordinator with component-specific documentation
-- `shared/contracts/`: oRPC API contracts (@atrarium/contracts - shared types/schemas)
-- `server/`: Backend implementation (Cloudflare Workers - @atrarium/server)
-- `client/`: Web dashboard (React)
-- `lexicons/`: Protocol definitions (shared across implementations)
-
-**Key Directories**:
 - `lexicons/` - AT Protocol Lexicon schemas (protocol definition, implementation-agnostic)
-- `shared/contracts/` - oRPC API contracts (type-safe RPC between client/server)
-  - `src/router.ts` - Contract definition (routes, schemas, middleware)
-  - `src/schemas.ts` - Zod validation schemas
-  - `src/types.ts` - TypeScript types (inferred from Zod)
-  - `src/client-types.ts` - Client-compatible RouterClient type
+- `shared/contracts/` - oRPC API contracts (@atrarium/contracts - type-safe RPC)
 - `server/` - Cloudflare Workers backend (@atrarium/server)
-  - `src/router.ts` - oRPC router implementation (type-safe API handlers for Posts, Reactions, Moderation)
-  - `src/durable-objects/` - Per-community feed storage (CommunityFeedGenerator, FirehoseReceiver)
-  - `src/routes/` - Legacy Hono routes (feed-generator, communities, memberships, auth) + deprecated routes (posts, emoji, reactions - marked for removal after 30-day monitoring)
-  - `src/workers/` - Queue consumers (FirehoseProcessor)
-  - `src/services/` - Business logic (AT Protocol client, auth)
-  - `src/schemas/` - Validation schemas (Zod, Lexicon types)
-  - `tests/` - Contract, integration, unit tests (Vitest + @cloudflare/vitest-pool-workers)
-- `client/` - React dashboard (TanStack Router + Query + Table)
-  - `src/components/` - React components (communities, feeds, posts, moderation, reactions, emoji, layout, UI)
-  - `src/routes/` - TanStack Router file-based routes
-  - `src/contexts/` - React Context providers (PDS session management)
-  - `src/lib/` - Utilities (API client with reaction/emoji helpers, PDS integration, TanStack Query client)
-  - `src/i18n/` - i18next translations (EN/JA)
-  - `tests/` - Component tests (Vitest + Testing Library), E2E tests (Playwright)
+- `client/` - React web dashboard (TanStack Router + Query + Table)
 
-**Detailed Structure** (for reference):
-```
-lexicons/              # AT Protocol Lexicon schemas (protocol definition, implementation-agnostic)
-├── net.atrarium.community.config.json
-├── net.atrarium.community.membership.json
-├── net.atrarium.community.reaction.json  # NEW (016-slack-mastodon-misskey): Reaction records
-├── net.atrarium.moderation.action.json
-└── README.md          # Lexicon schema documentation
-
-shared/                # Shared code across workspaces
-└── contracts/         # oRPC API contracts (@atrarium/contracts)
-    ├── src/
-    │   ├── router.ts       # oRPC router contract (routes, middleware, schemas)
-    │   ├── schemas.ts      # Zod validation schemas
-    │   ├── types.ts        # TypeScript types (inferred from Zod)
-    │   ├── client-types.ts # Client-compatible RouterClient type
-    │   └── index.ts        # Central export point
-    ├── package.json        # Dependencies: @orpc/server, @orpc/zod, zod
-    └── tsconfig.json
-
-server/                # Cloudflare Workers backend (pnpm workspace: @atrarium/server)
-├── src/
-├── ├── index.ts           # Main entry point, Hono router, Durable Objects + Queue bindings
-├── routes/            # API route handlers
-│   ├── feed-generator.ts  # AT Protocol Feed Generator API (proxies to CommunityFeedGenerator DO)
-│   ├── auth.ts            # Authentication endpoints
-│   ├── communities.ts     # Community management (writes to PDS, creates Durable Object)
-│   ├── memberships.ts     # Membership management (writes to PDS)
-│   ├── moderation.ts      # Moderation API (writes to PDS) - 003-id
-│   ├── reactions.ts       # NEW (016-slack-mastodon-misskey): Reaction management (POST /add, DELETE /remove, GET /list)
-│   └── lexicon.ts         # NEW (010-lexicon): Lexicon publication endpoints (serves lexicons/)
-├── durable-objects/   # Durable Objects (006-pds-1-db)
-│   ├── community-feed-generator.ts  # Per-community feed index (Storage: config:, member:, post:, moderation:)
-│   └── firehose-receiver.ts         # Firehose WebSocket → Queue (lightweight filter)
-├── workers/           # Queue Consumer Workers (006-pds-1-db)
-│   └── firehose-processor.ts       # Queue → CommunityFeedGenerator (heavyweight filter)
-├── services/          # Business logic services
-│   ├── atproto.ts         # AT Protocol client (PDS read/write methods) - 006-pds-1-db
-│   └── auth.ts            # JWT authentication
-├── schemas/           # Validation schemas
-│   ├── generated/         # NEW (010-lexicon): Auto-generated TypeScript from lexicons/
-│   ├── validation.ts      # Zod schemas
-│   └── lexicon.ts         # AT Protocol Lexicon validation (TypeScript types + Zod) - 006-pds-1-db
-├── utils/             # Utilities
-│   ├── did.ts             # DID resolution
-│   └── hashtag.ts         # Feed hashtag generation - 003-id
-├── └── types.ts           # TypeScript type definitions
-├── tests/             # Server test suite (Vitest + Cloudflare Workers)
-│   ├── contract/          # API contract tests
-│   │   ├── dashboard/         # Dashboard API tests
-│   │   │   ├── post-to-feed-with-hashtag.test.ts  # Hashtag posting - 003-id
-│   │   │   └── moderation.test.ts                 # Moderation API - 003-id
-│   │   ├── feed-generator/    # Feed Generator API tests
-│   │   │   └── get-feed-skeleton-with-hashtags.test.ts  # Hashtag filtering - 003-id
-│   │   ├── durable-object-storage.test.ts  # Durable Objects Storage operations - 006-pds-1-db
-│   │   └── queue-consumer.test.ts          # Queue consumer processing - 006-pds-1-db
-│   ├── integration/       # Integration tests
-│   │   ├── hashtag-indexing-flow.test.ts   # End-to-end hashtag flow - 003-id
-│   │   ├── moderation-flow.test.ts         # End-to-end moderation - 003-id
-│   │   ├── pds-posting.test.ts             # PDS integration test - 003-id
-│   │   ├── queue-to-feed-flow.test.ts      # Queue → CommunityFeedGenerator flow - 006-pds-1-db
-│   │   └── pds-to-feed-flow.test.ts        # Quickstart scenario (Alice-Bob) - 006-pds-1-db
-│   ├── unit/              # Unit tests
-│   │   ├── feed-hashtag-generator.test.ts  # Hashtag generation - 003-id
-│   │   └── membership-validation.test.ts   # Membership checks - 003-id
-│   └── helpers/           # Test utilities
-│       ├── setup.ts           # Test database setup
-│       └── test-env.ts        # Test environment config
-├── package.json       # Server dependencies (Hono, Zod v4, @atproto/api)
-├── wrangler.toml      # Cloudflare Workers configuration
-├── tsconfig.json      # TypeScript configuration
-└── vitest.*.config.ts # Vitest configurations (main, pds, docs)
-
-client/               # React web dashboard (pnpm workspace: client)
-    ├── src/
-    │   ├── components/          # React components
-    │   │   ├── communities/        # Community management components
-    │   │   ├── feeds/              # Feed management components
-    │   │   ├── posts/              # Post creation & display components
-    │   │   ├── moderation/         # Moderation components
-    │   │   ├── reactions/          # NEW (016-slack-mastodon-misskey): Reaction UI components
-    │   │   │   ├── ReactionBar.tsx      # Display reaction counts with toggle
-    │   │   │   ├── ReactionPicker.tsx   # Simple emoji selector (10 common emojis)
-    │   │   │   └── EmojiPicker.tsx      # Full emoji picker (6 categories, search, custom emojis)
-    │   │   ├── emoji/              # NEW (016-slack-mastodon-misskey): Custom emoji management
-    │   │   │   ├── CustomEmojiUpload.tsx  # Upload form with validation
-    │   │   │   ├── CustomEmojiList.tsx    # User's emoji list with delete
-    │   │   │   └── EmojiApproval.tsx      # Owner approval queue
-    │   │   ├── pds/                # PDS login component
-    │   │   ├── layout/             # Layout components (Header, Sidebar, Layout)
-    │   │   └── ui/                 # shadcn/ui components (button, card, etc.)
-    │   ├── routes/              # TanStack Router file-based routes
-    │   │   ├── __root.tsx          # Root route with Layout
-    │   │   ├── index.tsx           # Home page
-    │   │   ├── communities/        # Community routes
-    │   │   └── moderation.tsx      # Moderation log page
-    │   ├── contexts/            # React Context providers
-    │   │   └── PDSContext.tsx      # PDS session management
-    │   ├── lib/                 # Utilities
-    │   │   ├── api.ts              # API client with reaction/emoji helpers (016-slack-mastodon-misskey)
-    │   │   ├── pds.ts              # PDS integration (@atproto/api)
-    │   │   ├── queryClient.ts      # TanStack Query client
-    │   │   └── utils.ts            # Tailwind utilities
-    │   ├── i18n/                # i18next translations
-    │   │   ├── index.ts            # i18n setup
-    │   │   └── locales/            # EN/JA translations
-    │   ├── types.ts             # TypeScript type definitions
-    │   ├── router.tsx           # TanStack Router instance
-    │   └── main.tsx             # Entry point
-    ├── tests/               # Component & integration tests
-    │   ├── components/          # Component tests (Vitest + Testing Library)
-    │   ├── integration/         # Integration tests (DEFERRED)
-    │   └── helpers/             # Test utilities
-    ├── package.json         # Dashboard dependencies (React 19, Zod v4, TanStack, shadcn/ui)
-    ├── vite.config.ts       # Vite configuration
-    ├── vitest.config.ts     # Vitest configuration for component tests
-    ├── playwright.config.ts # Playwright E2E test configuration
-    ├── tsconfig.json        # TypeScript configuration
-    └── README.md            # Dashboard setup guide
-
-# Root documentation files (previously in docs/)
-CONCEPT.md           # System design and architecture
-QUICKSTART.md        # Getting started guide
-SETUP.md             # Development setup instructions
-CONTRIBUTING.md      # Contribution guidelines
-
-pnpm-workspace.yaml  # pnpm workspace configuration
-package.json         # Root workspace coordinator
-start-dev.sh         # Parallel development startup script (server + dashboard)
-```
+**Key Components**:
+- **Lexicons** ([lexicons/README.md](lexicons/README.md)): `net.atrarium.*` schemas (community.config, community.membership, community.reaction, moderation.action)
+- **Server** ([server/](server/)): Durable Objects (CommunityFeedGenerator, FirehoseReceiver), Queue consumers (FirehoseProcessor), oRPC router, AT Protocol client
+- **Client** ([client/README.md](client/README.md)): React components, TanStack Router routes, i18next (EN/JA), PDS integration
 
 **Documentation**:
-- [README.md](README.md) - Project summary (English) - **source of truth for project info**
-- [README.ja.md](README.ja.md) - Japanese translation (maintain sync with README.md)
+- [README.md](README.md) - Project summary (English, source of truth)
 - [CONCEPT.md](CONCEPT.md) - System design and architecture
 - [QUICKSTART.md](QUICKSTART.md) - Getting started guide
-- [SETUP.md](SETUP.md) - Development setup instructions
-- Component-specific documentation:
-  - [lexicons/README.md](lexicons/README.md) - AT Protocol Lexicon schemas
-  - [server/](server/) - Backend documentation (API.md, ARCHITECTURE.md, DEPLOYMENT.md, etc.)
-  - [client/README.md](client/README.md) - Web dashboard documentation
-
-**Documentation Policy**:
-- **English (README.md)** is the primary/canonical version for project information
-- Component-specific docs are located in respective directories (lexicons/, server/, client/)
-- README.ja.md should be kept in sync with README.md for Japanese speakers
-- When updating project information, always update README.md first, then sync translations
+- Component-specific docs in respective directories
 
 ## Data Storage (PDS-First Architecture - 006-pds-1-db)
 
@@ -321,229 +164,89 @@ start-dev.sh         # Parallel development startup script (server + dashboard)
 - Membership verification ensures only community members can post
 - Two-stage filtering: lightweight (`includes('#atrarium_')`) → heavyweight (`regex /#atrarium_[0-9a-f]{8}/`)
 
-## Development Commands
+## Quick Start Commands
 
-### Quick Reference
-
-**Root-level commands** (run from any directory):
+**Most Common Tasks**:
 ```bash
-pnpm install                    # Install all workspace dependencies
-pnpm -r build                   # Build all workspaces
+# Development (start both server + client)
+./start-dev.sh all              # Start PDS + Server + Client
+./start-dev.sh                  # Start Client only (default)
+
+# Testing
 pnpm -r test                    # Run all tests
+pnpm --filter server test       # Server tests only
+pnpm --filter client test       # Client tests only
+
+# Code Quality (runs automatically on pre-commit)
+pnpm lint:fix                   # Auto-fix linting + formatting
 pnpm -r typecheck               # Type check all workspaces
-pnpm lint                       # Check linting issues
-pnpm lint:fix                   # Auto-fix linting issues
-pnpm format                     # Auto-format code
-pnpm format:check               # Check formatting
+
+# Load test data (requires PDS + Server running)
+./scripts/load-test-data.sh     # Creates alice.test, bob.test, moderator.test accounts
 ```
 
-**Workspace-specific commands**:
+**Workspace Commands**:
 ```bash
-pnpm --filter server <command>              # Run server command
-pnpm --filter client <command>              # Run client command
-pnpm --filter @atrarium/contracts <command> # Run contracts command
+pnpm --filter server <command>  # Run server command
+pnpm --filter client <command>  # Run client command
+pnpm -r <command>               # Run command in all workspaces
 ```
 
-### Setup
+## Development Setup
+
+### Initial Setup
 ```bash
-# Install all workspace dependencies (uses pnpm workspaces)
-pnpm install
+pnpm install                     # Install all workspace dependencies
+pnpm add -g wrangler            # Install Wrangler CLI (if needed)
+wrangler login                  # Login to Cloudflare
 
-# Install Wrangler CLI (if not already installed)
-pnpm add -g wrangler
-wrangler login
-
-# Create Cloudflare Queue (006-pds-1-db)
+# Create Cloudflare Queues (production only)
 wrangler queues create firehose-events
-wrangler queues create firehose-dlq  # Dead letter queue
-
-# Queue configuration in wrangler.toml:
-# - max_batch_size: 100 (process up to 100 messages per batch)
-# - max_batch_timeout: 5s (wait up to 5 seconds for batch to fill)
-# - max_retries: 3 (retry failed messages 3 times before DLQ)
-# Durable Objects are automatically provisioned on first deploy
+wrangler queues create firehose-dlq
 ```
 
-### Development
+### Local Development with DevContainer
 ```bash
-# Server development (can run from root or server/)
-pnpm --filter server dev          # Run Workers locally with Miniflare (localhost:8787)
-pnpm --filter server typecheck    # TypeScript type checking
-pnpm --filter server test         # Run server tests
-pnpm --filter server build        # Build server (dry-run deploy)
+# Open in VS Code DevContainer (auto-starts local PDS)
+# Services: PDS (localhost:3000), Server (localhost:8787), Client (localhost:5173)
 
-# Dashboard development (can run from root or client/)
-pnpm --filter client dev       # Start dashboard dev server (http://localhost:5173)
-pnpm --filter client build     # Build dashboard production bundle
-pnpm --filter client test      # Run dashboard tests
+./start-dev.sh all              # Start all services
+./scripts/load-test-data.sh     # Load test accounts and data
 
-# Parallel development (server + dashboard)
-./start-dev.sh                # Start both server and client in parallel (if available)
-# Or manually: pnpm --filter server dev & pnpm --filter client dev
-
-# Run all workspaces (from root only)
-pnpm -r build        # Build all workspaces
-pnpm -r test         # Run all tests
-pnpm -r typecheck    # Type check all workspaces
-
-# Lexicon TypeScript Code Generation (010-lexicon)
-pnpm --filter server codegen      # Generate TypeScript types from lexicons/*.json
-                                  # Output: server/src/schemas/generated/
-                                  # Note: Generated code excluded from tsconfig, use JSON imports
-```
-
-### Development with Local PDS (DevContainer)
-```bash
-# Open project in DevContainer (VS Code)
-# This automatically starts a local Bluesky PDS for testing
-
-# Load test data (creates accounts + communities + posts)
-./scripts/load-test-data.sh
-
-# Run PDS integration tests (from server directory)
-pnpm --filter server test:pds
-
-# PDS is available at http://localhost:3000 (or http://pds:3000 from container)
-# Environment variable: PDS_URL=http://pds:3000
-```
-
-### Development Server Startup (start-dev.sh)
-```bash
-# Start all services (PDS + Server + Client)
-./start-dev.sh all
-
-# Start only specific services
-./start-dev.sh client    # Client only (default)
-./start-dev.sh server    # Server only
-./start-dev.sh pds       # Local PDS only
-
-# The script automatically:
-# - Starts Docker Compose for local PDS
-# - Creates test accounts (alice.test, bob.test, moderator.test)
-# - Runs server in background, client in foreground
-# - Server logs: tail -f /tmp/atrarium-server.log
-
-# Services:
-# - PDS:    http://localhost:3000 (real Bluesky PDS)
-# - Client: http://localhost:5173 (Vite dev server)
-# - Server: http://localhost:8787 (Miniflare with real Durable Objects/Queue)
-
-# Note: MSW is NOT used during development
-# - Development uses real server (Miniflare) and real PDS
-# - MSW is only used in client component tests (pnpm --filter client test)
-```
-
-### Load Test Data (scripts/load-test-data.sh)
-```bash
-# Load sample communities and posts into local environment
-# Prerequisites: PDS and Server must be running
-./scripts/load-test-data.sh
-
-# The script automatically:
-# - Verifies PDS (localhost:3000) and Server (localhost:8787) are running
-# - Logs in as test accounts (alice.test, bob.test, moderator.test)
-# - Creates 3 communities (Design, Tech, Game)
-# - Adds members with appropriate roles
-# - Creates ~7 sample posts across communities
-
-# Test accounts and roles:
-# - alice.test: Owner of Design & Tech communities
-# - bob.test: Owner of Game community, member of others
-# - moderator.test: Moderator of Design community
-
-# Access the dashboard:
-# - URL: http://localhost:5173
-# - Login: alice.test / test123 (or bob.test, moderator.test)
-
-# To reset data:
-# 1. Restart PDS: docker compose -f .devcontainer/docker-compose.yml restart pds
-# 2. Restart server: Ctrl+C and pnpm --filter server dev
-# 3. Run script again: ./scripts/load-test-data.sh
-```
-
-### Code Quality and Pre-commit Validation
-
-**Automated quality gates** (enforced by pre-commit hooks):
-- **Biome linting/formatting**: Auto-fixes staged files via lint-staged
-- **TypeScript type checking**: Validates types across all workspaces (`pnpm -r typecheck`)
-- **Configuration**: [.husky/pre-commit](.husky/pre-commit), [biome.json](biome.json), [package.json](package.json)
-- **Bypassing validation**: Prohibited per Constitution Principle 9 (emergency bypasses require maintainer approval)
-
-**Biome configuration** ([biome.json](biome.json)):
-- Line width: 100 characters
-- Indent: 2 spaces
-- Quote style: Single quotes (JS), double quotes (JSX)
-- Semicolons: Always
-- Trailing commas: ES5
-- Line ending: LF
-
-**Manual validation**:
-```bash
-pnpm lint              # Check linting issues
-pnpm lint:fix          # Auto-fix linting issues
-pnpm format            # Auto-format code
-pnpm format:check      # Check formatting only
-pnpm -r typecheck      # Type check all workspaces
+# Test accounts: alice.test, bob.test, moderator.test (password: test123)
+# Dashboard: http://localhost:5173
 ```
 
 ### Testing
-
-**For detailed testing guide (local vs deployed, troubleshooting), see [TESTING.md](TESTING.md).**
-
 ```bash
-# Run all workspace tests
-pnpm -r test
+pnpm -r test                    # All tests
+pnpm --filter server test       # Server tests (Miniflare + Vitest)
+pnpm --filter server test:pds   # PDS integration tests
+pnpm --filter client test       # Client tests (MSW + Testing Library)
+pnpm --filter client test:e2e   # E2E tests (Playwright)
+```
 
-# Server tests (uses @cloudflare/vitest-pool-workers)
-pnpm --filter server test           # Run all server tests
-pnpm --filter server test:watch     # Watch mode
-pnpm --filter server test:pds       # PDS integration tests (requires local PDS)
+### Code Quality (Pre-commit Hooks)
+**Automated validation** (runs on `git commit`):
+- Biome linting/formatting (auto-fix via lint-staged)
+- TypeScript type checking (all workspaces)
+- Bypassing hooks (`--no-verify`) prohibited per Constitution Principle 9
 
-# Client tests (uses MSW for API mocking)
-pnpm --filter client test           # Run component tests with MSW
-pnpm --filter client test:watch     # Watch mode
-pnpm --filter client test:e2e       # E2E tests with Playwright (no MSW)
-
-# Run specific test file
-pnpm --filter server exec vitest run tests/contract/feed-generator/get-feed-skeleton.test.ts
-
-# Test environment differences:
-# - Server tests: Real Miniflare environment (Durable Objects, Queue)
-# - Client tests: MSW mocks API responses (client/tests/mocks/handlers.ts)
-# - PDS tests: Real Bluesky PDS via DevContainer (vitest.pds.config.ts)
-# - E2E tests: Real server + real PDS (Playwright)
+**Manual validation**:
+```bash
+pnpm lint:fix                   # Auto-fix linting + formatting
+pnpm -r typecheck               # Type check all workspaces
 ```
 
 ### Deployment
 ```bash
-# Server deployment
-pnpm --filter server deploy                # Deploy Workers to production
-wrangler secret put JWT_SECRET             # Set secrets (also: BLUESKY_HANDLE, BLUESKY_APP_PASSWORD)
+# Server (Cloudflare Workers)
+pnpm --filter server deploy
+wrangler secret put JWT_SECRET
 
-# Dashboard (Cloudflare Pages)
-# Recommended deployment via GitHub integration:
-# - Build command: cd client && pnpm install && pnpm run build
-# - Build output: client/dist
-# - Environment variables: VITE_API_URL, VITE_PDS_URL
-
-# Manual deployment (if needed)
-pnpm --filter client build
-wrangler pages deploy client/dist --project-name=atrarium-dashboard
-```
-
-### Durable Objects Management (006-pds-1-db)
-```bash
-# View Durable Objects logs
-wrangler tail --format pretty
-
-# Durable Objects are automatically created on first request
-# Each community gets its own CommunityFeedGenerator instance
-# Storage is persistent and isolated per community
-
-# Scheduled cleanup runs every 12 hours (configured in wrangler.toml)
-# Cron trigger: "0 */12 * * *" - deletes posts older than 7 days
-
-# Note: D1 database deprecated in favor of Durable Objects Storage
+# Client (Cloudflare Pages via GitHub integration)
+# Build command: cd client && pnpm install && pnpm run build
+# Build output: client/dist
 ```
 
 ## Key AT Protocol Concepts
@@ -593,102 +296,48 @@ The client fetches actual post content from Bluesky's AppView using these URIs.
 
 ## Implementation Status
 
-### ✅ Completed
-- [x] **Feed Generator API** (DID document, getFeedSkeleton, describeFeedGenerator)
-- [x] **AT Protocol Lexicon schemas** (`net.atrarium.*` - migrated from `com.atrarium.*`)
-  - [x] `net.atrarium.community.config` (community metadata)
-  - [x] `net.atrarium.community.membership` (user memberships)
-  - [x] `net.atrarium.community.post` (community posts, custom Lexicon) - **014-bluesky**
-  - [x] `net.atrarium.community.reaction` (post reactions with emoji) - **016-slack-mastodon-misskey**
-  - [x] `net.atrarium.moderation.action` (moderation actions)
-- [x] **PDS read/write service** (@atproto/api with AtpAgent - BskyAgent deprecated)
-- [x] **Durable Objects architecture**
-  - [x] CommunityFeedGenerator (per-community feed index with Storage API)
-  - [x] FirehoseReceiver (Jetstream WebSocket → Queue, lightweight filter)
-- [x] **Cloudflare Queues** (firehose-events, firehose-dlq, 5000 msg/sec)
-- [x] **FirehoseProcessor Worker** (Queue consumer, heavyweight regex filter)
-- [x] **API routes** (communities, memberships, moderation, reactions - write to PDS, proxy to DOs)
-- [x] **Hashtag system** (system-generated `#atrarium_[0-9a-f]{8}`, unique per community)
-- [x] **Moderation system** (hide posts, block users, role-based access)
-- [x] **Authentication** (JWT with DID verification)
-- [x] **Test suite** (contract + integration + unit tests)
-- [x] **Component documentation** (consolidated from VitePress, organized by component)
-- [x] **React dashboard** (Phase 0-1: full web UI with PDS integration)
-- [x] **Local PDS integration** (DevContainer with Bluesky PDS for testing)
-- [x] **Domain migration** (atrarium.net acquired, all references updated)
-- [x] **Lexicon publication API** (010-lexicon: HTTP endpoints with ETag caching, beta status documented)
-- [x] **Custom emoji reactions** (016-slack-mastodon-misskey: Slack/Mastodon/Misskey-style reactions)
-  - [x] Backend: Reaction PDS methods, Durable Objects aggregation, API routes
-  - [x] Frontend Components: ReactionBar, ReactionPicker, EmojiPicker (6 Unicode categories, 60+ emojis, search, custom emoji integration)
-  - [x] Custom Emoji Management: CustomEmojiUpload, CustomEmojiList, EmojiApproval (upload, validation, approval queue)
-  - [x] API Helpers: addReaction, removeReaction, listReactions, uploadEmoji, deleteEmoji, listEmojis, listUserEmojis, listPendingEmojis, approveEmoji
-- [x] **oRPC Router Implementation** (018-api-orpc: Type-safe API migration) ✅ **COMPLETED**
-  - [x] Posts API (create, list, get) - Fully migrated with contract tests
-  - [x] Emoji API (upload, list, submit, listPending, approve, revoke, registry) - **Completed with base64 approach**
-  - [x] Reactions API (add, remove, list) - Fully migrated with contract tests
-  - [x] Moderation API fix (list with communityUri parameter)
-  - [x] Contract tests (14 tests covering Posts, Emoji, Reactions, Moderation)
-  - [x] Integration tests (Post creation flow, Emoji approval flow, Moderation list validation)
-  - [x] Performance validation (p95 < 100ms target)
-  - [x] Legacy route removal (Posts, Emoji routes deleted - SSE endpoint kept)
-  - [x] Client integration (all TypeScript errors resolved, MSW mocks updated)
-  - [x] Type safety validation (`pnpm -r typecheck` passes across all workspaces)
-- [x] **Communities Hierarchy API** (019-communities-api-api) ✅ **COMPLETED** (2025-10-11)
-  - [x] Infrastructure: ATProtoService hierarchy methods (getCommunityStatsDetailed, getCommunityChildrenWithMetadata, validateCircularReference)
-  - [x] Durable Objects: Hierarchy RPC endpoints (checkMembership, getHierarchy, validateStageTransition)
-  - [x] API Endpoints: All 6 hierarchy operations implemented
-    - [x] createChild: Create child theme under graduated parent
-    - [x] upgradeStage: Stage progression with member count validation (theme→community: 10+, community→graduated: 50+)
-    - [x] downgradeStage: Stage regression with safety checks (graduated→community requires 0 children)
-    - [x] listChildren: Query child communities with pagination
-    - [x] getParent: Fetch parent community metadata
-    - [x] delete: Safe deletion with multi-layer validation (no active members/children/posts)
-  - [x] Validation: Circular reference detection, stage transition rules, feed mix ratios (must sum to 100)
-  - [x] Type safety: Full oRPC integration with `pnpm -r typecheck` passing
-  - [x] Build validation: `pnpm --filter server build` passing
+**Current Phase**: Phase 1 (PDS-First Architecture) - Ready for production deployment
 
-### 🚧 In Progress / Pending
-- [ ] Production deployment (Cloudflare Workers + Durable Objects + Queues)
-- [ ] Dashboard API integration (update to use PDS-first endpoints)
-- [ ] Firehose connection monitoring and auto-reconnect
-- [ ] Feed Generator registration in Bluesky AppView
+**Completed Features**:
+- Feed Generator API, AT Protocol Lexicon schemas (`net.atrarium.*`)
+- PDS-First Architecture (Durable Objects + Queues, 7-day cache)
+- oRPC type-safe API (Posts, Reactions, Emoji, Moderation)
+- Custom emoji reactions (Slack/Mastodon/Misskey-style)
+- Communities hierarchy API (stage transitions, parent/child relationships)
+- React dashboard with PDS integration
+- Local PDS testing environment (DevContainer)
+- Comprehensive test suite (contract + integration + unit)
 
-### 📅 Future Phases
-- Achievement system (Phase 1)
-- Automated feed archiving (Phase 1)
-- Dynamic feed mixing (Phase 2)
-- Community graduation/splitting (Phase 2)
+**Pending**:
+- Production deployment (Cloudflare Workers + Durable Objects + Queues)
+- Firehose connection monitoring and auto-reconnect
+- Feed Generator registration in Bluesky AppView
 
-## Common Patterns
+**Future Phases**:
+- Phase 1: Achievement system, automated feed archiving
+- Phase 2: Dynamic feed mixing, community graduation/splitting
 
-### Architecture (006-pds-1-db)
-- **Router**: Hono framework with type-safe routing
-- **Durable Objects**: Per-community isolation using CommunityFeedGenerator class
-- **Queue Processing**: FirehoseProcessor consumes batched events from Cloudflare Queue
-- **Services**: Business logic (AT Protocol client, auth)
-- **Routes**: HTTP handlers that write to PDS and proxy to Durable Objects
-- **Validation**: Zod schemas in [src/schemas/validation.ts](src/schemas/validation.ts) and [src/schemas/lexicon.ts](src/schemas/lexicon.ts)
+## Common Development Patterns
 
-### TypeScript Types
-All types are defined in [src/types.ts](src/types.ts). Key patterns:
-- **PDS Lexicon Types**: `CommunityConfig`, `MembershipRecord`, `ModerationAction` (from Lexicon schemas)
-- **Durable Object Types**: `PostMetadata`, `PostEvent`, `ModerationAction` (internal to CommunityFeedGenerator)
-- **API Types**: `CreateCommunityRequest`, `CommunityResponse` (request/response)
-- **Enums**: `CommunityStage`, `MembershipRole`, `ModerationStatus`
+### Architecture Components
+- **oRPC Router** ([server/src/router.ts](server/src/router.ts)): Type-safe API handlers (Posts, Reactions, Moderation, Emoji)
+- **Durable Objects**: Per-community isolation (CommunityFeedGenerator, FirehoseReceiver)
+- **Queue Processing**: FirehoseProcessor consumes batched events (100 msg/batch, 5s timeout)
+- **AT Protocol Service** ([server/src/services/atproto.ts](server/src/services/atproto.ts)): PDS read/write operations
+- **Validation**: Zod schemas in `shared/contracts/` and `server/src/schemas/`
 
-### Authentication
-JWT-based authentication with DID verification ([src/services/auth.ts](src/services/auth.ts)):
-- Dashboard JWT: `{ iss, sub, aud, handle, iat, exp, jti }`
-- Service JWT: `{ iss, aud, exp, iat, jti, lxm }` (for AT Protocol)
-- Middleware: `authMiddleware()` in routes requiring authentication
-- Roles: `owner` (full control), `moderator` (moderation), `member` (view only)
+### Authentication & Authorization
+JWT-based authentication with DID verification:
+- **Roles**: `owner` (full control), `moderator` (moderation), `member` (view only)
+- **Middleware**: `authMiddleware()` in protected routes
+- **Token format**: `{ iss, sub, aud, handle, iat, exp, jti }`
 
-### Durable Objects Storage Patterns (006-pds-1-db)
-- **Key schema**: Prefix-based namespacing (`config:`, `member:`, `post:`, `moderation:`)
-- **Post keys**: `post:<timestamp>:<rkey>` for chronological ordering
-- **Listing**: `storage.list({ prefix: 'post:', reverse: true })` for newest-first
-- **Cleanup**: Scheduled alarm deletes posts older than 7 days
-- **Timestamps**: ISO 8601 strings (consistent with AT Protocol)
+### Durable Objects Storage
+- **Key prefixes**: `config:`, `member:`, `post:`, `moderation:`, `reaction:`
+- **Post keys**: `post:<timestamp>:<rkey>` (chronological ordering)
+- **Listing**: `storage.list({ prefix: 'post:', reverse: true })` (newest-first)
+- **Cleanup**: Scheduled alarm (every 12 hours) deletes posts older than 7 days
+- **Timestamps**: ISO 8601 strings (AT Protocol compatibility)
 
 ### oRPC Handler Pattern (018-api-orpc)
 Standard pattern for implementing oRPC route handlers:
@@ -863,66 +512,29 @@ All outputs include Constitution Check section validating compliance with 10 pri
 
 ### Testing Strategy
 
-**Server Tests** (uses `@cloudflare/vitest-pool-workers`):
-- **Setup**: Durable Objects auto-provisioned on first use (no schema migrations)
-- **Environment**: Real Miniflare with Durable Objects and Queue bindings ([wrangler.toml](wrangler.toml))
-- **Mock Data**: Generated per-test in [tests/helpers/test-env.ts](tests/helpers/test-env.ts)
-- **Test Types**:
-  - Contract tests: API endpoint validation ([tests/contract/](tests/contract/))
-  - Integration tests: End-to-end workflows ([tests/integration/](tests/integration/))
-  - Unit tests: Isolated logic validation ([tests/unit/](tests/unit/))
-  - PDS tests: Real Bluesky PDS via DevContainer ([tests/integration/pds-posting.test.ts](tests/integration/pds-posting.test.ts))
+**Server Tests** (@cloudflare/vitest-pool-workers):
+- **Environment**: Real Miniflare with Durable Objects and Queue bindings
+- **Test Types**: Contract tests (API validation), Integration tests (end-to-end flows), Unit tests (isolated logic), PDS tests (real Bluesky PDS)
+- **Mock Data**: Generated per-test in [server/tests/helpers/](server/tests/helpers/)
 
-**Client Tests** (uses MSW + Testing Library):
-- **Setup**: MSW server started in [tests/setup.ts](client/tests/setup.ts)
-- **Mock Handlers**: API responses in [tests/mocks/handlers.ts](client/tests/mocks/handlers.ts)
-- **Mock Data**: Communities, feeds, posts predefined in handlers
-- **Test Types**:
-  - Component tests: React component behavior with mocked API
-  - E2E tests: Playwright with real server (no MSW)
+**Client Tests** (MSW + Testing Library):
+- **Environment**: MSW mocks API responses, Testing Library for component tests
+- **Test Types**: Component tests (React behavior), E2E tests (Playwright with real server)
+- **Mock Data**: Predefined in [client/tests/mocks/handlers.ts](client/tests/mocks/handlers.ts)
 
 **Test Data Loading**:
-- **Development**: No pre-loaded data, use Dashboard UI or API to create test data
-- **Server Tests**: Mock data generated per-test (`createMockEnv()`, `createMockJWT()`)
-- **Client Tests**: MSW handlers return predefined mock data
-- **PDS Tests**: DevContainer setup script creates accounts (alice.test, bob.test, moderator.test)
-
-### Local Development (006-pds-1-db)
-```bash
-# Run Workers locally (with Miniflare)
-pnpm --filter server dev
-
-# The dev server includes:
-# - Durable Objects (in-memory simulation)
-# - Cloudflare Queues (in-memory simulation)
-# - CORS enabled for local dashboard development
-
-# Note: Firehose WebSocket connection requires production deployment
-# Use PDS integration tests for local development
-```
+- **Development**: `./scripts/load-test-data.sh` creates test accounts and sample data
+- **Tests**: Mock data generated per-test (server) or predefined in MSW handlers (client)
 
 ### Production Monitoring
 ```bash
-# View live logs
-wrangler tail
-
-# View logs with formatting
-wrangler tail --format pretty
-
-# Monitor Durable Objects performance
-wrangler tail --format json | grep "CommunityFeedGenerator"
-
-# Monitor Queue processing
-wrangler tail --format json | grep "FirehoseProcessor"
+wrangler tail --format pretty           # View live logs
+wrangler tail --format json | grep "CommunityFeedGenerator"  # Monitor Durable Objects
 ```
 
-### Cloudflare Costs (006-pds-1-db)
-**Expected monthly cost for 1000 communities**: ~$0.40
-
-Breakdown:
-- **Workers Paid**: $5/month (includes 10M requests/month)
-- **Durable Objects**: Included in Workers Paid (400k requests/month free, then $0.15/million)
-- **Queues**: ~$0.22/month (2000 events/sec × 2.6M events/month at $0.40/million writes)
-- **Storage**: ~$0.18/month (1000 communities × 10MB avg × $0.20/GB/month)
-
-**Note**: D1 and KV no longer used, saving $5/month vs previous architecture
+### Cost Estimation
+**Expected monthly cost for 1000 communities**: ~$0.40 (~95% reduction vs VPS)
+- Workers Paid: $5/month (10M requests/month)
+- Durable Objects: Included (400k requests/month free)
+- Queues: ~$0.22/month (2.6M events/month)
+- Storage: ~$0.18/month (10MB avg per community)
