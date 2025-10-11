@@ -1,35 +1,12 @@
-// TanStack Query hooks for Atrarium API
-// All API hooks for communities, memberships, moderation, and feeds (T082-T100)
+// Membership-related TanStack Query hooks
+// Hooks for membership queries and mutations (join, leave, approve, reject, etc.)
 
-import { type UseQueryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 
 // ============================================================================
-// Query Hooks (T082-T087, T092, T099)
+// Query Hooks
 // ============================================================================
-
-export function useCommunities(options?: Omit<UseQueryOptions, 'queryKey' | 'queryFn'>) {
-  return useQuery({
-    queryKey: ['communities'],
-    queryFn: async () => {
-      // TODO: Replace with actual oRPC call
-      return [];
-    },
-    staleTime: 5 * 60 * 1000, // 5-minute cache for static data
-    ...options,
-  });
-}
-
-export function useCommunity(communityId: string) {
-  return useQuery({
-    queryKey: ['community', communityId],
-    queryFn: async () => {
-      const apiClient = (await import('./api')).apiClient;
-      const result = await apiClient.communities.get({ id: communityId });
-      return result;
-    },
-  });
-}
 
 export function useMyMemberships() {
   return useQuery({
@@ -51,29 +28,6 @@ export function useCommunityMembers(communityId: string) {
   });
 }
 
-export function useCommunityFeed(communityId: string, _limit = 20) {
-  return useQuery({
-    queryKey: ['community-feed', communityId],
-    queryFn: async () => {
-      // GET /api/feeds/:communityId?limit=20
-      return { feed: [], cursor: undefined };
-    },
-    refetchInterval: 20000, // Poll every 20 seconds
-    refetchOnWindowFocus: false,
-  });
-}
-
-export function useCommunityStats(communityId: string) {
-  return useQuery({
-    queryKey: ['community-stats', communityId],
-    queryFn: async () => {
-      // GET /api/feeds/:communityId/stats (memberCount and pendingRequestCount only)
-      return { memberCount: 0, pendingRequestCount: 0 };
-    },
-    refetchInterval: 30000, // Poll every 30 seconds
-  });
-}
-
 export function useJoinRequests(communityId: string) {
   return useQuery({
     queryKey: ['join-requests', communityId],
@@ -84,18 +38,8 @@ export function useJoinRequests(communityId: string) {
   });
 }
 
-export function useModerationHistory(communityId: string) {
-  return useQuery({
-    queryKey: ['moderation-history', communityId],
-    queryFn: async () => {
-      // GET /api/moderation/:communityId/history
-      return [];
-    },
-  });
-}
-
 // ============================================================================
-// Mutation Hooks (T088-T091, T093-T098, T100)
+// Mutation Hooks
 // ============================================================================
 
 export function useJoinCommunity() {
@@ -266,134 +210,6 @@ export function useRejectJoinRequest() {
     onError: (error) => {
       toast({
         title: 'Failed to reject',
-        description: (error as Error).message,
-        variant: 'destructive',
-      });
-    },
-  });
-}
-
-export function useHidePost() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      postUri: _postUri,
-      communityId: _communityId,
-      reason: _reason,
-    }: {
-      postUri: string;
-      communityId: string;
-      reason?: string;
-    }) => {
-      // POST /api/moderation/hide with { postUri, communityId, reason }
-      return { success: true };
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['community-feed', variables.communityId] });
-      queryClient.invalidateQueries({ queryKey: ['moderation-history', variables.communityId] });
-      toast({ title: 'Post hidden successfully' });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Failed to hide post',
-        description: (error as Error).message,
-        variant: 'destructive',
-      });
-    },
-  });
-}
-
-export function useUnhidePost() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      postUri: _postUri,
-      communityId: _communityId,
-      reason: _reason,
-    }: {
-      postUri: string;
-      communityId: string;
-      reason?: string;
-    }) => {
-      // POST /api/moderation/unhide with { postUri, communityId, reason }
-      return { success: true };
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['community-feed', variables.communityId] });
-      queryClient.invalidateQueries({ queryKey: ['moderation-history', variables.communityId] });
-      toast({ title: 'Post unhidden successfully' });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Failed to unhide post',
-        description: (error as Error).message,
-        variant: 'destructive',
-      });
-    },
-  });
-}
-
-export function useBlockUser() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      targetDid: _targetDid,
-      communityId: _communityId,
-      reason: _reason,
-    }: {
-      targetDid: string;
-      communityId: string;
-      reason?: string;
-    }) => {
-      // POST /api/moderation/block with { targetDid, communityId, reason }
-      return { success: true };
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['community-feed', variables.communityId] });
-      queryClient.invalidateQueries({ queryKey: ['moderation-history', variables.communityId] });
-      toast({ title: 'User blocked successfully' });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Failed to block user',
-        description: (error as Error).message,
-        variant: 'destructive',
-      });
-    },
-  });
-}
-
-export function useUnblockUser() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      targetDid: _targetDid,
-      communityId: _communityId,
-      reason: _reason,
-    }: {
-      targetDid: string;
-      communityId: string;
-      reason?: string;
-    }) => {
-      // POST /api/moderation/unblock with { targetDid, communityId, reason }
-      return { success: true };
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['community-feed', variables.communityId] });
-      queryClient.invalidateQueries({ queryKey: ['moderation-history', variables.communityId] });
-      toast({ title: 'User unblocked successfully' });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Failed to unblock user',
         description: (error as Error).message,
         variant: 'destructive',
       });

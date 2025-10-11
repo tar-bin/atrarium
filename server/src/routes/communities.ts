@@ -144,7 +144,7 @@ app.post('/', async (c) => {
 
     // Generate unique hashtag for the community with collision check
     const { ATProtoService } = await import('../services/atproto');
-    const { generateFeedHashtag } = await import('../utils/hashtag');
+    const { generateFeedHashtag } = await import('@atrarium/utils/hashtag');
     const atproto = new ATProtoService(c.env);
 
     let hashtag: string | null = null;
