@@ -7,7 +7,7 @@ import {
   ValidationError,
   type ValidationResult,
 } from '@atproto/lexicon';
-import { type $Typed, is$typed, maybe$typed } from './util.js';
+import { is$typed, maybe$typed } from './util.js';
 
 export const schemaDict = {
   NetAtrariumEmojiApproval: {

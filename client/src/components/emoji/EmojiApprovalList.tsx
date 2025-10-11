@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { apiClient } from '@/lib/api';
+import { approveEmoji } from '@/lib/api';
 
 interface EmojiSubmission {
   emojiUri: string;
@@ -43,11 +43,7 @@ export function EmojiApprovalList({
       setError(null);
       setProcessingUri(emojiUri);
 
-      await apiClient.emoji.approve({
-        communityId,
-        emojiURI: emojiUri,
-        approve: true,
-      });
+      await approveEmoji(communityId, emojiUri, true);
 
       if (onApprovalChange) {
         onApprovalChange();
@@ -64,12 +60,7 @@ export function EmojiApprovalList({
       setError(null);
       setProcessingUri(emojiUri);
 
-      await apiClient.emoji.approve({
-        communityId,
-        emojiURI: emojiUri,
-        approve: false,
-        reason: rejectReason[emojiUri] || undefined,
-      });
+      await approveEmoji(communityId, emojiUri, false, rejectReason[emojiUri] || undefined);
 
       // Clear reject reason
       setRejectReason((prev) => {

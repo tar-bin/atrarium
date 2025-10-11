@@ -51,6 +51,48 @@ const mockPosts: Post[] = [
   },
 ];
 
+// Mock emoji data (016-slack-mastodon-misskey)
+interface MockEmoji {
+  uri: string;
+  shortcode: string;
+  blobRef: { $type: string; ref: string; mimeType: string; size: number };
+  communityId: string;
+  approved: boolean;
+  creatorDid: string;
+  createdAt: string;
+}
+
+const mockEmojis: MockEmoji[] = [
+  {
+    uri: 'at://did:plc:owner123/net.atrarium.community.emoji/test1',
+    shortcode: 'test_emoji',
+    blobRef: {
+      $type: 'blob',
+      ref: 'bafyblob1',
+      mimeType: 'image/png',
+      size: 1024,
+    },
+    communityId: 'comm-001',
+    approved: true,
+    creatorDid: 'did:plc:owner123',
+    createdAt: new Date(Date.now() - 86400000).toISOString(),
+  },
+  {
+    uri: 'at://did:plc:user123/net.atrarium.community.emoji/pending1',
+    shortcode: 'pending_emoji',
+    blobRef: {
+      $type: 'blob',
+      ref: 'bafyblob2',
+      mimeType: 'image/png',
+      size: 2048,
+    },
+    communityId: 'comm-001',
+    approved: false,
+    creatorDid: 'did:plc:user123',
+    createdAt: new Date(Date.now() - 3600000).toISOString(),
+  },
+];
+
 export const handlers = [
   // GET /api/communities - List all communities
   http.get(`${API_URL}/api/communities`, () => {
@@ -175,5 +217,153 @@ export const handlers = [
     }
 
     return HttpResponse.json({ error: 'AuthenticationRequired' }, { status: 401 });
+  }),
+
+  // Emoji API endpoints (016-slack-mastodon-misskey, 018-api-orpc)
+  // POST /api/emoji/upload - Upload custom emoji
+  http.post(`${API_URL}/api/emoji/upload`, async ({ request }) => {
+    const body = (await request.json()) as {
+      shortcode: string;
+      fileData: string;
+      mimeType: string;
+      size: number;
+      dimensions: { width: number; height: number };
+      animated: boolean;
+    };
+
+    const newEmoji: MockEmoji = {
+      uri: `at://did:plc:test123/net.atrarium.community.emoji/${Date.now()}`,
+      shortcode: body.shortcode,
+      blobRef: {
+        $type: 'blob',
+        ref: `bafyblob${Date.now()}`,
+        mimeType: body.mimeType,
+        size: body.size,
+      },
+      communityId: '',
+      approved: false,
+      creatorDid: 'did:plc:test123',
+      createdAt: new Date().toISOString(),
+    };
+
+    mockEmojis.push(newEmoji);
+
+    return HttpResponse.json({
+      uri: newEmoji.uri,
+      shortcode: newEmoji.shortcode,
+      approved: false,
+    });
+  }),
+
+  // GET /api/emoji/list - List user's uploaded emojis
+  http.get(`${API_URL}/api/emoji/list`, () => {
+    const userEmojis = mockEmojis.filter((e) => e.creatorDid === 'did:plc:test123');
+    return HttpResponse.json({
+      data: userEmojis.map((e) => ({
+        uri: e.uri,
+        shortcode: e.shortcode,
+        approved: e.approved,
+        createdAt: e.createdAt,
+      })),
+    });
+  }),
+
+  // POST /api/communities/:id/emoji/submit - Submit emoji for approval
+  http.post(`${API_URL}/api/communities/:id/emoji/submit`, async ({ params, request }) => {
+    const { id } = params;
+    const body = (await request.json()) as { communityId: string; emojiUri: string };
+
+    const emoji = mockEmojis.find((e) => e.uri === body.emojiUri);
+    if (!emoji) {
+      return HttpResponse.json({ error: 'NotFound' }, { status: 404 });
+    }
+
+    emoji.communityId = id as string;
+
+    return HttpResponse.json({
+      success: true,
+      status: 'pending',
+    });
+  }),
+
+  // GET /api/communities/:id/emoji/pending - List pending emoji approvals
+  http.get(`${API_URL}/api/communities/:id/emoji/pending`, ({ params }) => {
+    const { id } = params;
+    const pendingEmojis = mockEmojis.filter((e) => e.communityId === id && !e.approved);
+
+    return HttpResponse.json({
+      data: pendingEmojis.map((e) => ({
+        uri: e.uri,
+        shortcode: e.shortcode,
+        creatorDid: e.creatorDid,
+        approved: e.approved,
+        createdAt: e.createdAt,
+      })),
+    });
+  }),
+
+  // POST /api/communities/:id/emoji/approve - Approve/reject emoji
+  http.post(`${API_URL}/api/communities/:id/emoji/approve`, async ({ params, request }) => {
+    const { id } = params;
+    const body = (await request.json()) as {
+      communityId: string;
+      emojiUri: string;
+      approve: boolean;
+    };
+
+    const emoji = mockEmojis.find((e) => e.uri === body.emojiUri && e.communityId === id);
+    if (!emoji) {
+      return HttpResponse.json({ error: 'NotFound' }, { status: 404 });
+    }
+
+    if (body.approve) {
+      emoji.approved = true;
+      return HttpResponse.json({
+        uri: emoji.uri,
+        approved: true,
+      });
+    }
+
+    // Reject: remove from list
+    const index = mockEmojis.findIndex((e) => e.uri === body.emojiUri);
+    if (index !== -1) {
+      mockEmojis.splice(index, 1);
+    }
+
+    return HttpResponse.json({
+      success: true,
+    });
+  }),
+
+  // POST /api/communities/:id/emoji/revoke - Revoke approved emoji
+  http.post(`${API_URL}/api/communities/:id/emoji/revoke`, async ({ params, request }) => {
+    const { id } = params;
+    const body = (await request.json()) as { communityId: string; emojiUri: string };
+
+    const emoji = mockEmojis.find((e) => e.uri === body.emojiUri && e.communityId === id);
+    if (!emoji) {
+      return HttpResponse.json({ error: 'NotFound' }, { status: 404 });
+    }
+
+    emoji.approved = false;
+
+    return HttpResponse.json({
+      success: true,
+    });
+  }),
+
+  // GET /api/communities/:id/emoji/registry - Get emoji registry (public)
+  http.get(`${API_URL}/api/communities/:id/emoji/registry`, ({ params }) => {
+    const { id } = params;
+    const approvedEmojis = mockEmojis.filter((e) => e.communityId === id && e.approved);
+
+    return HttpResponse.json({
+      data: approvedEmojis.map((e) => ({
+        uri: e.uri,
+        shortcode: e.shortcode,
+        approved: e.approved,
+        blobRef: e.blobRef,
+      })),
+    });
   }),
 ];

@@ -214,6 +214,11 @@ export const ModerationActionOutputSchema = z.object({
   moderatorDid: z.string(), // Derived from URI
 });
 
+// Input: List moderation actions for a community
+export const ListModerationActionsInputSchema = z.object({
+  communityUri: z.string(), // AT-URI of community config (required for filtering)
+});
+
 // Output: List of moderation actions
 export const ModerationActionListOutputSchema = z.object({
   data: z.array(ModerationActionOutputSchema),
@@ -390,12 +395,19 @@ export const EmojiMetadataSchema = z.object({
 
 // POST /api/emoji/upload
 export const UploadEmojiInputSchema = z.object({
-  file: z.any(), // Blob type (client-side only, not available in Node.js)
+  fileData: z.string(), // base64-encoded image data
+  mimeType: z.enum(['image/png', 'image/gif', 'image/webp']),
   shortcode: z
     .string()
     .min(2)
     .max(32)
     .regex(/^[a-z0-9_]+$/),
+  size: z.number().int().min(1).max(512000), // ≤500KB
+  dimensions: z.object({
+    width: z.number().int().min(1).max(256),
+    height: z.number().int().min(1).max(256),
+  }),
+  animated: z.boolean(),
 });
 
 export const UploadEmojiOutputSchema = z.object({
@@ -485,6 +497,10 @@ export const EmojiReferenceSchema = z.discriminatedUnion('type', [
 export const AddReactionInputSchema = z.object({
   postUri: z.string().regex(/^at:\/\//, 'postUri must be AT URI'),
   emoji: EmojiReferenceSchema,
+  communityId: z
+    .string()
+    .length(8)
+    .regex(/^[0-9a-f]{8}$/, 'Community ID must be 8-character hex'),
 });
 
 export const AddReactionOutputSchema = z.object({

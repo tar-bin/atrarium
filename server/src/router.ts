@@ -682,14 +682,230 @@ export const router = {
       };
     }),
 
-    list: contract.moderation.list.handler(async () => {
-      // TODO: This needs communityUri from input, but contract doesn't specify it
-      // For now, return empty list
-      // In production, should list all moderation actions for communities where user is admin
+    list: contract.moderation.list.handler(async ({ input, context }) => {
+      const { env, userDid } = context as ServerContext;
+      const { ATProtoService } = await import('./services/atproto');
+      const atproto = new ATProtoService(env);
+
+      // Verify user is admin for the specified community
+      const userMemberships = await atproto.listMemberships(userDid || '', {
+        communityUri: input.communityUri,
+      });
+
+      const userMembership = userMemberships.find((m) => m.active && m.status === 'active');
+      if (!userMembership || !['owner', 'moderator'].includes(userMembership.role)) {
+        throw new ORPCError('FORBIDDEN', {
+          message: 'Only admins can view moderation actions',
+        });
+      }
+
+      // List moderation actions for this community
+      const actions = await atproto.listModerationActions(input.communityUri, userDid || '');
+
+      // Map reason to enum or undefined
+      const validReasons = [
+        'spam',
+        'low_quality',
+        'duplicate',
+        'off_topic',
+        'wrong_community',
+        'guidelines_violation',
+        'terms_violation',
+        'copyright',
+        'harassment',
+        'hate_speech',
+        'violence',
+        'nsfw',
+        'illegal_content',
+        'bot_activity',
+        'impersonation',
+        'ban_evasion',
+        'other',
+      ] as const;
 
       return {
-        data: [],
+        data: actions.map((action) => ({
+          uri: action.uri,
+          action: action.action,
+          target: action.target,
+          community: action.community,
+          reason:
+            action.reason && validReasons.includes(action.reason as (typeof validReasons)[number])
+              ? (action.reason as (typeof validReasons)[number])
+              : undefined,
+          createdAt: action.createdAt,
+          moderatorDid: userDid || '',
+        })),
       };
+    }),
+  },
+
+  // ==========================================================================
+  // Posts Router Implementation (018-api-orpc: T006-T008)
+  // ==========================================================================
+
+  posts: {
+    create: contract.posts.create.handler(async ({ input, context }) => {
+      const { env, userDid } = context as ServerContext;
+      const { ATProtoService } = await import('./services/atproto');
+      const atproto = new ATProtoService(env);
+
+      // Verify membership via Durable Object RPC
+      const feedId = env.COMMUNITY_FEED.idFromName(input.communityId);
+      const feedStub = env.COMMUNITY_FEED.get(feedId);
+
+      const membershipResponse = await feedStub.fetch(
+        new Request(`https://internal/checkMembership?did=${userDid}`)
+      );
+
+      if (!membershipResponse.ok) {
+        throw new ORPCError('INTERNAL_SERVER_ERROR', {
+          message: 'Failed to verify membership',
+        });
+      }
+
+      const membershipData = (await membershipResponse.json()) as { isMember: boolean };
+      if (!membershipData.isMember) {
+        throw new ORPCError('FORBIDDEN', {
+          message: 'You are not a member of this community',
+        });
+      }
+
+      // Create post in PDS
+      const postRecord = {
+        $type: 'net.atrarium.group.post',
+        text: input.text,
+        communityId: input.communityId,
+        createdAt: new Date().toISOString(),
+      };
+
+      const result = await atproto.createCommunityPost(postRecord, userDid || '');
+
+      return {
+        uri: result.uri,
+        rkey: result.rkey,
+        createdAt: postRecord.createdAt,
+      };
+    }),
+
+    list: contract.posts.list.handler(async ({ input, context }) => {
+      const { env } = context as ServerContext;
+      const { ATProtoService } = await import('./services/atproto');
+      const atproto = new ATProtoService(env);
+
+      // Fetch posts from Durable Object
+      const feedId = env.COMMUNITY_FEED.idFromName(input.communityId);
+      const feedStub = env.COMMUNITY_FEED.get(feedId);
+
+      const response = await feedStub.fetch(
+        new Request(
+          `https://internal/posts?limit=${input.limit || 50}${
+            input.cursor ? `&cursor=${input.cursor}` : ''
+          }`
+        )
+      );
+
+      if (!response.ok) {
+        throw new ORPCError('INTERNAL_SERVER_ERROR', {
+          message: 'Failed to fetch posts',
+        });
+      }
+
+      const data = (await response.json()) as {
+        posts: Array<{ uri: string; authorDid: string; createdAt: string; text?: string }>;
+        cursor: string | null;
+      };
+
+      // Enrich posts with author profiles
+      const authorDids = [...new Set(data.posts.map((p) => p.authorDid))];
+      const profiles = await atproto.getProfiles(authorDids);
+      const profileMap = new Map(profiles.map((p) => [p.did, p]));
+
+      const enrichedPosts = data.posts.map((post) => ({
+        uri: post.uri,
+        rkey: post.uri.split('/').pop() || '',
+        text: post.text || '',
+        communityId: input.communityId,
+        createdAt: post.createdAt,
+        author: profileMap.get(post.authorDid) || {
+          did: post.authorDid,
+          handle: 'unknown.bsky.social',
+          displayName: null,
+          avatar: null,
+        },
+      }));
+
+      return {
+        posts: enrichedPosts,
+        cursor: data.cursor,
+      };
+    }),
+
+    get: contract.posts.get.handler(async ({ input, context }) => {
+      const { env } = context as ServerContext;
+      const { ATProtoService } = await import('./services/atproto');
+      const atproto = new ATProtoService(env);
+      const agent = await atproto.getAgent();
+
+      // Parse AT-URI
+      const uriParts = input.uri.replace('at://', '').split('/');
+      const [repo, collection, rkey] = uriParts;
+
+      if (!repo || !collection || !rkey) {
+        throw new ORPCError('BAD_REQUEST', {
+          message: 'Invalid AT-URI format',
+        });
+      }
+
+      // Validate collection type
+      if (collection !== 'net.atrarium.group.post') {
+        throw new ORPCError('BAD_REQUEST', {
+          message: 'Record is not a community post',
+        });
+      }
+
+      try {
+        // Fetch post from PDS
+        const recordResponse = await agent.com.atproto.repo.getRecord({
+          repo,
+          collection,
+          rkey,
+        });
+
+        const record = recordResponse.data.value as {
+          $type: string;
+          text: string;
+          communityId: string;
+          createdAt: string;
+        };
+
+        if (record.$type !== 'net.atrarium.group.post') {
+          throw new ORPCError('BAD_REQUEST', {
+            message: 'Record is not a community post',
+          });
+        }
+
+        // Fetch author profile
+        const profile = await atproto.getProfile(repo);
+
+        return {
+          uri: input.uri,
+          rkey,
+          text: record.text,
+          communityId: record.communityId,
+          createdAt: record.createdAt,
+          author: profile,
+        };
+      } catch (error) {
+        if (error instanceof ORPCError) {
+          throw error;
+        }
+
+        // Handle PDS errors
+        throw new ORPCError('NOT_FOUND', {
+          message: 'Post not found',
+        });
+      }
     }),
   },
 
@@ -755,6 +971,579 @@ export const router = {
         memberCount: stats.memberCount,
         pendingRequestCount: stats.pendingRequestCount,
         createdAt: communityConfig.createdAt,
+      };
+    }),
+  },
+
+  // ==========================================================================
+  // Reactions Router Implementation (018-api-orpc: T033-T035)
+  // ==========================================================================
+
+  reactions: {
+    add: contract.reactions.add.handler(async ({ input, context }) => {
+      const { env, userDid } = context as ServerContext;
+      const { ATProtoService } = await import('./services/atproto');
+      const atproto = new ATProtoService(env);
+
+      // Parse post URI to extract community ID
+      const uriParts = input.postUri.replace('at://', '').split('/');
+      const [repo, collection, _rkey] = uriParts;
+
+      if (!repo || !collection) {
+        throw new ORPCError('BAD_REQUEST', {
+          message: 'Invalid post URI format',
+        });
+      }
+
+      // Fetch post from PDS to get communityId
+      const agent = await atproto.getAgent();
+      let communityId: string;
+
+      try {
+        const recordResponse = await agent.com.atproto.repo.getRecord({
+          repo,
+          collection,
+          rkey: _rkey || '',
+        });
+
+        const record = recordResponse.data.value as {
+          communityId?: string;
+        };
+
+        if (!record.communityId) {
+          throw new ORPCError('BAD_REQUEST', {
+            message: 'Post does not have a community ID',
+          });
+        }
+
+        communityId = record.communityId;
+      } catch (_error) {
+        throw new ORPCError('NOT_FOUND', {
+          message: 'Post not found',
+        });
+      }
+
+      // Verify user is member of community via Durable Object RPC
+      const feedId = env.COMMUNITY_FEED.idFromName(communityId);
+      const feedStub = env.COMMUNITY_FEED.get(feedId);
+
+      const membershipResponse = await feedStub.fetch(
+        new Request(`https://internal/checkMembership?did=${userDid}`)
+      );
+
+      if (!membershipResponse.ok) {
+        throw new ORPCError('INTERNAL_SERVER_ERROR', {
+          message: 'Failed to verify membership',
+        });
+      }
+
+      const membershipData = (await membershipResponse.json()) as { isMember: boolean };
+      if (!membershipData.isMember) {
+        throw new ORPCError('FORBIDDEN', {
+          message: 'You must be a member of the community to react to posts',
+        });
+      }
+
+      // Validate custom emoji is approved (if applicable)
+      if (input.emoji.type === 'custom') {
+        // TODO: Implement custom emoji validation
+        // For now, accept all custom emojis
+      }
+
+      // Create reaction in PDS
+      try {
+        const result = await atproto.createReaction(input.postUri, input.emoji, communityId);
+
+        return {
+          success: true,
+          reactionUri: result.uri,
+        };
+      } catch (error) {
+        // Handle duplicate reaction
+        if (error instanceof Error && error.message.includes('duplicate')) {
+          throw new ORPCError('CONFLICT', {
+            message: 'You have already reacted with this emoji',
+          });
+        }
+
+        throw new ORPCError('INTERNAL_SERVER_ERROR', {
+          message: 'Failed to create reaction',
+        });
+      }
+    }),
+
+    remove: contract.reactions.remove.handler(async ({ input, context }) => {
+      const { env, userDid } = context as ServerContext;
+      const { ATProtoService } = await import('./services/atproto');
+      const atproto = new ATProtoService(env);
+
+      // Validate reactionUri format
+      if (!input.reactionUri.startsWith('at://')) {
+        throw new ORPCError('BAD_REQUEST', {
+          message: 'reactionUri must be an AT-URI',
+        });
+      }
+
+      // Verify user owns the reaction
+      const reactionDid = input.reactionUri.split('/')[0]?.replace('at://', '');
+      if (reactionDid !== userDid) {
+        throw new ORPCError('FORBIDDEN', {
+          message: 'You can only remove your own reactions',
+        });
+      }
+
+      // Delete reaction from PDS
+      try {
+        await atproto.deleteReaction(input.reactionUri);
+
+        return {
+          success: true,
+        };
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('not found')) {
+          // Idempotent: return success even if already deleted
+          return {
+            success: true,
+          };
+        }
+
+        throw new ORPCError('INTERNAL_SERVER_ERROR', {
+          message: 'Failed to remove reaction',
+        });
+      }
+    }),
+
+    list: contract.reactions.list.handler(async ({ input, context }) => {
+      const { env, userDid } = context as ServerContext;
+      const { ATProtoService } = await import('./services/atproto');
+      const atproto = new ATProtoService(env);
+
+      // Validate postUri format
+      if (!input.postUri.startsWith('at://')) {
+        throw new ORPCError('BAD_REQUEST', {
+          message: 'postUri must be an AT-URI',
+        });
+      }
+
+      // Parse post URI to extract community ID
+      const uriParts = input.postUri.replace('at://', '').split('/');
+      const [repo, collection, _rkey] = uriParts;
+
+      if (!repo || !collection || !_rkey) {
+        throw new ORPCError('BAD_REQUEST', {
+          message: 'Invalid post URI format',
+        });
+      }
+
+      // Fetch post from PDS to get communityId
+      const agent = await atproto.getAgent();
+      let communityId: string;
+
+      try {
+        const recordResponse = await agent.com.atproto.repo.getRecord({
+          repo,
+          collection,
+          rkey: _rkey,
+        });
+
+        const record = recordResponse.data.value as {
+          communityId?: string;
+        };
+
+        if (!record.communityId) {
+          throw new ORPCError('BAD_REQUEST', {
+            message: 'Post does not have a community ID',
+          });
+        }
+
+        communityId = record.communityId;
+      } catch (_error) {
+        throw new ORPCError('NOT_FOUND', {
+          message: 'Post not found',
+        });
+      }
+
+      // Fetch reaction aggregates from Durable Object
+      const feedId = env.COMMUNITY_FEED.idFromName(communityId);
+      const feedStub = env.COMMUNITY_FEED.get(feedId);
+
+      const response = await feedStub.fetch(
+        new Request(`https://internal/reactions?postUri=${encodeURIComponent(input.postUri)}`)
+      );
+
+      if (!response.ok) {
+        // Return empty list if Durable Object doesn't have data yet
+        return {
+          reactions: [],
+        };
+      }
+
+      const data = (await response.json()) as {
+        reactions: Array<{
+          emoji: { type: 'unicode' | 'custom'; value: string };
+          count: number;
+          reactors: string[];
+        }>;
+      };
+
+      // Add currentUserReacted flag
+      const reactions = data.reactions.map((reaction) => ({
+        ...reaction,
+        currentUserReacted: userDid ? reaction.reactors.includes(userDid) : false,
+      }));
+
+      return {
+        reactions,
+      };
+    }),
+  },
+
+  // ==========================================================================
+  // Emoji Router (Phase 3: Emoji Migration - T020-T026, 018-api-orpc)
+  // ==========================================================================
+
+  emoji: {
+    // T020: Upload emoji (base64 approach)
+    upload: contract.emoji.upload.handler(async ({ input, context }) => {
+      const { env } = context as ServerContext;
+      const { ATProtoService } = await import('./services/atproto');
+      const atproto = new ATProtoService(env);
+      const agent = await atproto.getAgent();
+
+      // Extract format from mimeType
+      const formatMap: Record<string, 'png' | 'gif' | 'webp'> = {
+        'image/png': 'png',
+        'image/gif': 'gif',
+        'image/webp': 'webp',
+      };
+      const format = formatMap[input.mimeType];
+      if (!format) {
+        throw new ORPCError('BAD_REQUEST', {
+          message: `Unsupported mime type: ${input.mimeType}`,
+        });
+      }
+
+      // Upload blob to PDS (base64 → Uint8Array)
+      const blobRef = await atproto.uploadEmojiBlob(
+        agent,
+        input.fileData,
+        input.mimeType,
+        input.size
+      );
+
+      // Create CustomEmoji record in PDS
+      const result = await atproto.createCustomEmoji(
+        agent,
+        input.shortcode,
+        blobRef,
+        format,
+        input.size,
+        input.dimensions,
+        input.animated
+      );
+
+      return {
+        emojiURI: result.uri,
+        blob: blobRef,
+      };
+    }),
+
+    // T021: List user's uploaded emojis
+    list: contract.emoji.list.handler(async ({ input, context }) => {
+      const { env } = context as ServerContext;
+      const { ATProtoService } = await import('./services/atproto');
+      const atproto = new ATProtoService(env);
+      const agent = await atproto.getAgent();
+
+      // List user's custom emoji from PDS
+      const emojis = await atproto.listUserEmoji(agent, input.did);
+
+      return {
+        emoji: emojis,
+      };
+    }),
+
+    // T022: Submit emoji for community approval
+    submit: contract.emoji.submit.handler(async ({ input, context }) => {
+      const { env, userDid } = context as ServerContext;
+
+      // Verify membership
+      const feedId = env.COMMUNITY_FEED.idFromName(input.communityId);
+      const feedStub = env.COMMUNITY_FEED.get(feedId);
+
+      const membershipResponse = await feedStub.fetch(
+        new Request(`https://internal/checkMembership?did=${userDid}`)
+      );
+
+      if (!membershipResponse.ok) {
+        throw new ORPCError('FORBIDDEN', {
+          message: 'You are not a member of this community',
+        });
+      }
+
+      const membershipData = (await membershipResponse.json()) as { isMember: boolean };
+      if (!membershipData.isMember) {
+        throw new ORPCError('FORBIDDEN', {
+          message: 'You are not a member of this community',
+        });
+      }
+
+      // Create Durable Object submission entry (pending approval)
+      const submitResponse = await feedStub.fetch(
+        new Request('https://internal/submitEmoji', {
+          method: 'POST',
+          body: JSON.stringify({
+            emojiURI: input.emojiURI,
+            submitter: userDid,
+          }),
+        })
+      );
+
+      if (!submitResponse.ok) {
+        throw new ORPCError('INTERNAL_SERVER_ERROR', {
+          message: 'Failed to submit emoji for approval',
+        });
+      }
+
+      const data = (await submitResponse.json()) as { submissionId: string };
+
+      return {
+        submissionId: data.submissionId,
+        status: 'pending' as const,
+      };
+    }),
+
+    // T023: List pending emoji approvals (owner-only)
+    listPending: contract.emoji.listPending.handler(async ({ input, context }) => {
+      const { env, userDid } = context as ServerContext;
+
+      // Get Durable Object stub
+      const feedId = env.COMMUNITY_FEED.idFromName(input.communityId);
+      const feedStub = env.COMMUNITY_FEED.get(feedId);
+
+      // Check if user is owner/moderator
+      const membershipResponse = await feedStub.fetch(
+        new Request(`https://internal/checkMembership?did=${userDid}`)
+      );
+
+      if (!membershipResponse.ok) {
+        throw new ORPCError('FORBIDDEN', {
+          message: 'You are not authorized to view pending approvals',
+        });
+      }
+
+      const membershipData = (await membershipResponse.json()) as {
+        isMember: boolean;
+        role?: string;
+      };
+      if (!membershipData.isMember || !['owner', 'moderator'].includes(membershipData.role || '')) {
+        throw new ORPCError('FORBIDDEN', {
+          message: 'Only owners and moderators can view pending approvals',
+        });
+      }
+
+      // Fetch pending submissions from Durable Object
+      const pendingResponse = await feedStub.fetch(new Request('https://internal/pendingEmojis'));
+
+      if (!pendingResponse.ok) {
+        throw new ORPCError('INTERNAL_SERVER_ERROR', {
+          message: 'Failed to fetch pending approvals',
+        });
+      }
+
+      const data = (await pendingResponse.json()) as {
+        submissions: Array<{
+          emojiUri: string;
+          shortcode: string;
+          creator: string;
+          creatorHandle: string;
+          uploadedAt: string;
+          format: 'png' | 'gif' | 'webp';
+          animated: boolean;
+          blobUrl: string;
+        }>;
+      };
+
+      return {
+        submissions: data.submissions,
+      };
+    }),
+
+    // T024: Approve/reject emoji (owner-only)
+    approve: contract.emoji.approve.handler(async ({ input, context }) => {
+      const { env, userDid } = context as ServerContext;
+      const { ATProtoService } = await import('./services/atproto');
+      const atproto = new ATProtoService(env);
+      const agent = await atproto.getAgent();
+
+      // Get Durable Object stub
+      const feedId = env.COMMUNITY_FEED.idFromName(input.communityId);
+      const feedStub = env.COMMUNITY_FEED.get(feedId);
+
+      // Check if user is owner
+      const membershipResponse = await feedStub.fetch(
+        new Request(`https://internal/checkMembership?did=${userDid}`)
+      );
+
+      if (!membershipResponse.ok) {
+        throw new ORPCError('FORBIDDEN', {
+          message: 'You are not authorized to approve emojis',
+        });
+      }
+
+      const membershipData = (await membershipResponse.json()) as {
+        isMember: boolean;
+        role?: string;
+      };
+      if (!membershipData.isMember || membershipData.role !== 'owner') {
+        throw new ORPCError('FORBIDDEN', {
+          message: 'Only community owners can approve emojis',
+        });
+      }
+
+      // Extract shortcode from emoji URI
+      const shortcode = input.emojiURI.split('/').pop() || '';
+      if (!shortcode) {
+        throw new ORPCError('BAD_REQUEST', {
+          message: 'Invalid emoji URI',
+        });
+      }
+
+      // Create EmojiApproval record in PDS
+      const status = input.approve ? 'approved' : 'rejected';
+      const result = await atproto.createEmojiApproval(
+        agent,
+        shortcode,
+        input.emojiURI,
+        input.communityId,
+        status,
+        input.reason
+      );
+
+      // Update Durable Object registry if approved
+      if (input.approve) {
+        await feedStub.fetch(
+          new Request('https://internal/updateEmojiRegistry', {
+            method: 'POST',
+            body: JSON.stringify({
+              shortcode,
+              emojiURI: input.emojiURI,
+              approvalURI: result.uri,
+            }),
+          })
+        );
+      }
+
+      return {
+        approvalURI: result.uri,
+        status: status as 'approved' | 'rejected',
+      };
+    }),
+
+    // T025: Revoke approved emoji (owner-only)
+    revoke: contract.emoji.revoke.handler(async ({ input, context }) => {
+      const { env, userDid } = context as ServerContext;
+      const { ATProtoService } = await import('./services/atproto');
+      const atproto = new ATProtoService(env);
+      const agent = await atproto.getAgent();
+
+      // Get Durable Object stub
+      const feedId = env.COMMUNITY_FEED.idFromName(input.communityId);
+      const feedStub = env.COMMUNITY_FEED.get(feedId);
+
+      // Check if user is owner
+      const membershipResponse = await feedStub.fetch(
+        new Request(`https://internal/checkMembership?did=${userDid}`)
+      );
+
+      if (!membershipResponse.ok) {
+        throw new ORPCError('FORBIDDEN', {
+          message: 'You are not authorized to revoke emojis',
+        });
+      }
+
+      const membershipData = (await membershipResponse.json()) as {
+        isMember: boolean;
+        role?: string;
+      };
+      if (!membershipData.isMember || membershipData.role !== 'owner') {
+        throw new ORPCError('FORBIDDEN', {
+          message: 'Only community owners can revoke emojis',
+        });
+      }
+
+      // Get emoji URI from registry
+      const registryResponse = await feedStub.fetch(
+        new Request(`https://internal/getEmojiRegistry?communityId=${input.communityId}`)
+      );
+
+      if (!registryResponse.ok) {
+        throw new ORPCError('INTERNAL_SERVER_ERROR', {
+          message: 'Failed to fetch emoji registry',
+        });
+      }
+
+      const registry = (await registryResponse.json()) as {
+        emoji: Record<string, { emojiURI: string }>;
+      };
+      const emojiMetadata = registry.emoji[input.shortcode];
+
+      if (!emojiMetadata) {
+        throw new ORPCError('NOT_FOUND', {
+          message: 'Emoji not found in registry',
+        });
+      }
+
+      // Create revocation record in PDS
+      await atproto.createEmojiApproval(
+        agent,
+        input.shortcode,
+        emojiMetadata.emojiURI,
+        input.communityId,
+        'revoked',
+        input.reason
+      );
+
+      // Remove from Durable Object registry
+      await feedStub.fetch(
+        new Request('https://internal/removeFromEmojiRegistry', {
+          method: 'POST',
+          body: JSON.stringify({
+            shortcode: input.shortcode,
+          }),
+        })
+      );
+
+      return {
+        success: true,
+      };
+    }),
+
+    // T026: Get emoji registry (public, no auth required)
+    registry: contract.emoji.registry.handler(async ({ input, context }) => {
+      const { env } = context as ServerContext;
+
+      // Get Durable Object stub
+      const feedId = env.COMMUNITY_FEED.idFromName(input.communityId);
+      const feedStub = env.COMMUNITY_FEED.get(feedId);
+
+      // Fetch emoji registry from Durable Object
+      const registryResponse = await feedStub.fetch(
+        new Request(`https://internal/getEmojiRegistry?communityId=${input.communityId}`)
+      );
+
+      if (!registryResponse.ok) {
+        throw new ORPCError('INTERNAL_SERVER_ERROR', {
+          message: 'Failed to fetch emoji registry',
+        });
+      }
+
+      const data = (await registryResponse.json()) as {
+        emoji: Record<string, { emojiURI: string; blobURI: string; animated: boolean }>;
+      };
+
+      return {
+        emoji: data.emoji,
       };
     }),
   },

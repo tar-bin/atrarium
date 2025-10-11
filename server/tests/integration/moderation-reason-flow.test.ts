@@ -9,9 +9,13 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 // Will be implemented after T006-T012 (full stack implementation)
 describe.skip('Moderation Reason Flow (End-to-End)', () => {
-  beforeAll(async () => {});
+  beforeAll(async () => {
+    // Setup will be implemented with full stack
+  });
 
-  afterAll(async () => {});
+  afterAll(async () => {
+    // Teardown will be implemented with full stack
+  });
 
   it('should complete full moderation flow with enum reason', async () => {
     // Step 1: Alice logs in as moderator

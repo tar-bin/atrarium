@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { EmojiApprovalList } from '@/components/emoji/EmojiApprovalList';
 import { EmojiUploadForm } from '@/components/emoji/EmojiUploadForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { apiClient } from '@/lib/api';
+import { listPendingEmojis } from '@/lib/api';
 import { useCommunity, useMyMemberships } from '@/lib/hooks';
 
 // biome-ignore lint/suspicious/noExplicitAny: TanStack Router type generation requires dev server
@@ -35,7 +35,20 @@ function EmojiManagementPage() {
   const { data: pendingData, isLoading: pendingLoading } = useQuery({
     queryKey: ['emoji', 'pending', communityId],
     queryFn: async () => {
-      return apiClient.emoji.listPending({ communityId });
+      const result = await listPendingEmojis(communityId);
+      // Transform to expected format
+      return {
+        submissions: result.submissions.map((emoji) => ({
+          emojiUri: emoji.emojiUri,
+          shortcode: emoji.shortcode,
+          creator: emoji.creator,
+          creatorHandle: emoji.creatorHandle || '',
+          uploadedAt: emoji.uploadedAt,
+          format: emoji.format,
+          animated: emoji.animated,
+          blobUrl: emoji.blobUrl,
+        })),
+      };
     },
   });
 

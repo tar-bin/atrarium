@@ -19,13 +19,13 @@ test.describe('Moderation Features', () => {
     await expect(page.getByText(/no moderation actions yet/i)).toBeVisible();
   });
 
-  test.skip('should show moderation action filters', async ({ page }) => {
+  test.skip('should show moderation action filters', async ({ page: _page }) => {
     // TODO: Implement after filter controls are added to ModerationLog component
     const actionFilter = page.getByLabel(/filter by action/i);
     await expect(actionFilter).toBeVisible();
   });
 
-  test.skip('should display moderation history entries', async ({ page }) => {
+  test.skip('should display moderation history entries', async ({ page: _page }) => {
     // TODO: Implement after mock data is added to moderation page
     await expect(page.getByRole('table')).toBeVisible();
 
@@ -36,7 +36,7 @@ test.describe('Moderation Features', () => {
     await expect(page.getByRole('columnheader', { name: /timestamp/i })).toBeVisible();
   });
 
-  test.skip('should allow filtering by action type', async ({ page }) => {
+  test.skip('should allow filtering by action type', async ({ page: _page }) => {
     // TODO: Implement after filter controls are added
     const actionFilter = page.getByLabel(/filter by action/i);
 
@@ -50,7 +50,7 @@ test.describe('Moderation Features', () => {
     // Table should only show "hide_post" entries
   });
 
-  test.skip('should show reason in moderation log entries', async ({ page }) => {
+  test.skip('should show reason in moderation log entries', async ({ page: _page }) => {
     // TODO: Implement after mock data is added
     await expect(page.getByRole('table')).toBeVisible();
 
@@ -236,7 +236,9 @@ test.describe.skip('User Blocking', () => {
  * Note: These tests should verify that only moderators/owners can perform moderation actions
  */
 test.describe.skip('Moderation Permissions', () => {
-  test.skip('should show moderation options only to moderators and owners', async ({ page }) => {
+  test.skip('should show moderation options only to moderators and owners', async ({
+    page: _page,
+  }) => {
     // TODO: Implement after role-based access control is integrated
     // This test should:
     // 1. Login as regular member
@@ -245,7 +247,9 @@ test.describe.skip('Moderation Permissions', () => {
     // 4. Verify moderation options are visible
   });
 
-  test.skip('should prevent regular members from accessing moderation log', async ({ page }) => {
+  test.skip('should prevent regular members from accessing moderation log', async ({
+    page: _page,
+  }) => {
     // TODO: Implement after role-based access control is integrated
   });
 });
@@ -254,7 +258,7 @@ test.describe.skip('Moderation Permissions', () => {
  * Tests for moderation with backend integration
  */
 test.describe.skip('Moderation with Backend Integration', () => {
-  test.skip('should hide post after confirmation', async ({ page }) => {
+  test.skip('should hide post after confirmation', async ({ page: _page }) => {
     // TODO: Implement after backend API integration
     // This test should verify that:
     // 1. Post is hidden in the feed
@@ -262,15 +266,15 @@ test.describe.skip('Moderation with Backend Integration', () => {
     // 3. Success message is displayed
   });
 
-  test.skip('should unhide previously hidden post', async ({ page }) => {
+  test.skip('should unhide previously hidden post', async ({ page: _page }) => {
     // TODO: Implement after backend API integration
   });
 
-  test.skip('should block user and hide all their posts', async ({ page }) => {
+  test.skip('should block user and hide all their posts', async ({ page: _page }) => {
     // TODO: Implement after backend API integration
   });
 
-  test.skip('should unblock previously blocked user', async ({ page }) => {
+  test.skip('should unblock previously blocked user', async ({ page: _page }) => {
     // TODO: Implement after backend API integration
   });
 });

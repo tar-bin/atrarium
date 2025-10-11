@@ -28,54 +28,82 @@ export const apiClient: ClientRouter = createORPCClient(link);
 export default apiClient;
 
 // ============================================================================
-// Reaction API helpers (016-slack-mastodon-misskey, T031)
+// Posts API (018-api-orpc, T011)
 // ============================================================================
 
 /**
- * Add reaction to a post
+ * Posts API is fully migrated to oRPC client.
+ * Use apiClient.posts directly for type-safe API calls:
+ *
+ * @example Create post
+ * const result = await apiClient.posts.create({
+ *   communityId: 'a1b2c3d4',
+ *   text: 'Hello world!'
+ * });
+ *
+ * @example List posts
+ * const { data, cursor } = await apiClient.posts.list({
+ *   communityId: 'a1b2c3d4',
+ *   limit: 50
+ * });
+ *
+ * @example Get single post
+ * const post = await apiClient.posts.get({
+ *   uri: 'at://did:plc:xxx/net.atrarium.group.post/yyy'
+ * });
+ */
+
+// ============================================================================
+// Reaction API (018-api-orpc, T038)
+// ============================================================================
+
+/**
+ * Reactions API is migrated to oRPC client.
+ * Use apiClient.reactions directly for type-safe API calls:
+ *
+ * @example Add reaction
+ * const result = await apiClient.reactions.add({
+ *   postUri: 'at://did:plc:xxx/net.atrarium.group.post/yyy',
+ *   emoji: { type: 'unicode', value: '👍' },
+ *   communityId: 'a1b2c3d4'
+ * });
+ *
+ * @example Remove reaction
+ * await apiClient.reactions.remove({
+ *   reactionUri: 'at://did:plc:xxx/net.atrarium.community.reaction/zzz'
+ * });
+ *
+ * @example List reactions
+ * const { reactions } = await apiClient.reactions.list({
+ *   postUri: 'at://did:plc:xxx/net.atrarium.group.post/yyy'
+ * });
+ */
+
+/**
+ * @deprecated Use apiClient.reactions.add() instead. Legacy helper for backward compatibility.
+ * This function will be removed after client components are fully migrated.
  */
 export async function addReaction(
   postUri: string,
-  emoji: { type: 'unicode' | 'custom'; value: string }
+  emoji: { type: 'unicode' | 'custom'; value: string },
+  communityId?: string
 ): Promise<{ success: boolean; reactionUri: string }> {
-  const response = await fetch(`${baseURL}/api/reactions/add`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-    },
-    body: JSON.stringify({ postUri, emoji }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to add reaction: ${response.statusText}`);
-  }
-
-  return response.json();
+  // Fallback to community extraction if not provided
+  const cid = communityId || extractCommunityIdFromPostUri(postUri);
+  return await apiClient.reactions.add({ postUri, emoji, communityId: cid });
 }
 
 /**
- * Remove reaction from a post
+ * @deprecated Use apiClient.reactions.remove() instead. Legacy helper for backward compatibility.
+ * This function will be removed after client components are fully migrated.
  */
 export async function removeReaction(reactionUri: string): Promise<{ success: boolean }> {
-  const response = await fetch(`${baseURL}/api/reactions/remove`, {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-    },
-    body: JSON.stringify({ reactionUri }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to remove reaction: ${response.statusText}`);
-  }
-
-  return response.json();
+  return await apiClient.reactions.remove({ reactionUri });
 }
 
 /**
- * List reactions for a post
+ * @deprecated Use apiClient.reactions.list() instead. Legacy helper for backward compatibility.
+ * This function will be removed after client components are fully migrated.
  */
 export async function listReactions(postUri: string): Promise<{
   reactions: Array<{
@@ -85,187 +113,210 @@ export async function listReactions(postUri: string): Promise<{
     currentUserReacted: boolean;
   }>;
 }> {
-  const response = await fetch(
-    `${baseURL}/api/reactions/list?postUri=${encodeURIComponent(postUri)}`,
-    {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-      },
-    }
-  );
+  return await apiClient.reactions.list({ postUri });
+}
 
-  if (!response.ok) {
-    throw new Error(`Failed to list reactions: ${response.statusText}`);
-  }
-
-  return response.json();
+/**
+ * Helper: Extract communityId from post AT-URI
+ * Format: at://did:plc:xxx/net.atrarium.group.post/rkey
+ * TODO: Implement proper community ID extraction from post metadata
+ */
+function extractCommunityIdFromPostUri(_postUri: string): string {
+  // For now, return empty string (server will reject)
+  return '';
 }
 
 // ============================================================================
-// Custom Emoji API helpers (016-slack-mastodon-misskey, T024-T027)
+// Reaction SSE Stream (Legacy - oRPC does not support SSE)
 // ============================================================================
 
 /**
- * Upload custom emoji
+ * Subscribe to real-time reaction updates via SSE
+ * Note: This endpoint remains as legacy Hono route (oRPC limitation)
+ */
+export function subscribeToReactions(
+  communityId: string,
+  onUpdate: (data: { postUri: string; reactions: unknown[] }) => void,
+  onError?: (error: Error) => void
+): () => void {
+  const eventSource = new EventSource(
+    `${baseURL}/api/reactions/stream/${encodeURIComponent(communityId)}`,
+    { withCredentials: true }
+  );
+
+  eventSource.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      onUpdate(data);
+    } catch (error) {
+      onError?.(error instanceof Error ? error : new Error('Failed to parse SSE data'));
+    }
+  };
+
+  eventSource.onerror = () => {
+    onError?.(new Error('SSE connection error'));
+  };
+
+  // Return cleanup function
+  return () => {
+    eventSource.close();
+  };
+}
+
+// ============================================================================
+// Custom Emoji API (018-api-orpc, T028)
+// ============================================================================
+
+/**
+ * Emoji API is fully migrated to oRPC client with base64 approach.
+ * Use apiClient.emoji directly for type-safe API calls:
+ *
+ * @example Upload emoji
+ * import { fileToBase64, getImageDimensions, isAnimatedGif } from '@/lib/utils';
+ *
+ * const fileData = await fileToBase64(file);
+ * const dimensions = await getImageDimensions(file);
+ * const animated = await isAnimatedGif(file);
+ *
+ * const result = await apiClient.emoji.upload({
+ *   fileData,
+ *   mimeType: file.type,
+ *   shortcode: 'party_parrot',
+ *   size: file.size,
+ *   dimensions,
+ *   animated
+ * });
+ *
+ * @example List user's emojis
+ * const { emoji } = await apiClient.emoji.list({ did: 'did:plc:xxx' });
+ *
+ * @example Submit emoji for approval
+ * await apiClient.emoji.submit({
+ *   communityId: 'a1b2c3d4',
+ *   emojiURI: 'at://did:plc:xxx/net.atrarium.emoji.custom/yyy'
+ * });
+ *
+ * @example Approve emoji (owner only)
+ * await apiClient.emoji.approve({
+ *   communityId: 'a1b2c3d4',
+ *   emojiURI: 'at://...',
+ *   approve: true
+ * });
+ *
+ * @example Get emoji registry
+ * const { emoji } = await apiClient.emoji.registry({ communityId: 'a1b2c3d4' });
+ */
+
+/**
+ * Upload custom emoji with base64 encoding
+ * @deprecated Use apiClient.emoji.upload() with fileToBase64/getImageDimensions utilities.
+ * This helper is kept for backward compatibility during migration.
  */
 export async function uploadEmoji(
   shortcode: string,
   image: File
-): Promise<{ success: boolean; emojiUri: string }> {
-  const formData = new FormData();
-  formData.append('shortcode', shortcode);
-  formData.append('image', image);
+): Promise<{ emojiURI: string; blob: unknown }> {
+  // Import utilities dynamically to avoid circular dependencies
+  const { fileToBase64, getImageDimensions, isAnimatedGif } = await import('./utils');
 
-  const response = await fetch(`${baseURL}/api/emoji/upload`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-    },
-    body: formData,
+  // Convert File to base64
+  const fileData = await fileToBase64(image);
+  const dimensions = await getImageDimensions(image);
+  const animated = await isAnimatedGif(image);
+
+  // Call oRPC endpoint
+  const result = await apiClient.emoji.upload({
+    fileData,
+    mimeType: image.type as 'image/png' | 'image/gif' | 'image/webp',
+    shortcode,
+    size: image.size,
+    dimensions,
+    animated,
   });
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(error.error || `Failed to upload emoji: ${response.statusText}`);
-  }
-
-  return response.json();
+  return result;
 }
 
 /**
- * Delete custom emoji
+ * @deprecated Legacy endpoint removed. Emoji deletion not supported in oRPC API.
+ * Consider implementing revoke functionality via apiClient.emoji.revoke() instead.
  */
-export async function deleteEmoji(emojiUri: string): Promise<{ success: boolean }> {
-  const response = await fetch(`${baseURL}/api/emoji/delete`, {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-    },
-    body: JSON.stringify({ emojiUri }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to delete emoji: ${response.statusText}`);
-  }
-
-  return response.json();
+export async function deleteEmoji(_emojiUri: string): Promise<{ success: boolean }> {
+  throw new Error('deleteEmoji is no longer supported. Use apiClient.emoji.revoke() instead.');
 }
 
 /**
- * List approved emojis for a community
+ * List approved emojis for a community (registry)
+ * @deprecated Use apiClient.emoji.registry({ communityId }) instead.
  */
 export async function listEmojis(communityId: string): Promise<{
-  emojis: Array<{
-    shortcode: string;
-    imageUrl: string;
-    creator: string;
-    animated: boolean;
-    dimensions: { width: number; height: number };
-  }>;
-}> {
-  const response = await fetch(
-    `${baseURL}/api/emoji/list?communityId=${encodeURIComponent(communityId)}&status=approved`,
+  emoji: Record<
+    string,
     {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-      },
+      emojiURI: string;
+      blobURI: string;
+      animated: boolean;
     }
-  );
-
-  if (!response.ok) {
-    throw new Error(`Failed to list emojis: ${response.statusText}`);
-  }
-
-  return response.json();
+  >;
+}> {
+  return await apiClient.emoji.registry({ communityId });
 }
 
 /**
  * List user's uploaded emojis
+ * @deprecated Use apiClient.emoji.list({ did }) instead.
  */
 export async function listUserEmojis(userId: string): Promise<{
-  emojis: Array<{
+  emoji: Array<{
     shortcode: string;
-    imageUrl: string;
-    emojiUri: string;
+    blob: unknown;
     creator: string;
     uploadedAt: string;
     format: 'png' | 'gif' | 'webp';
     size: number;
     dimensions: { width: number; height: number };
     animated: boolean;
-    approvalStatus?: 'pending' | 'approved' | 'rejected' | 'revoked';
+    uri: string;
   }>;
 }> {
-  const response = await fetch(`${baseURL}/api/emoji/user/${encodeURIComponent(userId)}`, {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to list user emojis: ${response.statusText}`);
-  }
-
-  return response.json();
+  return await apiClient.emoji.list({ did: userId });
 }
 
 /**
  * List pending emojis for approval (owner only)
+ * @deprecated Use apiClient.emoji.listPending({ communityId }) instead.
  */
 export async function listPendingEmojis(communityId: string): Promise<{
-  emojis: Array<{
+  submissions: Array<{
+    emojiUri: string;
     shortcode: string;
-    emojiRef: string;
-    imageUrl: string;
     creator: string;
-    creatorHandle?: string;
+    creatorHandle: string;
     uploadedAt: string;
     format: 'png' | 'gif' | 'webp';
-    size: number;
-    dimensions: { width: number; height: number };
     animated: boolean;
+    blobUrl: string;
   }>;
 }> {
-  const response = await fetch(
-    `${baseURL}/api/emoji/pending?communityId=${encodeURIComponent(communityId)}`,
-    {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-      },
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error(`Failed to list pending emojis: ${response.statusText}`);
-  }
-
-  return response.json();
+  return await apiClient.emoji.listPending({ communityId });
 }
 
 /**
  * Approve or reject custom emoji (owner only)
+ * @deprecated Use apiClient.emoji.approve() instead.
  */
 export async function approveEmoji(
   communityId: string,
-  emojiRef: string,
-  status: 'approved' | 'rejected',
+  emojiURI: string,
+  approve: boolean,
   reason?: string
-): Promise<{ success: boolean; approvalUri: string }> {
-  const response = await fetch(`${baseURL}/api/emoji/approve`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-    },
-    body: JSON.stringify({ communityId, emojiRef, status, reason }),
+): Promise<{ approvalURI: string; status: 'approved' | 'rejected' }> {
+  return await apiClient.emoji.approve({
+    communityId,
+    emojiURI,
+    approve,
+    reason,
   });
-
-  if (!response.ok) {
-    throw new Error(`Failed to approve emoji: ${response.statusText}`);
-  }
-
-  return response.json();
 }
 
 // ============================================================================

@@ -6,4 +6,8 @@ async function main() {
   const _spec = await generateOpenAPISpec();
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  // biome-ignore lint/suspicious/noConsole: Script execution requires error logging
+  console.error(error);
+  process.exit(1);
+});

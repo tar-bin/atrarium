@@ -193,8 +193,10 @@ test.describe.skip('Member Management', () => {
   });
 
   test('should display role badges for members', async ({ page }) => {
-    // Wait for members to load
-    await page.waitForSelector('[data-testid="member-item"]', { timeout: 5000 }).catch(() => {});
+    // Wait for members to load (ignore timeout errors)
+    await page.waitForSelector('[data-testid="member-item"]', { timeout: 5000 }).catch(() => {
+      // Expected: Member list may be empty in test environment
+    });
 
     const firstMember = page.locator('[data-testid="member-item"]').first();
 
@@ -371,7 +373,7 @@ test.describe.skip('Community Deletion', () => {
  * Tests for settings permissions
  */
 test.describe('Settings Permissions', () => {
-  test.skip('should only allow owners to access settings', async ({ page }) => {
+  test.skip('should only allow owners to access settings', async ({ page: _page }) => {
     // TODO: Implement after role-based access control is integrated
     // This test should verify that:
     // 1. Regular members cannot access settings
@@ -379,7 +381,7 @@ test.describe('Settings Permissions', () => {
     // 3. Owners have full access
   });
 
-  test.skip('should hide delete button for non-owners', async ({ page }) => {
+  test.skip('should hide delete button for non-owners', async ({ page: _page }) => {
     // TODO: Implement after role-based access control is integrated
   });
 });
@@ -388,19 +390,19 @@ test.describe('Settings Permissions', () => {
  * Tests for settings with backend integration
  */
 test.describe('Settings with Backend Integration', () => {
-  test.skip('should save community settings changes', async ({ page }) => {
+  test.skip('should save community settings changes', async ({ page: _page }) => {
     // TODO: Implement after backend API integration
   });
 
-  test.skip('should show success message after saving', async ({ page }) => {
+  test.skip('should show success message after saving', async ({ page: _page }) => {
     // TODO: Implement after backend API integration
   });
 
-  test.skip('should show error message on save failure', async ({ page }) => {
+  test.skip('should show error message on save failure', async ({ page: _page }) => {
     // TODO: Implement after backend API integration
   });
 
-  test.skip('should persist feed mix changes', async ({ page }) => {
+  test.skip('should persist feed mix changes', async ({ page: _page }) => {
     // TODO: Implement after backend API integration
   });
 });

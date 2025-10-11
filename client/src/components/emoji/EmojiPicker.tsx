@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { apiClient } from '@/lib/api';
+import { listEmojis } from '@/lib/api';
 
 interface EmojiMetadata {
   emojiURI: string;
@@ -26,10 +26,9 @@ export function EmojiPicker({ communityId, onEmojiSelect, trigger }: EmojiPicker
       setIsLoading(true);
       setError(null);
 
-      const result = await apiClient.emoji.registry({
-        communityId,
-      });
+      const result = await listEmojis(communityId);
 
+      // result.emoji is already a Record<string, EmojiMetadata>
       setEmojiRegistry(result.emoji);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load emoji');
