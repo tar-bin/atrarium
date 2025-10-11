@@ -156,6 +156,150 @@ export const ListReactionsRequestSchema = z.object({
 });
 
 // ============================================================================
+// Hierarchical Group System Validation (017-1-1)
+// ============================================================================
+
+/**
+ * Dunbar threshold constants for stage progression
+ * Based on social group size research (Dunbar's number)
+ */
+export const THEME_TO_COMMUNITY_THRESHOLD = 15;
+export const COMMUNITY_TO_GRADUATED_THRESHOLD = 50;
+
+/**
+ * Validate stage upgrade transition
+ * @param currentStage - Current group stage
+ * @param targetStage - Desired target stage
+ * @param memberCount - Active member count
+ * @returns Validation result with error message if invalid
+ */
+export function validateStageUpgrade(
+  currentStage: 'theme' | 'community' | 'graduated',
+  targetStage: 'theme' | 'community' | 'graduated',
+  memberCount: number
+): { valid: boolean; error?: string } {
+  // Cannot upgrade to same stage
+  if (currentStage === targetStage) {
+    return { valid: false, error: 'Target stage must differ from current stage' };
+  }
+
+  // Theme → Community
+  if (currentStage === 'theme' && targetStage === 'community') {
+    if (memberCount < THEME_TO_COMMUNITY_THRESHOLD) {
+      return {
+        valid: false,
+        error: `Member count (${memberCount}) below threshold (${THEME_TO_COMMUNITY_THRESHOLD}) for Community stage`,
+      };
+    }
+    return { valid: true };
+  }
+
+  // Community → Graduated
+  if (currentStage === 'community' && targetStage === 'graduated') {
+    if (memberCount < COMMUNITY_TO_GRADUATED_THRESHOLD) {
+      return {
+        valid: false,
+        error: `Member count (${memberCount}) below threshold (${COMMUNITY_TO_GRADUATED_THRESHOLD}) for Graduated stage`,
+      };
+    }
+    return { valid: true };
+  }
+
+  // Theme → Graduated (must go through Community)
+  if (currentStage === 'theme' && targetStage === 'graduated') {
+    return {
+      valid: false,
+      error: 'Cannot upgrade from Theme to Graduated directly. Must upgrade to Community first.',
+    };
+  }
+
+  // Invalid downgrade via upgrade endpoint
+  return {
+    valid: false,
+    error: 'Invalid stage transition. Use downgrade endpoint for downgrades.',
+  };
+}
+
+/**
+ * Validate stage downgrade transition
+ * @param currentStage - Current group stage
+ * @param targetStage - Desired target stage
+ * @returns Validation result with error message if invalid
+ */
+export function validateStageDowngrade(
+  currentStage: 'theme' | 'community' | 'graduated',
+  targetStage: 'theme' | 'community' | 'graduated'
+): { valid: boolean; error?: string } {
+  // Cannot downgrade to same stage
+  if (currentStage === targetStage) {
+    return { valid: false, error: 'Target stage must differ from current stage' };
+  }
+
+  // Graduated → Community
+  if (currentStage === 'graduated' && targetStage === 'community') {
+    return { valid: true };
+  }
+
+  // Graduated → Theme (direct downgrade allowed)
+  if (currentStage === 'graduated' && targetStage === 'theme') {
+    return { valid: true };
+  }
+
+  // Community → Theme
+  if (currentStage === 'community' && targetStage === 'theme') {
+    return { valid: true };
+  }
+
+  // Invalid upgrade via downgrade endpoint
+  return { valid: false, error: 'Invalid stage transition. Use upgrade endpoint for upgrades.' };
+}
+
+/**
+ * Validate parent-child stage compatibility
+ * @param parentStage - Parent group stage
+ * @param childStage - Child group stage
+ * @returns Validation result with error message if invalid
+ */
+export function validateParentChild(
+  parentStage: 'theme' | 'community' | 'graduated',
+  childStage: 'theme' | 'community' | 'graduated'
+): { valid: boolean; error?: string } {
+  // Only Graduated can be parents
+  if (parentStage !== 'graduated') {
+    return { valid: false, error: 'Only Graduated-stage groups can have children' };
+  }
+
+  // Only Theme can be children
+  if (childStage !== 'theme') {
+    return { valid: false, error: 'Only Theme-stage groups can have parents' };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Validate hierarchy depth (max 1 level)
+ * @param parentGroupUri - Parent group AT-URI (if exists)
+ * @returns Validation result with error message if invalid
+ */
+export function validateHierarchyDepth(parentGroupUri: string | null | undefined): {
+  valid: boolean;
+  error?: string;
+} {
+  // If parent group itself has a parent, hierarchy depth exceeds 1 level
+  // This check is performed by querying the parent group's config
+  // For now, we return valid if parentGroupUri is null/undefined (top-level group)
+  if (!parentGroupUri) {
+    return { valid: true };
+  }
+
+  // Actual depth validation requires fetching parent config from PDS
+  // This will be implemented in PDS service methods (T015-T020)
+  // For schema validation, we assume caller has already checked parent depth
+  return { valid: true };
+}
+
+// ============================================================================
 // Validation Helper
 // ============================================================================
 

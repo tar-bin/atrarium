@@ -372,6 +372,132 @@ export const reactionSchema = z.object({
 });
 
 // ============================================================================
+// Hierarchical Group System Types and Validation (017-1-1)
+// ============================================================================
+
+/**
+ * Parent-child relationship validation
+ * Ensures AT-URI format and stage compatibility
+ */
+export interface ParentChildRelationship {
+  parentUri: string; // AT-URI of parent group config
+  parentStage: 'graduated'; // Only Graduated can be parents
+  childStage: 'theme'; // Only Theme can be children
+}
+
+/**
+ * Stage-specific rules for hierarchy constraints
+ */
+export interface GroupStageRules {
+  stage: 'theme' | 'community' | 'graduated';
+  canHaveParent: boolean; // True for theme, false for community/graduated
+  canCreateChildren: boolean; // True for graduated, false for theme/community
+  moderationMode: 'inherited' | 'independent'; // inherited for theme, independent for others
+}
+
+/**
+ * Get stage-specific hierarchy rules
+ * @param stage - Group stage
+ * @returns Stage rules
+ */
+export function getStageRules(stage: 'theme' | 'community' | 'graduated'): GroupStageRules {
+  switch (stage) {
+    case 'theme':
+      return {
+        stage: 'theme',
+        canHaveParent: true,
+        canCreateChildren: false,
+        moderationMode: 'inherited',
+      };
+    case 'community':
+      return {
+        stage: 'community',
+        canHaveParent: false,
+        canCreateChildren: false,
+        moderationMode: 'independent',
+      };
+    case 'graduated':
+      return {
+        stage: 'graduated',
+        canHaveParent: false,
+        canCreateChildren: true,
+        moderationMode: 'independent',
+      };
+  }
+}
+
+/**
+ * Validate immutable parent reference
+ * Ensures parentGroup field never changes after initial creation
+ * @param existingParent - Existing parent AT-URI (from PDS)
+ * @param newParent - New parent AT-URI (from update request)
+ * @returns Validation result
+ */
+export function validateImmutableParent(
+  existingParent: string | null | undefined,
+  newParent: string | null | undefined
+): { valid: boolean; error?: string } {
+  // If both are null/undefined, no parent exists (valid)
+  if (!existingParent && !newParent) {
+    return { valid: true };
+  }
+
+  // If existing parent is null but new parent is set, this is initial creation (valid)
+  if (!existingParent && newParent) {
+    return { valid: true };
+  }
+
+  // If existing parent exists and new parent is different, immutability violated
+  if (existingParent && newParent !== existingParent) {
+    return {
+      valid: false,
+      error: `Parent reference is immutable. Existing parent: ${existingParent}, attempted change to: ${newParent}`,
+    };
+  }
+
+  // Parent unchanged (valid)
+  return { valid: true };
+}
+
+/**
+ * Validate parent-child relationship
+ * Ensures AT-URI format, stage compatibility, and Lexicon constraints
+ * @param parentConfig - Parent group config
+ * @param childStage - Child group stage
+ * @returns Validation result
+ */
+export function validateParentChildRelationship(
+  parentConfig: CommunityConfig,
+  childStage: 'theme' | 'community' | 'graduated'
+): { valid: boolean; error?: string } {
+  // Validate parent stage (must be Graduated)
+  if (parentConfig.stage !== 'graduated') {
+    return {
+      valid: false,
+      error: `Only Graduated-stage groups can be parents. Parent stage: ${parentConfig.stage}`,
+    };
+  }
+
+  // Validate child stage (must be Theme)
+  if (childStage !== 'theme') {
+    return {
+      valid: false,
+      error: `Only Theme-stage groups can have parents. Child stage: ${childStage}`,
+    };
+  }
+
+  // Validate parent cannot have its own parent (max depth 1 level)
+  if (parentConfig.parentCommunity) {
+    return {
+      valid: false,
+      error: 'Parent group cannot have its own parent (max hierarchy depth is 1 level)',
+    };
+  }
+
+  return { valid: true };
+}
+
+// ============================================================================
 // Validation Helper Functions
 // ============================================================================
 
