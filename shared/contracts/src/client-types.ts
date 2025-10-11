@@ -11,6 +11,13 @@ const router = {
     list: contract.communities.list.handler(async () => ({ data: [] })),
     create: contract.communities.create.handler(async () => ({}) as any),
     get: contract.communities.get.handler(async () => ({}) as any),
+    // T033: Hierarchy endpoints
+    createChild: contract.communities.createChild.handler(async () => ({}) as any),
+    upgradeStage: contract.communities.upgradeStage.handler(async () => ({}) as any),
+    downgradeStage: contract.communities.downgradeStage.handler(async () => ({}) as any),
+    listChildren: contract.communities.listChildren.handler(async () => ({}) as any),
+    getParent: contract.communities.getParent.handler(async () => ({}) as any),
+    delete: contract.communities.delete.handler(async () => ({}) as any),
   },
   memberships: {
     list: contract.memberships.list.handler(async () => ({}) as any),
@@ -48,6 +55,11 @@ const router = {
     approve: contract.emoji.approve.handler(async () => ({}) as any),
     revoke: contract.emoji.revoke.handler(async () => ({}) as any),
     registry: contract.emoji.registry.handler(async () => ({}) as any),
+  },
+  reactions: {
+    add: contract.reactions.add.handler(async () => ({}) as any),
+    remove: contract.reactions.remove.handler(async () => ({}) as any),
+    list: contract.reactions.list.handler(async () => ({}) as any),
   },
 };
 
