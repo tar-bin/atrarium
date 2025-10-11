@@ -2,7 +2,7 @@
 // TDD: This test MUST FAIL before implementation (T016-T021)
 
 import { env } from 'cloudflare:test';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 describe('POST /api/reactions/add', () => {
   it('should return 401 Unauthorized without auth token', async () => {

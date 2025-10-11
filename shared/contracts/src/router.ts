@@ -444,7 +444,7 @@ export const contract = {
   feeds: feedsContract,
   posts: postsContract,
   // emoji: emojiContract, // TODO (018-api-orpc): Deferred - requires schema redesign
-  // reactions: reactionsContract, // TODO (018-api-orpc): Pending implementation
+  reactions: reactionsContract, // Phase 4: Reactions Migration (T030-T039)
 };
 
 export type Contract = typeof contract;
