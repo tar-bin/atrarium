@@ -1,562 +1,581 @@
 # Tasks: Hierarchical Group System
 
-**Feature**: 017-1-1 (Hierarchical Group System)
+**Feature**: 017-1-1
 **Input**: Design documents from `/workspaces/atrarium/specs/017-1-1/`
 **Prerequisites**: plan.md, research.md, data-model.md, contracts/hierarchy-api.md, quickstart.md
 
 ---
 
-## Execution Flow
-```
-1. ✅ Load plan.md → Tech stack: TypeScript 5.7, Hono, React 19, TanStack, Zod
-2. ✅ Load data-model.md → 3 entities: Group, Membership, Stage (reuse existing schemas)
-3. ✅ Load contracts/ → 6 new endpoints + 1 extended endpoint
-4. ✅ Generate tasks by category (Setup → Tests → Core → Integration → Polish)
-5. ✅ Apply TDD order (tests before implementation)
-6. ✅ Mark [P] for parallel execution (different files, no dependencies)
-7. ✅ Number sequentially (T001-T037)
-```
+## Overview
+
+This document provides executable tasks for implementing the hierarchical group system. Tasks are ordered by dependencies and marked with [P] for parallel execution where applicable.
+
+**Implementation Strategy**:
+- **TDD Order**: Contract tests → Implementation → Integration tests
+- **PDS-First**: All writes to PDS, Durable Objects as 7-day cache (Principle 8)
+- **Complete Implementation**: No MVP deferrals (Principle 10)
+- **Parallel Execution**: [P] tasks can run concurrently (different files, no dependencies)
 
 ---
 
-## Format: `[ID] [P?] Description`
-- **[P]**: Can run in parallel (different files, no dependencies)
-- Includes exact file paths in descriptions
-- **Project Structure**: Web app (backend: `server/`, frontend: `client/`)
+## Phase 3.1: Setup and Prerequisites
+
+- [ ] **T001** Validate existing project structure (monorepo with server/, client/, shared/contracts/)
+- [ ] **T002** [P] Review Lexicon schemas in `lexicons/net.atrarium.group.config.json` (verify `parentGroup` field exists)
+- [ ] **T003** [P] Verify PDS-first architecture constraints (no new databases, Durable Objects cache only)
+- [ ] **T004** [P] Confirm Biome linting/formatting configuration (Constitution Principle 7)
+- [ ] **T005** [P] Confirm TypeScript type checking configuration (Constitution Principle 7)
 
 ---
 
-## Phase 3.1: Setup & Validation
+## Phase 3.2: Contract Tests (TDD) ⚠️ MUST COMPLETE BEFORE IMPLEMENTATION
 
-- [ ] **T001** Validate branch 017-1-1 is checked out and clean
-- [ ] **T002 [P]** Run TypeScript type checks across all workspaces (`pnpm -r typecheck`)
-- [ ] **T003 [P]** Run Biome linting and formatting checks (`pnpm lint`, `pnpm format:check`)
-- [ ] **T004 [P]** Verify existing Lexicon schema `net.atrarium.group.config` includes `parentGroup` field (no schema changes needed)
-- [ ] **T005 [P]** Verify Durable Objects Storage infrastructure exists (no new databases per Principle 8)
+**CRITICAL**: These tests MUST be written and MUST FAIL before ANY implementation begins.
 
----
+### Backend Contract Tests (6 endpoints)
 
-## Phase 3.2: Contract Tests (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
+- [ ] **T006** [P] Contract test `groups.createChild` in `server/tests/contract/hierarchy/create-child.test.ts`
+  - Test: Graduated parent creates Theme child → success (child has parent AT-URI)
+  - Test: Community parent creates child → 409 Conflict (only Graduated can create children)
+  - Test: Non-owner attempts createChild → 403 Forbidden
+  - Test: Child created with `stage: 'theme'` and immutable `parentGroup` field
 
-**CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
+- [ ] **T007** [P] Contract test `groups.upgradeStage` in `server/tests/contract/hierarchy/upgrade-stage.test.ts`
+  - Test: Theme → Community with memberCount >= 15 → success
+  - Test: Theme → Community with memberCount < 15 → 409 Conflict (threshold not met)
+  - Test: Community → Graduated with memberCount >= 50 → success
+  - Test: Community → Graduated with memberCount < 50 → 409 Conflict
+  - Test: Invalid stage transitions (e.g., Theme → Graduated) → 400 Bad Request
 
-### Backend Contract Tests (server/tests/contract/)
+- [ ] **T008** [P] Contract test `groups.downgradeStage` in `server/tests/contract/hierarchy/downgrade-stage.test.ts`
+  - Test: Graduated → Community → success (moderation remains independent)
+  - Test: Community → Theme → success (moderation switches to inherited)
+  - Test: Graduated with children → Community → success (children retained, but cannot create more)
+  - Test: Invalid downgrade (e.g., Theme → Graduated) → 400 Bad Request
 
-- [ ] **T006 [P]** Contract test `groups.createChild` endpoint in `server/tests/contract/hierarchy/create-child.test.ts`
-  - Input: `{ parentId, name, description?, feedMix? }`
-  - Expected: 200 OK with child group (stage='theme', parentGroup=parent AT-URI)
-  - Errors: 400 (invalid input), 403 (not owner), 409 (parent not Graduated)
+- [ ] **T009** [P] Contract test `groups.listChildren` in `server/tests/contract/hierarchy/list-children.test.ts`
+  - Test: Graduated parent with 3 children → returns all children
+  - Test: Graduated parent with no children → returns empty array
+  - Test: Community parent (no children capability) → returns empty array
+  - Test: Pagination with cursor → returns correct page
 
-- [ ] **T007 [P]** Contract test `groups.upgradeStage` endpoint in `server/tests/contract/hierarchy/upgrade-stage.test.ts`
-  - Input: `{ groupId, targetStage: 'community' | 'graduated' }`
-  - Expected: 200 OK with updated stage
-  - Errors: 400 (invalid transition), 403 (not owner), 409 (member count < threshold)
+- [ ] **T010** [P] Contract test `groups.getParent` in `server/tests/contract/hierarchy/get-parent.test.ts`
+  - Test: Theme child with parent → returns Graduated parent
+  - Test: Graduated group (no parent) → returns null
+  - Test: Community group (no parent) → returns null
+  - Test: Invalid child ID → 404 Not Found
 
-- [ ] **T008 [P]** Contract test `groups.downgradeStage` endpoint in `server/tests/contract/hierarchy/downgrade-stage.test.ts`
-  - Input: `{ groupId, targetStage: 'theme' | 'community' }`
-  - Expected: 200 OK with downgraded stage
-  - Errors: 400 (invalid transition), 403 (not owner)
-
-- [ ] **T009 [P]** Contract test `groups.listChildren` endpoint in `server/tests/contract/hierarchy/list-children.test.ts`
-  - Input: `{ parentId, limit?, cursor? }`
-  - Expected: 200 OK with children array (all stage='theme'), cursor for pagination
-  - Errors: 404 (parent not found)
-
-- [ ] **T010 [P]** Contract test `groups.getParent` endpoint in `server/tests/contract/hierarchy/get-parent.test.ts`
-  - Input: `{ childId }`
-  - Expected: 200 OK with parent group (stage='graduated') or null
-  - Errors: 404 (child not found)
-
-- [ ] **T011 [P]** Contract test `groups.delete` with children blocking in `server/tests/contract/hierarchy/delete-blocking.test.ts`
-  - Setup: Create Graduated parent with child themes
-  - Expected: 409 Conflict "Cannot delete group with N active children"
-  - Verify: Deletion succeeds after children removed
+- [ ] **T011** [P] Contract test `groups.delete` (extended validation) in `server/tests/contract/hierarchy/delete-with-children.test.ts`
+  - Test: Delete Graduated with 2 children → 409 Conflict (lists child names)
+  - Test: Delete Graduated with no children → success
+  - Test: Delete Theme child → success (does not affect parent)
+  - Test: Delete all children, then parent → success
 
 ---
 
-## Phase 3.3: Backend Schema & Validation ⚠️ Tests from 3.2 MUST BE FAILING
+## Phase 3.3: Backend Schema & Validation
 
-### Schema Extensions (server/src/schemas/)
+- [ ] **T012** [P] Extend validation schemas with stage rules in `server/src/schemas/validation.ts`
+  - Add Dunbar threshold constants: `THEME_TO_COMMUNITY_THRESHOLD = 15`, `COMMUNITY_TO_GRADUATED_THRESHOLD = 50`
+  - Add stage transition validation: `validateStageUpgrade(currentStage, targetStage, memberCount)`
+  - Add stage transition validation: `validateStageDowngrade(currentStage, targetStage)`
+  - Add parent-child validation: `validateParentChild(parentStage, childStage)`
+  - Add hierarchy depth validation: `validateHierarchyDepth(parentGroupUri)` (max 1 level)
 
-- [ ] **T012 [P]** Add stage validation rules in `server/src/schemas/validation.ts`
-  - Dunbar thresholds: Theme→Community (15), Community→Graduated (50)
-  - Stage transition matrix (Theme→Community, Community→Graduated, bidirectional downgrades)
-  - Parent-child stage rules (only Graduated can be parent, only Theme can have parent)
+- [ ] **T013** [P] Extend Lexicon validation in `server/src/schemas/lexicon.ts`
+  - Add `ParentChildRelationship` type (validates AT-URI format, stage compatibility)
+  - Add `GroupStageRules` interface (stage-specific constraints: canHaveParent, canCreateChildren)
+  - Add `validateImmutableParent()` function (ensures parentGroup never changes after creation)
 
-- [ ] **T013 [P]** Add parent-child validation schemas in `server/src/schemas/validation.ts`
-  - `CreateChildInputSchema` (parentId, name, description?, feedMix?)
-  - `UpgradeStageInputSchema` (groupId, targetStage)
-  - `DowngradeStageInputSchema` (groupId, targetStage)
-  - `ListChildrenInputSchema` (parentId, limit, cursor)
-  - `GetParentInputSchema` (childId)
-
-- [ ] **T014 [P]** Add hierarchy validation helpers in `server/src/schemas/validation.ts`
-  - `validateParentStage(parent: Group)` → assert parent.stage === 'graduated'
-  - `validateMemberCountForUpgrade(memberCount: number, targetStage: Stage)` → check Dunbar thresholds
-  - `validateStageTransition(fromStage: Stage, toStage: Stage)` → check transition matrix
+- [ ] **T014** [P] Update TypeScript types in `server/src/types.ts`
+  - Add `HierarchyConstraints` interface (maxDepth: 1, allowedParentStages: ['graduated'])
+  - Add `StageTransitionRequest` interface (groupId, fromStage, toStage, memberCount)
+  - Extend `GroupConfig` type with optional `children?: string[]` field (for API responses)
 
 ---
 
 ## Phase 3.4: PDS Service Extensions
 
-### AT Protocol Client Methods (server/src/services/atproto.ts)
+- [ ] **T015** Add `createChildGroup()` method in `server/src/services/atproto.ts`
+  - Query parent group from PDS (validate stage === 'graduated')
+  - Create child record with `stage: 'theme'` and `parentGroup: parentAtUri` (immutable)
+  - Return created child config (includes parent AT-URI)
+  - **Validation**: Parent must be Graduated, user must be owner
 
-- [ ] **T015** Add `createChildCommunity(parentId, input)` method in `server/src/services/atproto.ts`
-  - Validates parent is Graduated stage
-  - Creates `net.atrarium.group.config` record with `parentGroup: parentAtUri`
-  - Sets child stage to 'theme' (always)
-  - Returns child group with parent reference
+- [ ] **T016** Add `upgradeGroupStage()` method in `server/src/services/atproto.ts`
+  - Fetch current group config from PDS
+  - Query member count: `getMemberCount(groupId)` (counts active memberships)
+  - Validate stage transition rules (Dunbar thresholds: ~15 for Community, ~50 for Graduated)
+  - Update group record with new stage (putRecord)
+  - **Validation**: Owner only, member count thresholds, valid stage transitions
 
-- [ ] **T016** Add `upgradeStage(groupId, targetStage)` method in `server/src/services/atproto.ts`
-  - Queries member count via `getMemberCount(groupId)`
-  - Validates Dunbar threshold met
-  - Updates `net.atrarium.group.config` record with new stage
-  - Returns updated group
+- [ ] **T017** Add `downgradeGroupStage()` method in `server/src/services/atproto.ts`
+  - Fetch current group config from PDS
+  - Validate downgrade rules (Graduated → Community → Theme)
+  - Update group record with downgraded stage
+  - **Note**: `parentGroup` field retained (immutable)
 
-- [ ] **T017** Add `downgradeStage(groupId, targetStage)` method in `server/src/services/atproto.ts`
-  - Validates stage transition (Graduated→Community→Theme)
-  - Updates `net.atrarium.group.config` record with lower stage
-  - Returns updated group
+- [ ] **T018** Add `listChildGroups()` method in `server/src/services/atproto.ts`
+  - Query Durable Objects Storage: `storage.get<string[]>(\`children:${parentId}\`)`
+  - Fallback to PDS query if cache miss: `listRecords({ collection: 'net.atrarium.group.config', filter: parentGroup === parentAtUri })`
+  - Return array of child GroupConfig objects
 
-- [ ] **T018** Add `getMemberCount(groupId)` method in `server/src/services/atproto.ts`
-  - Queries PDS: `SELECT COUNT(*) FROM net.atrarium.group.membership WHERE group = ? AND active = true`
-  - Returns active member count for Dunbar threshold checks
+- [ ] **T019** Add `getParentGroup()` method in `server/src/services/atproto.ts`
+  - Query Durable Objects Storage: `storage.get<string>(\`parent:${childId}\`)`
+  - Fallback to PDS query if cache miss: fetch child record, extract `parentGroup` AT-URI
+  - Resolve parent AT-URI → fetch parent GroupConfig
+  - Return parent GroupConfig or null
 
-- [ ] **T019** Add `listChildrenFromPDS(parentId)` method in `server/src/services/atproto.ts`
-  - Queries PDS: `SELECT * FROM net.atrarium.group.config WHERE parentGroup = ?`
-  - Returns array of child groups (all should be stage='theme')
-
-- [ ] **T020** Extend `deleteCommunity(groupId)` method in `server/src/services/atproto.ts`
-  - NEW: Check for children via `listChildrenFromPDS(groupId)`
-  - NEW: Throw ConflictError if children.length > 0 with child names
-  - Existing: Delete `net.atrarium.group.config` record if no children
+- [ ] **T020** Add `getMemberCount()` method in `server/src/services/atproto.ts`
+  - Query PDS: `listRecords({ collection: 'net.atrarium.group.membership', repo: userDid })`
+  - Filter memberships: `membership.group === groupAtUri && membership.active === true`
+  - Return count of active memberships
+  - **Used for**: Stage progression threshold validation
 
 ---
 
 ## Phase 3.5: Durable Objects Extensions
 
-### GroupFeedGenerator Extensions (server/src/durable-objects/group-feed-generator.ts)
+- [ ] **T021** Extend `CommunityFeedGenerator` with parent/children cache in `server/src/durable-objects/community-feed-generator.ts`
+  - Add `parent:<groupId>` storage key (stores parent AT-URI string)
+  - Add `children:<groupId>` storage key (stores child IDs array: `string[]`)
+  - Update Firehose indexing to set parent/children keys on group creation
+  - Add `getChildren()` RPC method (returns cached child IDs)
 
-- [ ] **T021** Add parent/children cache keys to GroupFeedGenerator storage schema
-  - `parent:<groupId>` → stores parent AT-URI (string | undefined)
-  - `children:<parentId>` → stores child IDs array (string[])
-  - Updates via Firehose indexing when parentGroup field detected
+- [ ] **T022** Add parent-child validation in Firehose indexing in `server/src/durable-objects/community-feed-generator.ts`
+  - Validate parent stage === 'graduated' when indexing child creation
+  - Validate child stage === 'theme' at creation time
+  - Reject records with `parentGroup.parentGroup !== undefined` (max depth 1 level)
+  - Update `children:<parentId>` array when child created
 
-- [ ] **T022** Add `listChildren()` RPC method to GroupFeedGenerator
-  - Reads `children:<groupId>` from Durable Objects Storage
-  - Returns child group configs (fetches via `config:<childId>` keys)
-  - Used by API to fast-query children without PDS roundtrip
-
-- [ ] **T023** Add `getParent()` RPC method to GroupFeedGenerator
-  - Reads `parent:<groupId>` from Durable Objects Storage
-  - Fetches parent group config if parentUri exists
-  - Returns parent or null
-
-- [ ] **T024** Extend `getFeedSkeleton()` to aggregate child posts for Graduated parents
-  - If group.stage === 'graduated', query posts from self + all children
-  - Reads `children:<groupId>` → queries `post:*` for each child
-  - Merges posts by timestamp, returns newest-first (respects feedMix ratios)
-
-- [ ] **T025** Add moderation inheritance logic for Theme groups
-  - When moderating Theme-stage group, check if moderator belongs to parent Graduated group
-  - Reads `parent:<groupId>` → fetches parent.moderators + parent.owner
-  - Allows parent owner/moderators to moderate child themes
+- [ ] **T023** Add moderation inheritance logic in `server/src/durable-objects/community-feed-generator.ts`
+  - For Theme groups: fetch parent AT-URI from `parent:<groupId>` key
+  - Query parent group's moderators list
+  - Cache inherited moderators in `inherited_moderators:<groupId>` key (7-day TTL)
+  - Moderation API checks: if Theme, verify moderator in parent's moderators list
 
 ---
 
-## Phase 3.6: Firehose Processor Updates
+## Phase 3.6: Firehose Processor Extensions
 
-### Hierarchy Validation (server/src/workers/firehose-processor.ts)
+- [ ] **T024** Add hierarchy validation in Firehose processor in `server/src/workers/firehose-processor.ts`
+  - Validate parent-child stage combinations (Graduated → Theme only)
+  - Validate `parentGroup` immutability (reject updates to parentGroup field)
+  - Validate circular references (child cannot reference itself or descendants)
+  - Tag posts with `parentGroupId` for feed aggregation (if child group)
 
-- [ ] **T026** Add parent ancestry validation in FirehoseProcessor
-  - When indexing `net.atrarium.group.config` record with `parentGroup` field:
-    - Validate parent exists and is Graduated stage
-    - Validate no circular references (parent.parentGroup === undefined)
-    - Validate max depth = 1 (no grandchildren)
-  - Reject invalid records (exclude from Durable Objects Storage)
-
-- [ ] **T027** Update Firehose indexing to populate parent/children cache keys
-  - On config record create: Write `parent:<childId>` → parentUri
-  - On config record create: Append childId to parent's `children:<parentId>` array
-  - On config record delete: Remove childId from parent's `children:<parentId>` array
+- [ ] **T025** Update post indexing for hierarchy in `server/src/workers/firehose-processor.ts`
+  - Extract `parentGroup` from group config
+  - If parent exists: index post in both child DO and parent DO (`post:<timestamp>:<rkey>` keys)
+  - Update parent feed aggregation: include posts from all children
+  - Maintain existing 7-day TTL for cached posts
 
 ---
 
 ## Phase 3.7: API Route Handlers
 
-### Communities Router Extensions (server/src/routes/groups.ts)
+- [ ] **T026** Implement `POST /api/groups/:id/children` (createChild) in `server/src/routes/communities.ts`
+  - Validate JWT authentication (owner only)
+  - Call `atprotoService.createChildGroup(parentId, name, description, feedMix)`
+  - Trigger Durable Object update via RPC (add to parent's children list)
+  - Return created child GroupResponse (includes parent AT-URI)
 
-- [ ] **T028** Implement `groups.createChild` handler
-  - Validates JWT auth (owner of parent only)
-  - Calls `atproto.createChildCommunity(parentId, input)`
-  - Returns child group response
-  - File: `server/src/routes/groups.ts`
+- [ ] **T027** Implement `POST /api/groups/:id/upgrade` (upgradeStage) in `server/src/routes/communities.ts`
+  - Validate JWT authentication (owner only)
+  - Call `atprotoService.upgradeGroupStage(groupId, targetStage)`
+  - Validate Dunbar thresholds (~15 for Community, ~50 for Graduated)
+  - Return updated GroupResponse with new stage
 
-- [ ] **T029** Implement `groups.upgradeStage` handler
-  - Validates JWT auth (owner only)
-  - Calls `atproto.upgradeStage(groupId, targetStage)`
-  - Returns updated group response
-  - File: `server/src/routes/groups.ts`
+- [ ] **T028** Implement `POST /api/groups/:id/downgrade` (downgradeStage) in `server/src/routes/communities.ts`
+  - Validate JWT authentication (owner only)
+  - Call `atprotoService.downgradeGroupStage(groupId, targetStage)`
+  - Validate downgrade rules (bidirectional transitions allowed)
+  - Return updated GroupResponse with downgraded stage
 
-- [ ] **T030** Implement `groups.downgradeStage` handler
-  - Validates JWT auth (owner only)
-  - Calls `atproto.downgradeStage(groupId, targetStage)`
-  - Returns downgraded group response
-  - File: `server/src/routes/groups.ts`
+- [ ] **T029** Implement `GET /api/groups/:id/children` (listChildren) in `server/src/routes/communities.ts`
+  - Optional authentication (public endpoint)
+  - Call `atprotoService.listChildGroups(parentId, limit, cursor)`
+  - Return ListChildrenResponse (array of child GroupResponse objects)
 
-- [ ] **T031** Implement `groups.listChildren` handler
-  - Calls GroupFeedGenerator DO `listChildren()` RPC
-  - Returns children array with pagination cursor
-  - File: `server/src/routes/groups.ts`
+- [ ] **T030** Implement `GET /api/groups/:id/parent` (getParent) in `server/src/routes/communities.ts`
+  - Optional authentication (public endpoint)
+  - Call `atprotoService.getParentGroup(childId)`
+  - Return parent GroupResponse or null (if no parent)
 
-- [ ] **T032** Implement `groups.getParent` handler
-  - Calls GroupFeedGenerator DO `getParent()` RPC
-  - Returns parent group or null
-  - File: `server/src/routes/groups.ts`
-
-- [ ] **T033** Extend `groups.delete` handler with children blocking
-  - Calls `atproto.deleteCommunity(groupId)` (includes children check)
-  - Returns 409 Conflict if children exist (with child names in error message)
-  - Returns 200 OK with deletedId if deletion succeeds
-  - File: `server/src/routes/groups.ts`
+- [ ] **T031** Extend `DELETE /api/groups/:id` with children validation in `server/src/routes/communities.ts`
+  - Validate JWT authentication (owner only)
+  - Query children: `atprotoService.listChildGroups(groupId)`
+  - If children exist: throw 409 Conflict error with child names
+  - If no children: proceed with deletion (call existing delete logic)
 
 ---
 
-## Phase 3.8: oRPC Contract Extensions
+## Phase 3.8: oRPC Contract Implementation
 
-### Shared Contracts (shared/contracts/src/)
+- [ ] **T032** [P] Add hierarchy schemas to oRPC contracts in `shared/contracts/src/schemas.ts`
+  - Add `CreateChildInputSchema` (parentId, name, description?, feedMix?)
+  - Add `UpgradeStageInputSchema` (groupId, targetStage: 'community' | 'graduated')
+  - Add `DowngradeStageInputSchema` (groupId, targetStage: 'theme' | 'community')
+  - Add `ListChildrenInputSchema` (parentId, limit?, cursor?)
+  - Add `GetParentInputSchema` (childId)
+  - Extend `GroupResponseSchema` with optional `parentGroup?: string`, `children?: string[]`
 
-- [ ] **T034 [P]** Add hierarchy endpoint contracts to `shared/contracts/src/router.ts`
-  - `groups.createChild: contract.input(CreateChildInputSchema).output(GroupResponseSchema)`
-  - `groups.upgradeStage: contract.input(UpgradeStageInputSchema).output(GroupResponseSchema)`
-  - `groups.downgradeStage: contract.input(DowngradeStageInputSchema).output(GroupResponseSchema)`
-  - `groups.listChildren: contract.input(ListChildrenInputSchema).output(ListChildrenResponseSchema)`
-  - `groups.getParent: contract.input(GetParentInputSchema).output(z.union([GroupResponseSchema, z.null()]))`
-
-- [ ] **T035 [P]** Add hierarchy validation schemas to `shared/contracts/src/schemas.ts`
-  - `CreateChildInputSchema`, `UpgradeStageInputSchema`, `DowngradeStageInputSchema`
-  - `ListChildrenInputSchema`, `GetParentInputSchema`
-  - `ListChildrenResponseSchema` (with children array + cursor)
-  - Export from `shared/contracts/src/index.ts`
+- [ ] **T033** Add hierarchy endpoints to oRPC router in `shared/contracts/src/router.ts`
+  - Add `groups.createChild` contract (input: CreateChildInputSchema, output: GroupResponseSchema)
+  - Add `groups.upgradeStage` contract (input: UpgradeStageInputSchema, output: GroupResponseSchema)
+  - Add `groups.downgradeStage` contract (input: DowngradeStageInputSchema, output: GroupResponseSchema)
+  - Add `groups.listChildren` contract (input: ListChildrenInputSchema, output: ListChildrenResponseSchema)
+  - Add `groups.getParent` contract (input: GetParentInputSchema, output: GroupResponseSchema | null)
+  - Extend `groups.delete` contract with children validation logic
 
 ---
 
 ## Phase 3.9: Frontend Components
 
-### Hierarchy UI Components (client/src/components/groups/)
+- [ ] **T034** [P] Create `GroupHierarchy` component in `client/src/components/communities/GroupHierarchy.tsx`
+  - Display parent-child tree view (Radix UI Accordion for collapsible hierarchy)
+  - Show stage badges (Theme/Community/Graduated) with member counts
+  - Clickable group names → navigate to group detail page
+  - Handle 1-level depth constraint (no grandchildren display)
 
-- [ ] **T036 [P]** Create `GroupHierarchy.tsx` component in `client/src/components/groups/`
-  - Displays parent-child tree view using Radix UI Accordion
-  - Shows "Parent: [Name]" link for child themes
-  - Shows "Child Themes (N)" collapsible list for Graduated groups
-  - Uses TanStack Query `useQuery(['group', id, 'children'])`
+- [ ] **T035** [P] Create `StageUpgradeButton` component in `client/src/components/communities/StageUpgradeButton.tsx`
+  - Display upgrade button when Dunbar threshold met (memberCount >= ~15 or ~50)
+  - Show modal confirmation: "Upgrade [Group Name] to [Target Stage]?"
+  - Call `apiClient.groups.upgradeStage({ groupId, targetStage })`
+  - Handle success: show toast, invalidate group query cache
+  - Handle errors: display error message (e.g., threshold not met)
 
-- [ ] **T037 [P]** Create `StageUpgradeButton.tsx` component in `client/src/components/groups/`
-  - Displays upgrade button when member count >= Dunbar threshold
-  - Shows threshold progress: "15 / ~15 (eligible for Group)" or "50 / ~50 (eligible for Graduated)"
-  - Calls `apiClient.groups.upgradeStage({ groupId, targetStage })`
-  - Uses TanStack Mutation with optimistic updates
+- [ ] **T036** [P] Create `CreateChildTheme` component in `client/src/components/communities/CreateChildTheme.tsx`
+  - Form fields: name (required, maxLength: 200), description (optional, maxLength: 2000)
+  - Visible only for Graduated-stage groups (hide for Theme/Community)
+  - Call `apiClient.groups.createChild({ parentId, name, description })`
+  - Handle success: navigate to new child group detail page
+  - Handle errors: display validation errors (e.g., parent not Graduated)
 
-- [ ] **T038 [P]** Create `CreateChildTheme.tsx` component in `client/src/components/groups/`
-  - Form for creating child theme (name, description, feedMix)
-  - Only visible when current group.stage === 'graduated'
-  - Calls `apiClient.groups.createChild({ parentId, ...input })`
-  - Invalidates children query on success
+- [ ] **T037** [P] Create `ParentLink` component in `client/src/components/communities/ParentLink.tsx`
+  - Display breadcrumb: `[Parent Name] > [Current Group Name]`
+  - Clickable parent name → navigate to parent group detail page
+  - Visible only for Theme groups with `parentGroup` field
+  - Handle null parent gracefully (no link displayed)
 
-- [ ] **T039 [P]** Create `StageDowngradeButton.tsx` component in `client/src/components/groups/`
-  - Allows downgrading Graduated→Community→Theme
-  - Shows warning: "Downgrading will disable child creation" (for Graduated→Community)
-  - Calls `apiClient.groups.downgradeStage({ groupId, targetStage })`
-  - Uses TanStack Mutation
-
-- [ ] **T040 [P]** Update `CommunityDetail.tsx` to display hierarchy info
-  - Integrates `GroupHierarchy` component
-  - Shows parent link if `group.parentGroup` exists
-  - Shows children list if `group.stage === 'graduated'`
-  - File: `client/src/components/groups/CommunityDetail.tsx`
+- [ ] **T038** [P] Create `InheritedModeration` indicator in `client/src/components/moderation/InheritedModeration.tsx`
+  - Display "Moderated by: [Parent Name] (inherited)" for Theme groups
+  - Display "Independent moderation" for Community/Graduated groups
+  - Show parent link for Theme groups (clickable → navigate to parent)
 
 ---
 
 ## Phase 3.10: Frontend Routes
 
-### Hierarchy Routes (client/src/routes/groups/)
+- [ ] **T039** Add children list route in `client/src/routes/communities/$id/children.tsx`
+  - Use TanStack Router file-based routing
+  - Fetch children: `useQuery(['group', groupId, 'children'], () => apiClient.groups.listChildren({ parentId: groupId }))`
+  - Display `GroupHierarchy` component with children list
+  - Handle empty state: "No child themes yet" with "Create Child Theme" button
 
-- [ ] **T041 [P]** Create `$id.children.tsx` route in `client/src/routes/groups/`
-  - Displays children list for Graduated group
-  - Uses TanStack Query `useQuery(['group', id, 'children'])`
-  - Filterable/sortable table using TanStack Table
-  - Breadcrumb: "Communities > [Parent Name] > Child Themes"
-
-- [ ] **T042 [P]** Update group detail route to show parent navigation in `client/src/routes/groups/$id.tsx`
-  - Adds "Part of: [Parent Name]" link if `parentGroup` exists
-  - Calls `apiClient.groups.getParent({ childId })` to fetch parent
-  - Updates breadcrumb: "Communities > [Parent Name] > [Current Name]"
+- [ ] **T040** Extend group detail page with hierarchy UI in `client/src/routes/communities/$id/index.tsx`
+  - Add "Child Themes" section (visible only for Graduated groups with children)
+  - Add `ParentLink` component (visible only for Theme groups with parent)
+  - Add `StageUpgradeButton` component (visible when threshold met)
+  - Add `CreateChildTheme` button (visible only for Graduated groups)
+  - Display `InheritedModeration` indicator (visible for Theme groups)
 
 ---
 
 ## Phase 3.11: Frontend API Integration
 
-### API Client Extensions (client/src/lib/api.ts)
+- [ ] **T041** Add hierarchy API methods in `client/src/lib/api.ts`
+  - Add `createChild(parentId, name, description?, feedMix?)` → returns GroupResponse
+  - Add `upgradeStage(groupId, targetStage)` → returns GroupResponse
+  - Add `downgradeStage(groupId, targetStage)` → returns GroupResponse
+  - Add `listChildren(parentId, limit?, cursor?)` → returns ListChildrenResponse
+  - Add `getParent(childId)` → returns GroupResponse | null
+  - Extend `deleteGroup(groupId)` with error handling for 409 Conflict (children exist)
 
-- [ ] **T043** Add hierarchy API methods to `client/src/lib/api.ts`
-  - Type-safe wrappers for oRPC hierarchy endpoints:
-    - `createChild(parentId, input)`
-    - `upgradeStage(groupId, targetStage)`
-    - `downgradeStage(groupId, targetStage)`
-    - `listChildren(parentId, limit, cursor)`
-    - `getParent(childId)`
-  - Uses `apiClient.groups.*` with TypeScript inference from `@atrarium/contracts`
+- [ ] **T042** Add TanStack Query hooks for hierarchy in `client/src/lib/hooks/useGroupHierarchy.ts`
+  - Add `useChildren(groupId)` hook (uses `useQuery(['group', groupId, 'children'])`)
+  - Add `useParent(groupId)` hook (uses `useQuery(['group', groupId, 'parent'])`)
+  - Add `useUpgradeStage()` mutation (invalidates group query on success)
+  - Add `useDowngradeStage()` mutation (invalidates group query on success)
+  - Add `useCreateChild()` mutation (invalidates parent's children query on success)
 
 ---
 
 ## Phase 3.12: Integration Tests
 
-### End-to-End Hierarchy Flows (server/tests/integration/)
+- [ ] **T043** [P] Integration test: Graduated creates Theme child in `server/tests/integration/hierarchy/create-child-flow.test.ts`
+  - Setup: Create Graduated group (50 members)
+  - Action: Call createChild API
+  - Verify: Child created with stage='theme', parentGroup AT-URI set
+  - Verify: Parent's children list includes new child
+  - Verify: Durable Objects cache updated (parent: and children: keys)
 
-- [ ] **T044 [P]** Integration test: Create Theme → Upgrade → Create children in `server/tests/integration/hierarchy/graduated-parent-flow.test.ts`
-  - Alice creates Theme "Design Patterns" (0 members)
-  - Add 15 members → upgrade to Group
-  - Add 35 more members (50 total) → upgrade to Graduated
-  - Create 3 child themes ("UI", "API", "Database")
-  - Verify all children have stage='theme' and parentGroup=parent AT-URI
+- [ ] **T044** [P] Integration test: Theme → Community → Graduated progression in `server/tests/integration/hierarchy/stage-progression-flow.test.ts`
+  - Setup: Create Theme group (1 member)
+  - Action: Add 14 members → upgrade to Community (memberCount = 15)
+  - Action: Add 35 members → upgrade to Graduated (memberCount = 50)
+  - Verify: Each upgrade validates member count thresholds
+  - Verify: PDS records updated with new stage at each step
 
-- [ ] **T045 [P]** Integration test: Moderation inheritance (Theme uses parent's) in `server/tests/integration/hierarchy/moderation-inheritance.test.ts`
-  - Alice (owner of Graduated parent) moderates post in child Theme
-  - Bob (member of child Theme) cannot moderate
-  - Verify Alice can hide/unhide posts in child despite not being child owner
+- [ ] **T045** [P] Integration test: Moderation inheritance in `server/tests/integration/hierarchy/moderation-inheritance-flow.test.ts`
+  - Setup: Create Graduated parent + Theme child
+  - Action: Parent owner moderates post in child theme
+  - Verify: Moderation succeeds (inherited moderation rights)
+  - Action: Child Theme upgrades to Community (independent moderation)
+  - Verify: Parent owner can no longer moderate child posts
 
-- [ ] **T046 [P]** Integration test: Deletion blocking in `server/tests/integration/hierarchy/deletion-blocking.test.ts`
-  - Create Graduated parent with 2 child themes
-  - Attempt to delete parent → 409 Conflict
-  - Delete both children → deletion succeeds
-  - Verify parent deleted from PDS and Durable Objects
+- [ ] **T046** [P] Integration test: Deletion blocking in `server/tests/integration/hierarchy/deletion-blocking-flow.test.ts`
+  - Setup: Create Graduated parent + 3 Theme children
+  - Action: Attempt to delete parent
+  - Verify: 409 Conflict error (includes child names)
+  - Action: Delete all children
+  - Action: Delete parent
+  - Verify: Deletion succeeds (no children remaining)
 
-- [ ] **T047 [P]** Integration test: Stage downgrade with children in `server/tests/integration/hierarchy/downgrade-with-children.test.ts`
-  - Create Graduated parent with children
-  - Downgrade to Group → success
-  - Verify children still exist but parent cannot create new children
-  - Verify parentGroup reference remains (immutable)
-
-- [ ] **T048 [P]** Integration test: Feed aggregation (parent shows child posts) in `server/tests/integration/hierarchy/feed-aggregation.test.ts`
-  - Bob posts to child Theme "UI Patterns"
-  - Query parent Graduated feed → includes Bob's post
-  - Verify post tagged with child hashtag but appears in parent feed
-
----
-
-## Phase 3.13: Unit Tests
-
-### Stage Validation Logic (server/tests/unit/)
-
-- [ ] **T049 [P]** Unit test: Dunbar threshold validation in `server/tests/unit/stage-validation.test.ts`
-  - Theme with 14 members → cannot upgrade to Group
-  - Theme with 15 members → can upgrade to Group
-  - Group with 49 members → cannot upgrade to Graduated
-  - Group with 50 members → can upgrade to Graduated
-
-- [ ] **T050 [P]** Unit test: Stage transition matrix in `server/tests/unit/stage-validation.test.ts`
-  - Theme→Community (valid), Theme→Graduated (invalid)
-  - Community→Graduated (valid), Group→Theme (valid downgrade)
-  - Graduated→Community (valid), Graduated→Theme (valid downgrade)
-
-- [ ] **T051 [P]** Unit test: Parent-child stage rules in `server/tests/unit/stage-validation.test.ts`
-  - Only Graduated can be parent (Group as parent → invalid)
-  - Only Theme can have parent (Group with parent → invalid)
-  - Group cannot have or be parent
+- [ ] **T047** [P] Integration test: Feed aggregation in `server/tests/integration/hierarchy/feed-aggregation-flow.test.ts`
+  - Setup: Create Graduated parent + 2 Theme children
+  - Action: Post to child theme A, child theme B, and parent
+  - Verify: Parent feed includes posts from: self + child A + child B (aggregated)
+  - Verify: Child feeds only include own posts (no aggregation at child level)
 
 ---
 
-## Phase 3.14: Frontend Component Tests
+## Phase 3.13: Frontend Component Tests
 
-### Hierarchy UI Tests (client/tests/components/)
+- [ ] **T048** [P] Component test: `GroupHierarchy` rendering in `client/tests/components/GroupHierarchy.test.tsx`
+  - Setup: Mock parent group with 3 children (via MSW)
+  - Render: `<GroupHierarchy groupId="parent123" />`
+  - Verify: Parent and children displayed in tree view
+  - Verify: Clickable group names navigate correctly
 
-- [ ] **T052 [P]** Component test: `GroupHierarchy.tsx` in `client/tests/components/hierarchy.test.tsx`
-  - Renders parent link for child theme
-  - Renders children list for Graduated parent
-  - Navigates to parent/child on click
+- [ ] **T049** [P] Component test: `StageUpgradeButton` behavior in `client/tests/components/StageUpgradeButton.test.tsx`
+  - Setup: Mock group with memberCount = 15 (eligible for Community)
+  - Render: `<StageUpgradeButton group={mockGroup} />`
+  - Verify: Upgrade button visible and enabled
+  - Action: Click button → modal opens → confirm upgrade
+  - Verify: API call made with correct targetStage
 
-- [ ] **T053 [P]** Component test: `StageUpgradeButton.tsx` in `client/tests/components/stage-upgrade.test.tsx`
-  - Button hidden when memberCount < threshold
-  - Button visible when memberCount >= threshold
-  - Calls `upgradeStage` API on click
-
-- [ ] **T054 [P]** Component test: `CreateChildTheme.tsx` in `client/tests/components/create-child.test.tsx`
-  - Form only visible when group.stage === 'graduated'
-  - Validates input (name required)
-  - Calls `createChild` API on submit
-
----
-
-## Phase 3.15: Quickstart Validation
-
-### Manual Testing Scenario (based on quickstart.md)
-
-- [ ] **T055** Run quickstart.md validation end-to-end
-  - Start dev environment (`./start-dev.sh all`)
-  - Load test data (`./scripts/load-test-data.sh`)
-  - Execute all 10 quickstart steps (create, upgrade, children, moderation, deletion)
-  - Verify all acceptance criteria from spec.md passed
-  - Document any deviations in `specs/017-1-1/quickstart-results.md`
+- [ ] **T050** [P] Component test: `CreateChildTheme` form in `client/tests/components/CreateChildTheme.test.tsx`
+  - Setup: Mock Graduated parent group
+  - Render: `<CreateChildTheme parentId="graduated123" />`
+  - Action: Fill form (name, description) → submit
+  - Verify: API call made with correct input
+  - Verify: Success toast displayed, navigation to child detail page
 
 ---
 
-## Phase 3.16: Polish & Documentation
+## Phase 3.14: E2E Tests (Playwright)
 
-- [ ] **T056 [P]** Run Biome linting and fix all issues (`pnpm lint:fix`)
-- [ ] **T057 [P]** Run Biome formatting and fix all issues (`pnpm format`)
-- [ ] **T058 [P]** Run TypeScript type checks and fix all errors (`pnpm -r typecheck`)
-- [ ] **T059 [P]** Update `CHANGELOG.md` with hierarchy feature entry
-- [ ] **T060** Final validation: Run all tests (`pnpm -r test`)
-  - Server contract tests (T006-T011)
-  - Server integration tests (T044-T048)
-  - Server unit tests (T049-T051)
-  - Client component tests (T052-T054)
-- [ ] **T061** Performance validation: Verify <200ms p95 API response time for hierarchy endpoints
-- [ ] **T062** Update `specs/017-1-1/plan.md` Progress Tracking → mark Phase 3-5 complete
+- [ ] **T051** [P] E2E test: Complete quickstart scenario in `client/tests/e2e/hierarchy-quickstart.spec.ts`
+  - Follow all steps from `specs/017-1-1/quickstart.md`
+  - Step 1-5: Create Theme → upgrade to Community → upgrade to Graduated
+  - Step 6-8: Create 3 child themes, browse hierarchy, test moderation inheritance
+  - Step 9: Test deletion blocking
+  - Verify: All acceptance criteria from spec.md met
+
+---
+
+## Phase 3.15: Polish & Validation
+
+- [ ] **T052** [P] Add unit tests for stage validation in `server/tests/unit/stage-validation.test.ts`
+  - Test: `validateStageUpgrade()` with various member counts
+  - Test: `validateStageDowngrade()` with all stage combinations
+  - Test: `validateParentChild()` with invalid stage combinations (e.g., Community → Theme)
+  - Test: `validateHierarchyDepth()` rejects grandchildren
+
+- [ ] **T053** [P] Add unit tests for Dunbar thresholds in `server/tests/unit/dunbar-thresholds.test.ts`
+  - Test: Theme → Community requires memberCount >= 15
+  - Test: Community → Graduated requires memberCount >= 50
+  - Test: Threshold validation edge cases (memberCount = 14 vs 15, 49 vs 50)
+
+- [ ] **T054** Performance test: Hierarchy queries <10ms in `server/tests/performance/hierarchy-query.test.ts`
+  - Test: `listChildren()` with 10 children completes in <10ms (Durable Objects cache)
+  - Test: `getParent()` completes in <5ms (cached parent AT-URI)
+  - Test: Feed aggregation (parent + 5 children) completes in <50ms
+
+- [ ] **T055** Update API documentation in `server/README.md` or `server/API.md`
+  - Document 6 new hierarchy endpoints (createChild, upgradeStage, downgradeStage, listChildren, getParent, delete-with-validation)
+  - Add examples for each endpoint (request/response)
+  - Document Dunbar thresholds (~15, ~50)
+  - Document hierarchy constraints (1-level, Graduated→Theme only)
+
+- [ ] **T056** Update Dashboard documentation in `client/README.md`
+  - Document new hierarchy UI components (GroupHierarchy, StageUpgradeButton, CreateChildTheme)
+  - Add screenshots of hierarchy views
+  - Document stage progression workflow (Theme → Community → Graduated)
+  - Document moderation inheritance behavior
+
+- [ ] **T057** Run all tests and fix any failures
+  - Run: `pnpm -r test` (all workspace tests)
+  - Fix: Any test failures in contract, integration, unit tests
+  - Verify: E2E tests pass (Playwright)
+
+- [ ] **T058** Run Biome linting/formatting and fix all issues (Constitution Principle 7)
+  - Run: `pnpm lint` (check linting issues)
+  - Run: `pnpm format` (auto-fix formatting)
+  - Fix: Any remaining linting errors manually
+
+- [ ] **T059** Run TypeScript type checking and fix all errors (Constitution Principle 7)
+  - Run: `pnpm -r typecheck` (all workspaces)
+  - Fix: Type errors in server/, client/, shared/contracts/
+  - Note: Generated code type errors are allowed per Constitution v1.4.0
+
+- [ ] **T060** Execute quickstart validation from `specs/017-1-1/quickstart.md`
+  - Follow all 10 steps in quickstart.md
+  - Verify: All acceptance criteria met
+  - Document: Any deviations or issues found
+
+- [ ] **T061** Performance validation: API response times <200ms p95
+  - Test: Hierarchy endpoints under load (50 concurrent requests)
+  - Verify: p95 response time <200ms for all endpoints
+  - Verify: Durable Objects read latency <10ms
+
+- [ ] **T062** Final Constitution compliance check
+  - Verify: No new databases added (Principle 8 - PDS + Durable Objects only)
+  - Verify: All features fully implemented (Principle 10 - no MVP deferrals)
+  - Verify: Pre-commit hooks pass (Principle 7 - linting, formatting, type checking)
+  - Verify: All changes committed (Principle 9 - no partial merges)
 
 ---
 
 ## Dependencies
 
-**Setup Phase (T001-T005)**:
-- Must complete before all other tasks
+### Phase Dependencies
+1. **Setup (T001-T005)** → Blocks all other phases
+2. **Contract Tests (T006-T011)** → MUST complete and FAIL before implementation
+3. **Backend Schema (T012-T014)** → Blocks PDS Service (T015-T020), Durable Objects (T021-T023)
+4. **PDS Service (T015-T020)** → Blocks API Routes (T026-T031)
+5. **Durable Objects (T021-T023)** → Blocks API Routes (T026-T031), Firehose (T024-T025)
+6. **Firehose (T024-T025)** → Blocks Integration Tests (T043-T047)
+7. **API Routes (T026-T031)** → Blocks oRPC Contracts (T032-T033), Integration Tests (T043-T047)
+8. **oRPC Contracts (T032-T033)** → Blocks Frontend API (T041-T042)
+9. **Frontend Components (T034-T038)** → Blocks Frontend Routes (T039-T040), Component Tests (T048-T050)
+10. **Frontend Routes (T039-T040)** → Blocks E2E Tests (T051)
+11. **All Implementation (T012-T042)** → Blocks Polish (T052-T062)
 
-**Contract Tests (T006-T011)**:
-- Must complete before implementation tasks (T012-T043)
-- Can run in parallel [P] (different test files)
-
-**Backend Schema (T012-T014)**:
-- Blocks: T015-T020 (PDS methods depend on validation schemas)
-- Can run in parallel [P] (same file, but logically independent)
-
-**PDS Service (T015-T020)**:
-- Depends on: T012-T014 (validation schemas)
-- Blocks: T028-T033 (API handlers depend on PDS methods)
-- Sequential (same file: atproto.ts)
-
-**Durable Objects (T021-T025)**:
-- Depends on: T012-T014 (validation schemas)
-- Blocks: T028-T033 (API handlers use DO RPC methods)
-- Sequential (same file: group-feed-generator.ts)
-
-**Firehose Processor (T026-T027)**:
-- Depends on: T012-T014 (validation logic)
-- Blocks: T044-T048 (integration tests rely on Firehose indexing)
-- Sequential (same file: firehose-processor.ts)
-
-**API Handlers (T028-T033)**:
-- Depends on: T015-T020 (PDS methods), T021-T025 (DO methods)
-- Sequential (same file: groups.ts)
-
-**oRPC Contracts (T034-T035)**:
-- Can run in parallel with backend implementation [P]
-- Blocks: T043 (frontend API client needs types)
-
-**Frontend Components (T036-T040)**:
-- Depends on: T043 (API client integration)
-- Can run in parallel [P] (different component files)
-
-**Frontend Routes (T041-T042)**:
-- Depends on: T036-T040 (hierarchy components)
-- Can run in parallel [P] (different route files)
-
-**Integration Tests (T044-T048)**:
-- Depends on: Full backend + frontend implementation (T028-T043)
-- Can run in parallel [P] (different test files)
-
-**Unit Tests (T049-T054)**:
-- Can run in parallel with implementation [P]
-- Tests individual functions/components
-
-**Polish (T056-T062)**:
-- Depends on: All implementation + tests complete
-- T056-T058 can run in parallel [P]
-- T060-T062 sequential (validation depends on code quality)
+### Specific Task Dependencies
+- T012, T013, T014 block T015-T020 (schemas before PDS methods)
+- T015-T020 block T026-T031 (PDS methods before API routes)
+- T021-T023 block T026-T031 (Durable Objects before API routes)
+- T026-T031 block T032-T033 (API routes before oRPC contracts)
+- T032-T033 block T041-T042 (oRPC contracts before frontend API)
+- T034-T038 block T039-T040 (components before routes)
+- T039-T040 block T051 (routes before E2E tests)
 
 ---
 
 ## Parallel Execution Examples
 
-### Example 1: Contract Tests (after T005)
+### Contract Tests (Phase 3.2)
+All contract tests can run in parallel (different files, no dependencies):
+
 ```bash
-# Launch T006-T011 in parallel (6 independent test files)
-Task: "Contract test groups.createChild in server/tests/contract/hierarchy/create-child.test.ts"
-Task: "Contract test groups.upgradeStage in server/tests/contract/hierarchy/upgrade-stage.test.ts"
-Task: "Contract test groups.downgradeStage in server/tests/contract/hierarchy/downgrade-stage.test.ts"
-Task: "Contract test groups.listChildren in server/tests/contract/hierarchy/list-children.test.ts"
-Task: "Contract test groups.getParent in server/tests/contract/hierarchy/get-parent.test.ts"
-Task: "Contract test groups.delete blocking in server/tests/contract/hierarchy/delete-blocking.test.ts"
+# Launch T006-T011 together (6 contract tests)
+pnpm --filter server exec vitest run tests/contract/hierarchy/create-child.test.ts &
+pnpm --filter server exec vitest run tests/contract/hierarchy/upgrade-stage.test.ts &
+pnpm --filter server exec vitest run tests/contract/hierarchy/downgrade-stage.test.ts &
+pnpm --filter server exec vitest run tests/contract/hierarchy/list-children.test.ts &
+pnpm --filter server exec vitest run tests/contract/hierarchy/get-parent.test.ts &
+pnpm --filter server exec vitest run tests/contract/hierarchy/delete-with-children.test.ts &
+wait
 ```
 
-### Example 2: Frontend Components (after T043)
+### Backend Schema (Phase 3.3)
+Schema tasks can run in parallel (different files):
+
 ```bash
-# Launch T036-T040 in parallel (5 independent component files)
-Task: "Create GroupHierarchy.tsx in client/src/components/groups/"
-Task: "Create StageUpgradeButton.tsx in client/src/components/groups/"
-Task: "Create CreateChildTheme.tsx in client/src/components/groups/"
-Task: "Create StageDowngradeButton.tsx in client/src/components/groups/"
-Task: "Update CommunityDetail.tsx in client/src/components/groups/"
+# Launch T012-T014 together (3 schema tasks)
+# Edit server/src/schemas/validation.ts
+# Edit server/src/schemas/lexicon.ts
+# Edit server/src/types.ts
+# (Execute in parallel using separate terminal tabs or Task agents)
 ```
 
-### Example 3: Integration Tests (after T043)
+### Frontend Components (Phase 3.9)
+Component tasks can run in parallel (different files):
+
 ```bash
-# Launch T044-T048 in parallel (5 independent test scenarios)
-Task: "Integration test Graduated parent flow in server/tests/integration/hierarchy/graduated-parent-flow.test.ts"
-Task: "Integration test moderation inheritance in server/tests/integration/hierarchy/moderation-inheritance.test.ts"
-Task: "Integration test deletion blocking in server/tests/integration/hierarchy/deletion-blocking.test.ts"
-Task: "Integration test downgrade with children in server/tests/integration/hierarchy/downgrade-with-children.test.ts"
-Task: "Integration test feed aggregation in server/tests/integration/hierarchy/feed-aggregation.test.ts"
+# Launch T034-T038 together (5 component tasks)
+# Create client/src/components/communities/GroupHierarchy.tsx
+# Create client/src/components/communities/StageUpgradeButton.tsx
+# Create client/src/components/communities/CreateChildTheme.tsx
+# Create client/src/components/communities/ParentLink.tsx
+# Create client/src/components/moderation/InheritedModeration.tsx
+# (Execute in parallel using separate Task agents)
+```
+
+### Integration Tests (Phase 3.12)
+Integration tests can run in parallel (different test files):
+
+```bash
+# Launch T043-T047 together (5 integration tests)
+pnpm --filter server exec vitest run tests/integration/hierarchy/create-child-flow.test.ts &
+pnpm --filter server exec vitest run tests/integration/hierarchy/stage-progression-flow.test.ts &
+pnpm --filter server exec vitest run tests/integration/hierarchy/moderation-inheritance-flow.test.ts &
+pnpm --filter server exec vitest run tests/integration/hierarchy/deletion-blocking-flow.test.ts &
+pnpm --filter server exec vitest run tests/integration/hierarchy/feed-aggregation-flow.test.ts &
+wait
 ```
 
 ---
 
 ## Notes
 
-- **[P] Marker**: Different files, no dependencies → safe to parallelize
-- **TDD Critical**: Tests (T006-T011) MUST fail before implementation starts
-- **Constitution Principle 8**: All storage via PDS + Durable Objects (no new databases)
-- **Commit Frequently**: After each task completion
-- **Avoid**: Same file conflicts (e.g., multiple tasks editing `groups.ts` simultaneously)
-
----
-
-## Validation Checklist
-
-- [x] All contracts have corresponding tests (T006-T011 cover 6 endpoints)
-- [x] All entities verified (reuse existing Group, Membership, Stage schemas)
-- [x] All tests come before implementation (Phase 3.2 before 3.3)
-- [x] Parallel tasks truly independent ([P] tasks in different files)
-- [x] Each task specifies exact file path (e.g., `server/src/routes/groups.ts`)
-- [x] No same-file conflicts (PDS methods sequential in atproto.ts, API handlers sequential in groups.ts)
+- **[P] Marker**: Tasks marked with [P] can run in parallel (different files, no dependencies)
+- **TDD Enforcement**: Contract tests (T006-T011) MUST be written and failing before implementation begins
+- **Constitution Compliance**:
+  - Principle 8: All persistent storage uses PDS + Lexicon schemas (no separate databases)
+  - Principle 10: Complete implementation (no MVP deferrals, no "Phase 2" placeholders)
+  - Principle 7: Biome linting, formatting, and TypeScript type checking enforced
+- **Commit Strategy**: Commit after completing each task (atomic changes)
+- **Error Handling**: All API endpoints must implement full error handling (400, 403, 404, 409 errors)
+- **Validation**: All input validation uses Zod schemas (runtime type safety)
 
 ---
 
 ## Completion Criteria (Constitution Principle 10)
 
-**Each task MUST be fully completed**:
-- ✅ All functionality in task description implemented (no partial/MVP)
-- ✅ All error handling implemented (no TODO comments)
-- ✅ All validation logic implemented (no deferrals)
-- ✅ All UI components fully functional (no placeholders)
-- ✅ All API endpoints implemented and tested (no mocks)
-- ✅ No "Phase 2" or "Future Enhancement" comments
-- ✅ Integration tests passing (not skipped)
+Each task MUST be fully completed before being marked as done:
 
-**Acceptable Deferrals** (tracked as separate tasks):
-- Performance optimizations (if core functionality works)
-- Non-critical edge cases (explicitly documented)
-- Features scoped out of spec.md
+✅ **Required for Completion**:
+- All functionality specified in task description implemented (not partial/MVP)
+- All error handling paths implemented (400, 403, 404, 409 responses)
+- All validation logic implemented (Zod schemas, stage rules, Dunbar thresholds)
+- All UI components created and integrated (no placeholders)
+- All API endpoints implemented and tested (no mocked responses)
+- Integration tests passing for completed tasks
 
-**Prohibited Patterns**:
-- ❌ "MVP implementation - full version later"
-- ❌ "TODO: Complete this functionality"
-- ❌ "Placeholder UI - design pending"
-- ❌ Marking task complete with skipped/mocked tests
+❌ **Prohibited Patterns**:
+- "MVP implementation - full version in Phase 2"
+- "TODO: Complete this functionality later"
+- "Placeholder UI - design pending"
+- Marking task complete while tests are skipped/mocked
+- Using `@ts-ignore` or `any` types to bypass validation
+
+✅ **Acceptable Deferrals** (must be tracked as separate tasks):
+- Performance optimizations beyond <200ms p95 target
+- Non-critical edge cases (documented in task notes)
+- Features explicitly scoped out of spec.md
 
 ---
 
-**Total Tasks**: 62 (T001-T062)
-**Estimated Parallel Groups**: 10 (Setup, Contract Tests, Components, Routes, Integration Tests, Unit Tests, etc.)
-**Critical Path**: Setup → Contract Tests → Backend Schema → PDS/DO/Firehose → API Handlers → Frontend → Integration → Polish
+## Validation Checklist
 
-**Ready for Execution** - Proceed with T001 or `/implement` command.
+Before marking tasks.md as complete, verify:
+
+- [x] All 6 contract endpoints have corresponding tests (T006-T011)
+- [x] All 3 entities (Group, Membership, Stage) have schema tasks (T012-T014)
+- [x] All 6 PDS methods have implementation tasks (T015-T020)
+- [x] All 6 API endpoints have handler tasks (T026-T031)
+- [x] All 5 frontend components have creation tasks (T034-T038)
+- [x] All 5 integration test scenarios have test tasks (T043-T047)
+- [x] All tests come before implementation (Phase 3.2 before Phase 3.3+)
+- [x] Parallel tasks are truly independent (different files, no shared state)
+- [x] Each task specifies exact file path
+- [x] No task modifies same file as another [P] task
+- [x] Constitution Principle 8 verified (PDS-first, no new databases)
+- [x] Constitution Principle 10 verified (complete implementation, no MVP deferrals)
+
+---
+
+**Tasks Ready for Execution** - Total: 62 tasks (5 setup + 6 contract tests + 51 implementation/polish)
