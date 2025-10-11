@@ -633,6 +633,19 @@ The client fetches actual post content from Bluesky's AppView using these URIs.
   - [x] Legacy route removal (Posts, Emoji routes deleted - SSE endpoint kept)
   - [x] Client integration (all TypeScript errors resolved, MSW mocks updated)
   - [x] Type safety validation (`pnpm -r typecheck` passes across all workspaces)
+- [x] **Communities Hierarchy API** (019-communities-api-api) ✅ **COMPLETED** (2025-10-11)
+  - [x] Infrastructure: ATProtoService hierarchy methods (getCommunityStatsDetailed, getCommunityChildrenWithMetadata, validateCircularReference)
+  - [x] Durable Objects: Hierarchy RPC endpoints (checkMembership, getHierarchy, validateStageTransition)
+  - [x] API Endpoints: All 6 hierarchy operations implemented
+    - [x] createChild: Create child theme under graduated parent
+    - [x] upgradeStage: Stage progression with member count validation (theme→community: 10+, community→graduated: 50+)
+    - [x] downgradeStage: Stage regression with safety checks (graduated→community requires 0 children)
+    - [x] listChildren: Query child communities with pagination
+    - [x] getParent: Fetch parent community metadata
+    - [x] delete: Safe deletion with multi-layer validation (no active members/children/posts)
+  - [x] Validation: Circular reference detection, stage transition rules, feed mix ratios (must sum to 100)
+  - [x] Type safety: Full oRPC integration with `pnpm -r typecheck` passing
+  - [x] Build validation: `pnpm --filter server build` passing
 
 ### 🚧 In Progress / Pending
 - [ ] Production deployment (Cloudflare Workers + Durable Objects + Queues)

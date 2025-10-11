@@ -144,6 +144,9 @@ export class CommunityFeedGenerator extends DurableObject {
       case '/hierarchy/checkModeration':
         return this.handleCheckModeration(request);
 
+      case '/hierarchy/validateStageTransition':
+        return this.handleValidateStageTransition(request);
+
       default:
         return new Response('Not Found', { status: 404 });
     }
@@ -1225,5 +1228,142 @@ export class CommunityFeedGenerator extends DurableObject {
     }
 
     return false;
+  }
+
+  // ============================================================================
+  // Communities Hierarchy API Methods (019-communities-api-api, T004-T006)
+  // ============================================================================
+
+  /**
+   * T006: Validate stage transition with member count checks (019-communities-api-api)
+   * Stage upgrade/downgrade validation with member count requirements
+   * @returns Validation result with error message if invalid
+   */
+  private async handleValidateStageTransition(request: Request): Promise<Response> {
+    try {
+      const body = (await request.json()) as {
+        currentStage: 'theme' | 'community' | 'graduated';
+        targetStage: 'theme' | 'community' | 'graduated';
+        memberCount: number;
+        childrenCount?: number;
+      };
+      const { currentStage, targetStage, memberCount, childrenCount } = body;
+
+      // Validate stage transitions
+      const validationResult = this.validateStageTransition(
+        currentStage,
+        targetStage,
+        memberCount,
+        childrenCount || 0
+      );
+
+      return Response.json(validationResult);
+    } catch (error) {
+      return Response.json(
+        {
+          error: 'InternalError',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        },
+        { status: 500 }
+      );
+    }
+  }
+
+  /**
+   * T006: Validate stage transition logic (019-communities-api-api)
+   * Rules:
+   * - theme → community: requires 10+ active members
+   * - community → graduated: requires 50+ active members
+   * - graduated → community: requires 0 children
+   * - Cannot skip stages (theme → graduated invalid)
+   * @returns Validation result
+   */
+  private validateStageTransition(
+    currentStage: 'theme' | 'community' | 'graduated',
+    targetStage: 'theme' | 'community' | 'graduated',
+    memberCount: number,
+    childrenCount: number
+  ): {
+    isValid: boolean;
+    error?: string;
+    requiredMembers?: number;
+  } {
+    // Same stage, no transition needed
+    if (currentStage === targetStage) {
+      return { isValid: true };
+    }
+
+    // Upgrade rules
+    if (
+      (currentStage === 'theme' && targetStage === 'community') ||
+      (currentStage === 'community' && targetStage === 'graduated')
+    ) {
+      // theme → community: requires 10+ members
+      if (currentStage === 'theme' && targetStage === 'community') {
+        if (memberCount < 10) {
+          return {
+            isValid: false,
+            error: `Community has ${memberCount} members, requires 10 for community stage`,
+            requiredMembers: 10,
+          };
+        }
+        return { isValid: true };
+      }
+
+      // community → graduated: requires 50+ members
+      if (currentStage === 'community' && targetStage === 'graduated') {
+        if (memberCount < 50) {
+          return {
+            isValid: false,
+            error: `Community has ${memberCount} members, requires 50 for graduated stage`,
+            requiredMembers: 50,
+          };
+        }
+        return { isValid: true };
+      }
+    }
+
+    // Downgrade rules
+    if (
+      (currentStage === 'community' && targetStage === 'theme') ||
+      (currentStage === 'graduated' && targetStage === 'community')
+    ) {
+      // graduated → community: requires 0 children
+      if (currentStage === 'graduated' && targetStage === 'community') {
+        if (childrenCount > 0) {
+          return {
+            isValid: false,
+            error: 'Cannot downgrade community with active children',
+          };
+        }
+        return { isValid: true };
+      }
+
+      // community → theme: always allowed (owner-initiated downgrade)
+      if (currentStage === 'community' && targetStage === 'theme') {
+        return { isValid: true };
+      }
+    }
+
+    // Skip stage validation (invalid transitions)
+    if (currentStage === 'theme' && targetStage === 'graduated') {
+      return {
+        isValid: false,
+        error: 'Cannot skip stages: theme → community → graduated',
+      };
+    }
+
+    if (currentStage === 'graduated' && targetStage === 'theme') {
+      return {
+        isValid: false,
+        error: 'Cannot skip stages: graduated → community → theme',
+      };
+    }
+
+    // Unknown transition
+    return {
+      isValid: false,
+      error: `Invalid stage transition: ${currentStage} → ${targetStage}`,
+    };
   }
 }

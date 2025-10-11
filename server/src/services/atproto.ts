@@ -871,6 +871,7 @@ export class ATProtoService {
     updates: Partial<{
       name: string;
       description: string;
+      stage: 'theme' | 'community' | 'graduated';
       accessType: 'open' | 'invite-only';
       moderators: string[];
       blocklist: string[];
@@ -1412,5 +1413,194 @@ export class ATProtoService {
       .filter((membership) => membership.community === groupAtUri && membership.active === true);
 
     return activeMembers.length;
+  }
+
+  // ============================================================================
+  // Communities Hierarchy API Methods (019-communities-api-api, T001-T003)
+  // ============================================================================
+
+  /**
+   * Get community statistics with detailed member counts (T001)
+   * Used for stage transition validation
+   * @param communityUri AT-URI of community config
+   * @returns Detailed member count statistics
+   */
+  async getCommunityStatsDetailed(communityUri: string): Promise<{
+    memberCount: number;
+    activeMemberCount: number;
+    pendingMemberCount: number;
+  }> {
+    // Validate community URI
+    validateATUri(communityUri);
+
+    // Parse community URI to extract owner DID
+    const uriParts = communityUri.replace('at://', '').split('/');
+    if (uriParts.length !== 3) {
+      throw new Error('Invalid AT-URI format');
+    }
+
+    const ownerDid = uriParts[0];
+
+    if (!ownerDid) {
+      throw new Error('Invalid community URI: missing DID');
+    }
+
+    const agent = await this.getAgent();
+
+    // Query all membership records (from owner's PDS and all members' PDSs)
+    // NOTE: In production, would need to query all members' PDSs or use indexer
+    // For now, query owner's PDS for memberships pointing to this community
+    const response = await agent.com.atproto.repo.listRecords({
+      repo: ownerDid,
+      collection: 'net.atrarium.group.membership',
+      limit: 100,
+    });
+
+    const memberships = response.data.records
+      .map((record) => validateMembershipRecord(record.value))
+      .filter((m) => m.community === communityUri);
+
+    // Count active members (status='active' AND active=true)
+    const activeMemberCount = memberships.filter((m) => m.status === 'active' && m.active).length;
+
+    // Count pending join requests (status='pending')
+    const pendingMemberCount = memberships.filter((m) => m.status === 'pending').length;
+
+    // Total member count (all active, excluding pending)
+    const memberCount = activeMemberCount;
+
+    return {
+      memberCount,
+      activeMemberCount,
+      pendingMemberCount,
+    };
+  }
+
+  /**
+   * Get community children with metadata (T002)
+   * Used for listChildren endpoint
+   * @param parentUri AT-URI of parent community
+   * @param options Query options (limit, cursor)
+   * @returns Array of child communities with metadata
+   */
+  async getCommunityChildrenWithMetadata(
+    parentUri: string,
+    options?: { limit?: number; cursor?: string }
+  ): Promise<{
+    children: Array<{
+      uri: string;
+      name: string;
+      stage: 'theme' | 'community' | 'graduated';
+      createdAt: string;
+    }>;
+    cursor?: string;
+  }> {
+    // Validate parent URI
+    validateATUri(parentUri);
+
+    const agent = await this.getAgent();
+
+    // Parse parent URI to extract owner DID
+    const uriParts = parentUri.replace('at://', '').split('/');
+    if (uriParts.length !== 3) {
+      throw new Error('Invalid AT-URI format');
+    }
+
+    const ownerDid = uriParts[0];
+
+    if (!ownerDid) {
+      throw new Error('Invalid parent URI: missing DID');
+    }
+
+    // Query PDS for community configs with parentCommunity = parentUri
+    const response = await agent.com.atproto.repo.listRecords({
+      repo: ownerDid,
+      collection: 'net.atrarium.group.config',
+      limit: options?.limit || 50,
+      cursor: options?.cursor,
+    });
+
+    // Filter records where parentCommunity matches parent URI
+    const children = response.data.records
+      .filter((record) => {
+        const config = validateCommunityConfig(record.value);
+        return config.parentCommunity === parentUri;
+      })
+      .map((record) => {
+        const config = validateCommunityConfig(record.value);
+        return {
+          uri: record.uri,
+          name: config.name,
+          stage: config.stage,
+          createdAt: config.createdAt,
+        };
+      })
+      // Sort by creation date (newest first)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    return {
+      children,
+      cursor: response.data.cursor,
+    };
+  }
+
+  /**
+   * Validate circular parent-child reference (T003)
+   * Prevents A→B→C→A invalid hierarchy
+   * @param childUri AT-URI of child community
+   * @param parentUri AT-URI of proposed parent
+   * @returns Validation result
+   */
+  async validateCircularReference(
+    childUri: string,
+    parentUri: string
+  ): Promise<{ isValid: boolean; error?: string }> {
+    // Validate URIs
+    validateATUri(childUri);
+    validateATUri(parentUri);
+
+    // If childUri === parentUri, circular reference
+    if (childUri === parentUri) {
+      return {
+        isValid: false,
+        error: 'Circular reference detected: child cannot be its own parent',
+      };
+    }
+
+    // Traverse parent hierarchy from parentUri up to 10 levels
+    // Check if childUri appears as ancestor
+    const visitedUris = new Set<string>();
+    let currentUri: string | null = parentUri;
+    let depth = 0;
+    const maxDepth = 10;
+
+    while (currentUri && depth < maxDepth) {
+      // Prevent infinite loops
+      if (visitedUris.has(currentUri)) {
+        return { isValid: false, error: 'Circular reference detected in parent hierarchy' };
+      }
+      visitedUris.add(currentUri);
+
+      // If currentUri === childUri, circular reference detected
+      if (currentUri === childUri) {
+        return {
+          isValid: false,
+          error: 'Circular reference detected: child cannot be ancestor of parent',
+        };
+      }
+
+      // Fetch parent config
+      try {
+        const config = await this.getCommunityConfig(currentUri);
+        currentUri = config.parentCommunity || null;
+        depth++;
+      } catch (_error) {
+        // Parent not found, stop traversal
+        break;
+      }
+    }
+
+    // No circular reference found
+    return { isValid: true };
   }
 }

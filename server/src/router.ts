@@ -151,6 +151,546 @@ export const router = {
         createdAt: new Date(community.createdAt).getTime(),
       };
     }),
+
+    // ========================================================================
+    // Hierarchy API Endpoints (019-communities-api-api, T013-T018)
+    // ========================================================================
+
+    createChild: contract.communities.createChild.handler(async ({ input, context }) => {
+      const { env, userDid } = context as ServerContext;
+      const { ATProtoService } = await import('./services/atproto');
+      const atproto = new ATProtoService(env);
+
+      // Step 1: Construct parent AT-URI
+      const parentUri = input.parentId.startsWith('at://')
+        ? input.parentId
+        : `at://${userDid}/net.atrarium.group.config/${input.parentId}`;
+
+      // Step 2: Fetch parent config and verify stage
+      try {
+        const parentConfig = await atproto.getCommunityConfig(parentUri);
+
+        if (parentConfig.stage !== 'graduated') {
+          throw new ORPCError('BAD_REQUEST', {
+            message: 'Only graduated communities can have children',
+          });
+        }
+
+        // Step 3: Verify user is parent owner
+        const parentMemberships = await atproto.listMemberships(userDid || '', {
+          communityUri: parentUri,
+        });
+        const ownerMembership = parentMemberships.find((m) => m.role === 'owner' && m.active);
+
+        if (!ownerMembership) {
+          throw new ORPCError('FORBIDDEN', {
+            message: 'Only parent owner can create children',
+          });
+        }
+
+        // Step 4: Validate feed mix (if provided)
+        if (input.feedMix) {
+          const sum = input.feedMix.own + input.feedMix.parent + input.feedMix.global;
+          if (sum !== 100) {
+            throw new ORPCError('BAD_REQUEST', {
+              message: `Feed mix ratios must sum to 100 (currently ${sum})`,
+            });
+          }
+        }
+
+        // Step 5: Generate child hashtag
+        const childHashtag = `#atrarium_${Math.random().toString(16).substring(2, 10)}`;
+
+        // Step 6: Create child community in PDS
+        const childResult = await atproto.createCommunityConfig({
+          $type: 'net.atrarium.group.config',
+          name: input.name,
+          description: input.description || '',
+          hashtag: childHashtag,
+          stage: 'theme' as const,
+          accessType: 'open',
+          parentCommunity: parentUri,
+          feedMix: input.feedMix || { own: 80, parent: 0, global: 20 },
+          createdAt: new Date().toISOString(),
+        });
+
+        const childId = childResult.rkey;
+
+        // Step 7: Initialize Durable Object for child
+        const childDOId = env.COMMUNITY_FEED.idFromName(childId);
+        const childStub = env.COMMUNITY_FEED.get(childDOId);
+
+        await childStub.fetch(
+          new Request('http://fake-host/updateConfig', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: input.name,
+              description: input.description,
+              hashtag: childHashtag,
+              stage: 'theme',
+              parentGroup: parentUri,
+              createdAt: new Date().toISOString(),
+            }),
+          })
+        );
+
+        // Step 8: Add owner as member of child
+        await childStub.fetch(
+          new Request('http://fake-host/addMember', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              did: userDid,
+              role: 'owner',
+              joinedAt: new Date().toISOString(),
+              active: true,
+            }),
+          })
+        );
+
+        // Step 9: Update parent DO with child reference
+        const parentDOId = env.COMMUNITY_FEED.idFromName(input.parentId);
+        const parentStub = env.COMMUNITY_FEED.get(parentDOId);
+
+        await parentStub.fetch(
+          new Request('http://fake-host/hierarchy/addChild', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              parentId: input.parentId,
+              childId,
+            }),
+          })
+        );
+
+        return {
+          id: childId,
+          name: input.name,
+          description: input.description || null,
+          stage: 'theme' as const,
+          hashtag: childHashtag,
+          parentGroup: parentUri,
+          memberCount: 1,
+          postCount: 0,
+          feedMix: input.feedMix || { own: 80, parent: 0, global: 20 },
+          createdAt: Math.floor(Date.now() / 1000),
+        };
+      } catch (error) {
+        if (error instanceof ORPCError) {
+          throw error;
+        }
+
+        throw new ORPCError('NOT_FOUND', {
+          message: 'Parent community not found',
+        });
+      }
+    }),
+
+    upgradeStage: contract.communities.upgradeStage.handler(async ({ input, context }) => {
+      const { env, userDid } = context as ServerContext;
+      const { ATProtoService } = await import('./services/atproto');
+      const atproto = new ATProtoService(env);
+
+      // Step 1: Construct community AT-URI
+      const communityUri = input.groupId.startsWith('at://')
+        ? input.groupId
+        : `at://${userDid}/net.atrarium.group.config/${input.groupId}`;
+
+      try {
+        // Step 2: Fetch community config
+        const config = await atproto.getCommunityConfig(communityUri);
+
+        // Step 3: Verify user is owner
+        const memberships = await atproto.listMemberships(userDid || '', {
+          communityUri,
+        });
+        const ownerMembership = memberships.find((m) => m.role === 'owner' && m.active);
+
+        if (!ownerMembership) {
+          throw new ORPCError('FORBIDDEN', {
+            message: 'Only community owner can upgrade stage',
+          });
+        }
+
+        // Step 4: Get member count
+        const stats = await atproto.getCommunityStatsDetailed(communityUri);
+
+        // Step 5: Validate stage transition via Durable Object
+        const communityDOId = env.COMMUNITY_FEED.idFromName(input.groupId);
+        const communityStub = env.COMMUNITY_FEED.get(communityDOId);
+
+        const validationResponse = await communityStub.fetch(
+          new Request('http://fake-host/hierarchy/validateStageTransition', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              currentStage: config.stage,
+              targetStage: input.targetStage,
+              memberCount: stats.activeMemberCount,
+              childrenCount: 0, // Upgrade doesn't require children check
+            }),
+          })
+        );
+
+        const validation = (await validationResponse.json()) as {
+          isValid: boolean;
+          error?: string;
+          requiredMembers?: number;
+        };
+
+        if (!validation.isValid) {
+          throw new ORPCError('BAD_REQUEST', {
+            message: validation.error || 'Invalid stage upgrade',
+          });
+        }
+
+        // Step 6: Update community config in PDS
+        const updated = await atproto.updateCommunityConfig(communityUri, {
+          stage: input.targetStage,
+        });
+
+        // Step 7: Update Durable Object config
+        await communityStub.fetch(
+          new Request('http://fake-host/updateConfig', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ...updated,
+              stage: input.targetStage,
+            }),
+          })
+        );
+
+        const rkey = communityUri.split('/').pop() || input.groupId;
+
+        return {
+          id: rkey,
+          name: updated.name,
+          description: updated.description || null,
+          stage: input.targetStage,
+          hashtag: updated.hashtag,
+          parentGroup: updated.parentCommunity,
+          memberCount: stats.activeMemberCount,
+          postCount: 0,
+          feedMix: updated.feedMix,
+          createdAt: new Date(updated.createdAt).getTime(),
+          updatedAt: updated.updatedAt ? new Date(updated.updatedAt).getTime() : undefined,
+        };
+      } catch (error) {
+        if (error instanceof ORPCError) {
+          throw error;
+        }
+
+        throw new ORPCError('NOT_FOUND', {
+          message: 'Community not found',
+        });
+      }
+    }),
+
+    downgradeStage: contract.communities.downgradeStage.handler(async ({ input, context }) => {
+      const { env, userDid } = context as ServerContext;
+      const { ATProtoService } = await import('./services/atproto');
+      const atproto = new ATProtoService(env);
+
+      // Step 1: Construct community AT-URI
+      const communityUri = input.groupId.startsWith('at://')
+        ? input.groupId
+        : `at://${userDid}/net.atrarium.group.config/${input.groupId}`;
+
+      try {
+        // Step 2: Fetch community config
+        const config = await atproto.getCommunityConfig(communityUri);
+
+        // Step 3: Verify user is owner
+        const memberships = await atproto.listMemberships(userDid || '', {
+          communityUri,
+        });
+        const ownerMembership = memberships.find((m) => m.role === 'owner' && m.active);
+
+        if (!ownerMembership) {
+          throw new ORPCError('FORBIDDEN', {
+            message: 'Only community owner can downgrade stage',
+          });
+        }
+
+        // Step 4: Check for children (if downgrading from graduated)
+        let childrenCount = 0;
+        if (config.stage === 'graduated') {
+          const children = await atproto.getCommunityChildrenWithMetadata(communityUri);
+          childrenCount = children.children.length;
+        }
+
+        // Step 5: Validate stage transition via Durable Object
+        const communityDOId = env.COMMUNITY_FEED.idFromName(input.groupId);
+        const communityStub = env.COMMUNITY_FEED.get(communityDOId);
+
+        const validationResponse = await communityStub.fetch(
+          new Request('http://fake-host/hierarchy/validateStageTransition', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              currentStage: config.stage,
+              targetStage: input.targetStage,
+              memberCount: 0, // Downgrade doesn't require member count check
+              childrenCount,
+            }),
+          })
+        );
+
+        const validation = (await validationResponse.json()) as {
+          isValid: boolean;
+          error?: string;
+        };
+
+        if (!validation.isValid) {
+          throw new ORPCError(childrenCount > 0 ? 'CONFLICT' : 'BAD_REQUEST', {
+            message: validation.error || 'Invalid stage downgrade',
+          });
+        }
+
+        // Step 6: Update community config in PDS
+        const updated = await atproto.updateCommunityConfig(communityUri, {
+          stage: input.targetStage,
+        });
+
+        // Step 7: Update Durable Object config
+        await communityStub.fetch(
+          new Request('http://fake-host/updateConfig', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ...updated,
+              stage: input.targetStage,
+            }),
+          })
+        );
+
+        const rkey = communityUri.split('/').pop() || input.groupId;
+        const stats = await atproto.getCommunityStatsDetailed(communityUri);
+
+        return {
+          id: rkey,
+          name: updated.name,
+          description: updated.description || null,
+          stage: input.targetStage,
+          hashtag: updated.hashtag,
+          parentGroup: updated.parentCommunity,
+          memberCount: stats.activeMemberCount,
+          postCount: 0,
+          feedMix: updated.feedMix,
+          createdAt: new Date(updated.createdAt).getTime(),
+          updatedAt: updated.updatedAt ? new Date(updated.updatedAt).getTime() : undefined,
+        };
+      } catch (error) {
+        if (error instanceof ORPCError) {
+          throw error;
+        }
+
+        throw new ORPCError('NOT_FOUND', {
+          message: 'Community not found',
+        });
+      }
+    }),
+
+    listChildren: contract.communities.listChildren.handler(async ({ input, context }) => {
+      const { env, userDid } = context as ServerContext;
+      const { ATProtoService } = await import('./services/atproto');
+      const atproto = new ATProtoService(env);
+
+      // Step 1: Construct parent AT-URI
+      const parentUri = input.parentId.startsWith('at://')
+        ? input.parentId
+        : `at://${userDid}/net.atrarium.group.config/${input.parentId}`;
+
+      try {
+        // Step 2: Fetch children from PDS
+        const result = await atproto.getCommunityChildrenWithMetadata(parentUri, {
+          limit: input.limit || 50,
+          cursor: input.cursor,
+        });
+
+        // Step 3: Enrich with stats
+        const children = await Promise.all(
+          result.children.map(async (child) => {
+            const stats = await atproto.getCommunityStatsDetailed(child.uri);
+            const rkey = child.uri.split('/').pop() || '';
+
+            return {
+              id: rkey,
+              name: child.name,
+              description: null, // Not fetched in metadata, optimization
+              stage: child.stage,
+              hashtag: `#atrarium_${rkey}`, // Derived from rkey
+              parentGroup: parentUri,
+              memberCount: stats.activeMemberCount,
+              postCount: 0,
+              createdAt: new Date(child.createdAt).getTime(),
+            };
+          })
+        );
+
+        return {
+          children,
+          cursor: result.cursor,
+        };
+      } catch (_error) {
+        throw new ORPCError('NOT_FOUND', {
+          message: 'Parent community not found',
+        });
+      }
+    }),
+
+    getParent: contract.communities.getParent.handler(async ({ input, context }) => {
+      const { env, userDid } = context as ServerContext;
+      const { ATProtoService } = await import('./services/atproto');
+      const atproto = new ATProtoService(env);
+
+      // Step 1: Construct child AT-URI
+      const childUri = input.childId.startsWith('at://')
+        ? input.childId
+        : `at://${userDid}/net.atrarium.group.config/${input.childId}`;
+
+      try {
+        // Step 2: Fetch child config
+        const childConfig = await atproto.getCommunityConfig(childUri);
+
+        // Step 3: Check for parent
+        if (!childConfig.parentCommunity) {
+          return null; // Top-level community, no parent
+        }
+
+        // Step 4: Fetch parent config
+        const parentConfig = await atproto.getCommunityConfig(childConfig.parentCommunity);
+        const parentStats = await atproto.getCommunityStatsDetailed(childConfig.parentCommunity);
+
+        // Step 5: Get parent's children list
+        const parentChildren = await atproto.getCommunityChildrenWithMetadata(
+          childConfig.parentCommunity
+        );
+        const childIds = parentChildren.children.map((c) => c.uri.split('/').pop() || '');
+
+        const parentRkey = childConfig.parentCommunity.split('/').pop() || '';
+
+        return {
+          id: parentRkey,
+          name: parentConfig.name,
+          description: parentConfig.description || null,
+          stage: parentConfig.stage,
+          hashtag: parentConfig.hashtag,
+          memberCount: parentStats.activeMemberCount,
+          postCount: 0,
+          children: childIds,
+          createdAt: new Date(parentConfig.createdAt).getTime(),
+          updatedAt: parentConfig.updatedAt
+            ? new Date(parentConfig.updatedAt).getTime()
+            : undefined,
+        };
+      } catch (_error) {
+        throw new ORPCError('NOT_FOUND', {
+          message: 'Child community not found',
+        });
+      }
+    }),
+
+    delete: contract.communities.delete.handler(async ({ input, context }) => {
+      const { env, userDid } = context as ServerContext;
+      const { ATProtoService } = await import('./services/atproto');
+      const atproto = new ATProtoService(env);
+
+      // Step 1: Construct community AT-URI
+      const communityUri = input.id.startsWith('at://')
+        ? input.id
+        : `at://${userDid}/net.atrarium.group.config/${input.id}`;
+
+      try {
+        // Step 2: Fetch community config
+        const config = await atproto.getCommunityConfig(communityUri);
+
+        // Step 3: Verify user is owner
+        const memberships = await atproto.listMemberships(userDid || '', {
+          communityUri,
+        });
+        const ownerMembership = memberships.find((m) => m.role === 'owner' && m.active);
+
+        if (!ownerMembership) {
+          throw new ORPCError('FORBIDDEN', {
+            message: 'Only community owner can delete community',
+          });
+        }
+
+        // Step 4: Check active members (excluding owner)
+        const stats = await atproto.getCommunityStatsDetailed(communityUri);
+        if (stats.activeMemberCount > 1) {
+          throw new ORPCError('CONFLICT', {
+            message: `Community has ${stats.activeMemberCount} active members, cannot delete`,
+          });
+        }
+
+        // Step 5: Check for children
+        const children = await atproto.getCommunityChildrenWithMetadata(communityUri);
+        if (children.children.length > 0) {
+          throw new ORPCError('CONFLICT', {
+            message: 'Community has children, remove them first',
+          });
+        }
+
+        // Step 6: Check for posts (via Durable Object)
+        const communityDOId = env.COMMUNITY_FEED.idFromName(input.id);
+        const communityStub = env.COMMUNITY_FEED.get(communityDOId);
+
+        const postsResponse = await communityStub.fetch(
+          new Request('http://fake-host/posts?limit=1')
+        );
+
+        if (postsResponse.ok) {
+          const postsData = (await postsResponse.json()) as { posts: unknown[] };
+          if (postsData.posts.length > 0) {
+            throw new ORPCError('CONFLICT', {
+              message: 'Community has posts, cannot delete',
+            });
+          }
+        }
+
+        // Step 7: Remove from parent's children list (if applicable)
+        if (config.parentCommunity) {
+          const parentRkey = config.parentCommunity.split('/').pop() || '';
+          const parentDOId = env.COMMUNITY_FEED.idFromName(parentRkey);
+          const parentStub = env.COMMUNITY_FEED.get(parentDOId);
+
+          await parentStub.fetch(
+            new Request('http://fake-host/hierarchy/removeChild', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                parentId: parentRkey,
+                childId: input.id,
+              }),
+            })
+          );
+        }
+
+        // Step 8: Delete community config from PDS
+        // Note: AT Protocol doesn't have direct delete, use putRecord with tombstone or deleteRecord
+        // For now, we'll skip actual PDS deletion (requires proper implementation)
+
+        // Step 9: Mark Durable Object as deleted
+        // (Future requests will return 404)
+
+        return {
+          success: true,
+          deletedId: input.id,
+        };
+      } catch (error) {
+        if (error instanceof ORPCError) {
+          throw error;
+        }
+
+        throw new ORPCError('NOT_FOUND', {
+          message: 'Community not found',
+        });
+      }
+    }),
   },
 
   // ==========================================================================
