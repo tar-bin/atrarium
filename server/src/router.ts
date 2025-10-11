@@ -682,14 +682,201 @@ export const router = {
       };
     }),
 
-    list: contract.moderation.list.handler(async () => {
-      // TODO: This needs communityUri from input, but contract doesn't specify it
-      // For now, return empty list
-      // In production, should list all moderation actions for communities where user is admin
+    list: contract.moderation.list.handler(async ({ input, context }) => {
+      const { env, userDid } = context as ServerContext;
+      const { ATProtoService } = await import('./services/atproto');
+      const atproto = new ATProtoService(env);
+
+      // Verify user is admin for the specified community
+      const userMemberships = await atproto.listMemberships(userDid || '', {
+        communityUri: input.communityUri,
+      });
+
+      const userMembership = userMemberships.find((m) => m.active && m.status === 'active');
+      if (!userMembership || !['owner', 'moderator'].includes(userMembership.role)) {
+        throw new ORPCError('FORBIDDEN', {
+          message: 'Only admins can view moderation actions',
+        });
+      }
+
+      // List moderation actions for this community
+      const actions = await atproto.listModerationActions(input.communityUri, userDid || '');
 
       return {
-        data: [],
+        data: actions.map((action) => ({
+          ...action,
+          moderatorDid: userDid || '',
+        })),
       };
+    }),
+  },
+
+  // ==========================================================================
+  // Posts Router Implementation (018-api-orpc: T006-T008)
+  // ==========================================================================
+
+  posts: {
+    create: contract.posts.create.handler(async ({ input, context }) => {
+      const { env, userDid } = context as ServerContext;
+      const { ATProtoService } = await import('./services/atproto');
+      const atproto = new ATProtoService(env);
+
+      // Verify membership via Durable Object RPC
+      const feedId = env.COMMUNITY_FEED.idFromName(input.communityId);
+      const feedStub = env.COMMUNITY_FEED.get(feedId);
+
+      const membershipResponse = await feedStub.fetch(
+        new Request(`https://internal/checkMembership?did=${userDid}`)
+      );
+
+      if (!membershipResponse.ok) {
+        throw new ORPCError('INTERNAL_SERVER_ERROR', {
+          message: 'Failed to verify membership',
+        });
+      }
+
+      const membershipData = (await membershipResponse.json()) as { isMember: boolean };
+      if (!membershipData.isMember) {
+        throw new ORPCError('FORBIDDEN', {
+          message: 'You are not a member of this community',
+        });
+      }
+
+      // Create post in PDS
+      const postRecord = {
+        $type: 'net.atrarium.group.post',
+        text: input.text,
+        communityId: input.communityId,
+        createdAt: new Date().toISOString(),
+      };
+
+      const result = await atproto.createCommunityPost(postRecord, userDid || '');
+
+      return {
+        uri: result.uri,
+        rkey: result.rkey,
+        createdAt: postRecord.createdAt,
+      };
+    }),
+
+    list: contract.posts.list.handler(async ({ input, context }) => {
+      const { env } = context as ServerContext;
+      const { ATProtoService } = await import('./services/atproto');
+      const atproto = new ATProtoService(env);
+
+      // Fetch posts from Durable Object
+      const feedId = env.COMMUNITY_FEED.idFromName(input.communityId);
+      const feedStub = env.COMMUNITY_FEED.get(feedId);
+
+      const response = await feedStub.fetch(
+        new Request(
+          `https://internal/posts?limit=${input.limit || 50}${
+            input.cursor ? `&cursor=${input.cursor}` : ''
+          }`
+        )
+      );
+
+      if (!response.ok) {
+        throw new ORPCError('INTERNAL_SERVER_ERROR', {
+          message: 'Failed to fetch posts',
+        });
+      }
+
+      const data = (await response.json()) as {
+        posts: Array<{ uri: string; authorDid: string; createdAt: string; text?: string }>;
+        cursor: string | null;
+      };
+
+      // Enrich posts with author profiles
+      const authorDids = [...new Set(data.posts.map((p) => p.authorDid))];
+      const profiles = await atproto.getProfiles(authorDids);
+      const profileMap = new Map(profiles.map((p) => [p.did, p]));
+
+      const enrichedPosts = data.posts.map((post) => ({
+        uri: post.uri,
+        rkey: post.uri.split('/').pop() || '',
+        text: post.text || '',
+        communityId: input.communityId,
+        createdAt: post.createdAt,
+        author: profileMap.get(post.authorDid) || {
+          did: post.authorDid,
+          handle: 'unknown.bsky.social',
+          displayName: null,
+          avatar: null,
+        },
+      }));
+
+      return {
+        posts: enrichedPosts,
+        cursor: data.cursor,
+      };
+    }),
+
+    get: contract.posts.get.handler(async ({ input, context }) => {
+      const { env } = context as ServerContext;
+      const { ATProtoService } = await import('./services/atproto');
+      const atproto = new ATProtoService(env);
+      const agent = await atproto.getAgent();
+
+      // Parse AT-URI
+      const uriParts = input.uri.replace('at://', '').split('/');
+      const [repo, collection, rkey] = uriParts;
+
+      if (!repo || !collection || !rkey) {
+        throw new ORPCError('BAD_REQUEST', {
+          message: 'Invalid AT-URI format',
+        });
+      }
+
+      // Validate collection type
+      if (collection !== 'net.atrarium.group.post') {
+        throw new ORPCError('BAD_REQUEST', {
+          message: 'Record is not a community post',
+        });
+      }
+
+      try {
+        // Fetch post from PDS
+        const recordResponse = await agent.com.atproto.repo.getRecord({
+          repo,
+          collection,
+          rkey,
+        });
+
+        const record = recordResponse.data.value as {
+          $type: string;
+          text: string;
+          communityId: string;
+          createdAt: string;
+        };
+
+        if (record.$type !== 'net.atrarium.group.post') {
+          throw new ORPCError('BAD_REQUEST', {
+            message: 'Record is not a community post',
+          });
+        }
+
+        // Fetch author profile
+        const profile = await atproto.getProfile(repo);
+
+        return {
+          uri: input.uri,
+          rkey,
+          text: record.text,
+          communityId: record.communityId,
+          createdAt: record.createdAt,
+          author: profile,
+        };
+      } catch (error) {
+        if (error instanceof ORPCError) {
+          throw error;
+        }
+
+        // Handle PDS errors
+        throw new ORPCError('NOT_FOUND', {
+          message: 'Post not found',
+        });
+      }
     }),
   },
 

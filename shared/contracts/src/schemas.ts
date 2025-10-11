@@ -214,6 +214,11 @@ export const ModerationActionOutputSchema = z.object({
   moderatorDid: z.string(), // Derived from URI
 });
 
+// Input: List moderation actions for a community
+export const ListModerationActionsInputSchema = z.object({
+  communityUri: z.string(), // AT-URI of community config (required for filtering)
+});
+
 // Output: List of moderation actions
 export const ModerationActionListOutputSchema = z.object({
   data: z.array(ModerationActionOutputSchema),

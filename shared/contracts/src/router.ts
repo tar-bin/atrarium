@@ -39,6 +39,7 @@ import {
   ListFeedsInputSchema,
   ListJoinRequestsInputSchema,
   ListMembershipsInputSchema,
+  ListModerationActionsInputSchema,
   ListPendingEmojiInputSchema,
   ListPendingEmojiOutputSchema,
   ListReactionsInputSchema,
@@ -283,6 +284,7 @@ export const moderationContract = {
       method: 'GET',
       path: '/api/moderation/actions',
     })
+    .input(ListModerationActionsInputSchema)
     .output(ModerationActionListOutputSchema),
 };
 
