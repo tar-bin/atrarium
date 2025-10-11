@@ -43,7 +43,7 @@ export function EmojiApprovalList({
       setError(null);
       setProcessingUri(emojiUri);
 
-      await approveEmoji(communityId, emojiUri, 'approved');
+      await approveEmoji(communityId, emojiUri, true);
 
       if (onApprovalChange) {
         onApprovalChange();
@@ -60,7 +60,7 @@ export function EmojiApprovalList({
       setError(null);
       setProcessingUri(emojiUri);
 
-      await approveEmoji(communityId, emojiUri, 'rejected', rejectReason[emojiUri] || undefined);
+      await approveEmoji(communityId, emojiUri, false, rejectReason[emojiUri] || undefined);
 
       // Clear reject reason
       setRejectReason((prev) => {

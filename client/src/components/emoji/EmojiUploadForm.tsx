@@ -91,7 +91,7 @@ export function EmojiUploadForm({ onSuccess, onError }: EmojiUploadFormProps) {
 
       // Notify success
       if (onSuccess) {
-        onSuccess(result.emojiUri);
+        onSuccess(result.emojiURI);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to upload emoji';

@@ -15,17 +15,16 @@ interface EmojiApprovalProps {
   isOwner: boolean;
 }
 
+// Match api.ts listPendingEmojis return type
 interface PendingEmoji {
+  emojiUri: string;
   shortcode: string;
-  emojiRef: string;
-  imageUrl: string;
   creator: string;
-  creatorHandle?: string;
+  creatorHandle: string;
   uploadedAt: string;
   format: 'png' | 'gif' | 'webp';
-  size: number;
-  dimensions: { width: number; height: number };
   animated: boolean;
+  blobUrl: string;
 }
 
 /**
@@ -53,8 +52,8 @@ export function EmojiApproval({ communityId, isOwner }: EmojiApprovalProps) {
 
   // Approval mutation
   const approveMutation = useMutation({
-    mutationFn: (data: { emojiRef: string; status: 'approved' | 'rejected'; reason?: string }) =>
-      approveEmoji(communityId, data.emojiRef, data.status, data.reason),
+    mutationFn: (data: { emojiRef: string; approve: boolean; reason?: string }) =>
+      approveEmoji(communityId, data.emojiRef, data.approve, data.reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pending-emojis', communityId] });
       queryClient.invalidateQueries({ queryKey: ['emojis', communityId] });
@@ -65,19 +64,19 @@ export function EmojiApproval({ communityId, isOwner }: EmojiApprovalProps) {
 
   const handleApprove = (emoji: PendingEmoji) => {
     approveMutation.mutate({
-      emojiRef: emoji.emojiRef,
-      status: 'approved',
+      emojiRef: emoji.emojiUri,
+      approve: true,
     });
   };
 
   const handleReject = (emoji: PendingEmoji) => {
-    setRejectingEmoji(emoji.emojiRef);
+    setRejectingEmoji(emoji.emojiUri);
   };
 
   const handleConfirmReject = (emoji: PendingEmoji) => {
     approveMutation.mutate({
-      emojiRef: emoji.emojiRef,
-      status: 'rejected',
+      emojiRef: emoji.emojiUri,
+      approve: false,
       reason: rejectionReason || undefined,
     });
   };
@@ -118,7 +117,7 @@ export function EmojiApproval({ communityId, isOwner }: EmojiApprovalProps) {
     );
   }
 
-  const pendingEmojis = data?.emojis || [];
+  const pendingEmojis = data?.submissions || [];
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6">
@@ -136,14 +135,14 @@ export function EmojiApproval({ communityId, isOwner }: EmojiApprovalProps) {
         <div className="space-y-4">
           {pendingEmojis.map((emoji: PendingEmoji) => (
             <div
-              key={emoji.emojiRef}
+              key={emoji.emojiUri}
               className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
             >
               <div className="flex items-start gap-4">
                 {/* Preview */}
                 <div className="flex-shrink-0">
                   <div className="flex items-center justify-center w-16 h-16 bg-gray-50 rounded border border-gray-200">
-                    <img src={emoji.imageUrl} alt={emoji.shortcode} className="max-h-14 w-auto" />
+                    <img src={emoji.blobUrl} alt={emoji.shortcode} className="max-h-14 w-auto" />
                   </div>
                 </div>
 
@@ -169,10 +168,6 @@ export function EmojiApproval({ communityId, isOwner }: EmojiApprovalProps) {
                       <span className="font-medium">Format:</span> {emoji.format.toUpperCase()}
                     </div>
                     <div>
-                      <span className="font-medium">Size:</span> {emoji.dimensions.width}×
-                      {emoji.dimensions.height}px ({(emoji.size / 1024).toFixed(1)} KB)
-                    </div>
-                    <div>
                       <span className="font-medium">Uploaded:</span>{' '}
                       {new Date(emoji.uploadedAt).toLocaleString()}
                     </div>
@@ -180,13 +175,13 @@ export function EmojiApproval({ communityId, isOwner }: EmojiApprovalProps) {
                 </div>
 
                 {/* Actions */}
-                {rejectingEmoji === emoji.emojiRef ? (
+                {rejectingEmoji === emoji.emojiUri ? (
                   <div className="flex-shrink-0 w-64">
                     <div className="space-y-3">
                       <div>
-                        <Label htmlFor={`reason-${emoji.emojiRef}`}>Rejection Reason</Label>
+                        <Label htmlFor={`reason-${emoji.emojiUri}`}>Rejection Reason</Label>
                         <Textarea
-                          id={`reason-${emoji.emojiRef}`}
+                          id={`reason-${emoji.emojiUri}`}
                           value={rejectionReason}
                           onChange={(e) => setRejectionReason(e.target.value)}
                           placeholder="Optional reason for rejection..."

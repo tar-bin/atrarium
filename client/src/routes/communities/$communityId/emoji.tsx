@@ -38,15 +38,15 @@ function EmojiManagementPage() {
       const result = await listPendingEmojis(communityId);
       // Transform to expected format
       return {
-        submissions: result.emojis.map((emoji) => ({
-          emojiUri: emoji.emojiRef,
+        submissions: result.submissions.map((emoji) => ({
+          emojiUri: emoji.emojiUri,
           shortcode: emoji.shortcode,
           creator: emoji.creator,
           creatorHandle: emoji.creatorHandle || '',
           uploadedAt: emoji.uploadedAt,
           format: emoji.format,
           animated: emoji.animated,
-          blobUrl: emoji.imageUrl,
+          blobUrl: emoji.blobUrl,
         })),
       };
     },

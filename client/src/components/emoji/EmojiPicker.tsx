@@ -28,16 +28,8 @@ export function EmojiPicker({ communityId, onEmojiSelect, trigger }: EmojiPicker
 
       const result = await listEmojis(communityId);
 
-      // Convert array to registry object
-      const registry: Record<string, EmojiMetadata> = {};
-      for (const emoji of result.emojis) {
-        registry[emoji.shortcode] = {
-          emojiURI: '', // Not available in legacy API
-          blobURI: emoji.imageUrl,
-          animated: emoji.animated,
-        };
-      }
-      setEmojiRegistry(registry);
+      // result.emoji is already a Record<string, EmojiMetadata>
+      setEmojiRegistry(result.emoji);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load emoji');
     } finally {

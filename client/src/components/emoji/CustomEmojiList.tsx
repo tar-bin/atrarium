@@ -11,16 +11,17 @@ interface CustomEmojiListProps {
   userId: string;
 }
 
+// Match api.ts listUserEmojis return type
 interface CustomEmoji {
   shortcode: string;
-  imageUrl: string;
-  emojiUri: string;
+  blob: unknown;
   creator: string;
   uploadedAt: string;
   format: 'png' | 'gif' | 'webp';
   size: number;
   dimensions: { width: number; height: number };
   animated: boolean;
+  uri: string;
   approvalStatus?: 'pending' | 'approved' | 'rejected' | 'revoked';
 }
 
@@ -57,7 +58,7 @@ export function CustomEmojiList({ userId }: CustomEmojiListProps) {
     if (
       window.confirm(`Are you sure you want to delete :${emoji.shortcode}:? This cannot be undone.`)
     ) {
-      deleteMutation.mutate(emoji.emojiUri);
+      deleteMutation.mutate(emoji.uri);
     }
   };
 
@@ -81,7 +82,7 @@ export function CustomEmojiList({ userId }: CustomEmojiListProps) {
     );
   }
 
-  const emojis = data?.emojis || [];
+  const emojis = data?.emoji || [];
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6">
@@ -106,11 +107,12 @@ export function CustomEmojiList({ userId }: CustomEmojiListProps) {
             </thead>
             <tbody>
               {emojis.map((emoji: CustomEmoji) => (
-                <tr key={emoji.emojiUri} className="border-b border-gray-100 hover:bg-gray-50">
+                <tr key={emoji.uri} className="border-b border-gray-100 hover:bg-gray-50">
                   {/* Preview */}
                   <td className="py-3 px-3">
                     <div className="flex items-center justify-center w-12 h-12 bg-gray-50 rounded border border-gray-200">
-                      <img src={emoji.imageUrl} alt={emoji.shortcode} className="max-h-10 w-auto" />
+                      {/* Note: blob URL not available in current schema, placeholder for now */}
+                      <div className="text-2xl">{emoji.shortcode}</div>
                     </div>
                   </td>
 

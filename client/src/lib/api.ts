@@ -249,7 +249,16 @@ export async function deleteEmoji(_emojiUri: string): Promise<{ success: boolean
  * List approved emojis for a community (registry)
  * @deprecated Use apiClient.emoji.registry({ communityId }) instead.
  */
-export async function listEmojis(communityId: string): Promise<{ emoji: Record<string, unknown> }> {
+export async function listEmojis(communityId: string): Promise<{
+  emoji: Record<
+    string,
+    {
+      emojiURI: string;
+      blobURI: string;
+      animated: boolean;
+    }
+  >;
+}> {
   return await apiClient.emoji.registry({ communityId });
 }
 

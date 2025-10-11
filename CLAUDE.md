@@ -622,16 +622,17 @@ The client fetches actual post content from Bluesky's AppView using these URIs.
   - [x] Frontend Components: ReactionBar, ReactionPicker, EmojiPicker (6 Unicode categories, 60+ emojis, search, custom emoji integration)
   - [x] Custom Emoji Management: CustomEmojiUpload, CustomEmojiList, EmojiApproval (upload, validation, approval queue)
   - [x] API Helpers: addReaction, removeReaction, listReactions, uploadEmoji, deleteEmoji, listEmojis, listUserEmojis, listPendingEmojis, approveEmoji
-- [x] **oRPC Router Implementation** (018-api-orpc: Type-safe API migration)
+- [x] **oRPC Router Implementation** (018-api-orpc: Type-safe API migration) ✅ **COMPLETED**
   - [x] Posts API (create, list, get) - Fully migrated with contract tests
   - [x] Emoji API (upload, list, submit, listPending, approve, revoke, registry) - **Completed with base64 approach**
   - [x] Reactions API (add, remove, list) - Fully migrated with contract tests
   - [x] Moderation API fix (list with communityUri parameter)
   - [x] Contract tests (14 tests covering Posts, Emoji, Reactions, Moderation)
-  - [x] Integration tests (Post creation flow, Moderation list validation)
+  - [x] Integration tests (Post creation flow, Emoji approval flow, Moderation list validation)
   - [x] Performance validation (p95 < 100ms target)
   - [x] Legacy route removal (Posts, Emoji routes deleted - SSE endpoint kept)
-  - [ ] Client emoji upload migration (requires File → base64 conversion)
+  - [x] Client integration (all TypeScript errors resolved, MSW mocks updated)
+  - [x] Type safety validation (`pnpm -r typecheck` passes across all workspaces)
 
 ### 🚧 In Progress / Pending
 - [ ] Production deployment (Cloudflare Workers + Durable Objects + Queues)

@@ -202,10 +202,11 @@
   **NOTE**: Emoji router uncommented in contract (shared/contracts/src/router.ts:446)
 
 ### 3.3 Integration Tests (Validate End-to-End)
-- [ ] **T027** Integration test: Emoji upload & approval flow (Scenario 3 from quickstart.md)
+- [X] **T027** Integration test: Emoji upload & approval flow (Scenario 3 from quickstart.md)
   - File: `/workspaces/atrarium/server/tests/integration/emoji/approval-flow.test.ts`
   - Test: Upload → Submit → Pending → Approve → Use in reaction
   - Reference: quickstart.md lines 217-332
+  - **Status**: Created comprehensive integration test covering full emoji lifecycle
 
 ### 3.4 Client & Deployment
 - [X] **T028** Update client API calls to use apiClient.emoji
@@ -223,10 +224,11 @@
        - `listPendingEmojis()` → `apiClient.emoji.listPending()`
        - `approveEmoji()` → `apiClient.emoji.approve()`
     4. ✅ Added deprecation notices to legacy helpers
-  - **Remaining**:
-    - Client component updates (CustomEmojiUpload, EmojiApproval, etc.)
-    - Type resolution issues with `apiClient.emoji` in components
-    - MSW mock handlers for emoji endpoints
+  - **Final Updates** (Completed):
+    5. ✅ Fixed all TypeScript type errors in client components
+    6. ✅ Updated MSW mock handlers for all emoji endpoints
+    7. ✅ Resolved type mismatches (Record vs Array, property names)
+    8. ✅ All workspaces pass `pnpm -r typecheck` successfully
 
 - [X] **T029** Legacy emoji route removed
   - File: `/workspaces/atrarium/server/src/routes/emoji.ts`

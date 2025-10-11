@@ -101,14 +101,6 @@ const UNICODE_CATEGORIES = [
   },
 ];
 
-interface CustomEmoji {
-  shortcode: string;
-  imageUrl: string;
-  creator: string;
-  animated: boolean;
-  dimensions: { width: number; height: number };
-}
-
 /**
  * EmojiPicker - Full-featured emoji picker with tabs and search
  *
@@ -160,7 +152,9 @@ export function EmojiPicker({ postUri, communityId, onClose }: EmojiPickerProps)
     return null;
   }
 
-  const customEmojis = customEmojisData?.emojis || [];
+  // Convert Record to array of [shortcode, metadata] entries
+  const customEmojisRecord = customEmojisData?.emoji || {};
+  const customEmojisArray = Object.entries(customEmojisRecord);
 
   // Filter emojis by search query
   const filteredUnicodeCategories = UNICODE_CATEGORIES.map((category) => ({
@@ -172,8 +166,8 @@ export function EmojiPicker({ postUri, communityId, onClose }: EmojiPickerProps)
     ),
   })).filter((category) => category.emojis.length > 0);
 
-  const filteredCustomEmojis = customEmojis.filter((emoji: CustomEmoji) =>
-    emoji.shortcode.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredCustomEmojis = customEmojisArray.filter(([shortcode]) =>
+    shortcode.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -227,7 +221,7 @@ export function EmojiPicker({ postUri, communityId, onClose }: EmojiPickerProps)
                   : 'text-gray-600 hover:bg-gray-50'
               }`}
             >
-              Custom ({customEmojis.length})
+              Custom ({customEmojisArray.length})
             </button>
           </div>
         </div>
@@ -276,16 +270,16 @@ export function EmojiPicker({ postUri, communityId, onClose }: EmojiPickerProps)
                 </div>
               ) : (
                 <div className="grid grid-cols-8 gap-1">
-                  {filteredCustomEmojis.map((emoji: CustomEmoji) => (
+                  {filteredCustomEmojis.map(([shortcode, metadata]) => (
                     <button
-                      key={emoji.shortcode}
+                      key={shortcode}
                       type="button"
-                      onClick={() => handleSelectCustomEmoji(emoji.imageUrl)}
+                      onClick={() => handleSelectCustomEmoji(metadata.emojiURI)}
                       disabled={addMutation.isPending}
                       className="flex items-center justify-center w-10 h-10 rounded hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
-                      title={`:${emoji.shortcode}:`}
+                      title={`:${shortcode}:`}
                     >
-                      <img src={emoji.imageUrl} alt={emoji.shortcode} className="max-h-8 w-auto" />
+                      <img src={metadata.blobURI} alt={shortcode} className="max-h-8 w-auto" />
                     </button>
                   ))}
                 </div>
