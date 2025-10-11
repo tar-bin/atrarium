@@ -164,170 +164,150 @@ export function subscribeToReactions(
 }
 
 // ============================================================================
-// Custom Emoji API helpers (016-slack-mastodon-misskey, T024-T027)
+// Custom Emoji API (018-api-orpc, T028)
 // ============================================================================
 
 /**
- * Upload custom emoji
+ * Emoji API is fully migrated to oRPC client with base64 approach.
+ * Use apiClient.emoji directly for type-safe API calls:
+ *
+ * @example Upload emoji
+ * import { fileToBase64, getImageDimensions, isAnimatedGif } from '@/lib/utils';
+ *
+ * const fileData = await fileToBase64(file);
+ * const dimensions = await getImageDimensions(file);
+ * const animated = await isAnimatedGif(file);
+ *
+ * const result = await apiClient.emoji.upload({
+ *   fileData,
+ *   mimeType: file.type,
+ *   shortcode: 'party_parrot',
+ *   size: file.size,
+ *   dimensions,
+ *   animated
+ * });
+ *
+ * @example List user's emojis
+ * const { emoji } = await apiClient.emoji.list({ did: 'did:plc:xxx' });
+ *
+ * @example Submit emoji for approval
+ * await apiClient.emoji.submit({
+ *   communityId: 'a1b2c3d4',
+ *   emojiURI: 'at://did:plc:xxx/net.atrarium.emoji.custom/yyy'
+ * });
+ *
+ * @example Approve emoji (owner only)
+ * await apiClient.emoji.approve({
+ *   communityId: 'a1b2c3d4',
+ *   emojiURI: 'at://...',
+ *   approve: true
+ * });
+ *
+ * @example Get emoji registry
+ * const { emoji } = await apiClient.emoji.registry({ communityId: 'a1b2c3d4' });
+ */
+
+/**
+ * Upload custom emoji with base64 encoding
+ * @deprecated Use apiClient.emoji.upload() with fileToBase64/getImageDimensions utilities.
+ * This helper is kept for backward compatibility during migration.
  */
 export async function uploadEmoji(
   shortcode: string,
   image: File
-): Promise<{ success: boolean; emojiUri: string }> {
-  const formData = new FormData();
-  formData.append('shortcode', shortcode);
-  formData.append('image', image);
+): Promise<{ emojiURI: string; blob: unknown }> {
+  // Import utilities dynamically to avoid circular dependencies
+  const { fileToBase64, getImageDimensions, isAnimatedGif } = await import('./utils');
 
-  const response = await fetch(`${baseURL}/api/emoji/upload`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-    },
-    body: formData,
+  // Convert File to base64
+  const fileData = await fileToBase64(image);
+  const dimensions = await getImageDimensions(image);
+  const animated = await isAnimatedGif(image);
+
+  // Call oRPC endpoint
+  const result = await apiClient.emoji.upload({
+    fileData,
+    mimeType: image.type as 'image/png' | 'image/gif' | 'image/webp',
+    shortcode,
+    size: image.size,
+    dimensions,
+    animated,
   });
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(error.error || `Failed to upload emoji: ${response.statusText}`);
-  }
-
-  return response.json();
+  return result;
 }
 
 /**
- * Delete custom emoji
+ * @deprecated Legacy endpoint removed. Emoji deletion not supported in oRPC API.
+ * Consider implementing revoke functionality via apiClient.emoji.revoke() instead.
  */
-export async function deleteEmoji(emojiUri: string): Promise<{ success: boolean }> {
-  const response = await fetch(`${baseURL}/api/emoji/delete`, {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-    },
-    body: JSON.stringify({ emojiUri }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to delete emoji: ${response.statusText}`);
-  }
-
-  return response.json();
+export async function deleteEmoji(_emojiUri: string): Promise<{ success: boolean }> {
+  throw new Error('deleteEmoji is no longer supported. Use apiClient.emoji.revoke() instead.');
 }
 
 /**
- * List approved emojis for a community
+ * List approved emojis for a community (registry)
+ * @deprecated Use apiClient.emoji.registry({ communityId }) instead.
  */
-export async function listEmojis(communityId: string): Promise<{
-  emojis: Array<{
-    shortcode: string;
-    imageUrl: string;
-    creator: string;
-    animated: boolean;
-    dimensions: { width: number; height: number };
-  }>;
-}> {
-  const response = await fetch(
-    `${baseURL}/api/emoji/list?communityId=${encodeURIComponent(communityId)}&status=approved`,
-    {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-      },
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error(`Failed to list emojis: ${response.statusText}`);
-  }
-
-  return response.json();
+export async function listEmojis(communityId: string): Promise<{ emoji: Record<string, unknown> }> {
+  return await apiClient.emoji.registry({ communityId });
 }
 
 /**
  * List user's uploaded emojis
+ * @deprecated Use apiClient.emoji.list({ did }) instead.
  */
 export async function listUserEmojis(userId: string): Promise<{
-  emojis: Array<{
+  emoji: Array<{
     shortcode: string;
-    imageUrl: string;
-    emojiUri: string;
+    blob: unknown;
     creator: string;
     uploadedAt: string;
     format: 'png' | 'gif' | 'webp';
     size: number;
     dimensions: { width: number; height: number };
     animated: boolean;
-    approvalStatus?: 'pending' | 'approved' | 'rejected' | 'revoked';
+    uri: string;
   }>;
 }> {
-  const response = await fetch(`${baseURL}/api/emoji/user/${encodeURIComponent(userId)}`, {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to list user emojis: ${response.statusText}`);
-  }
-
-  return response.json();
+  return await apiClient.emoji.list({ did: userId });
 }
 
 /**
  * List pending emojis for approval (owner only)
+ * @deprecated Use apiClient.emoji.listPending({ communityId }) instead.
  */
 export async function listPendingEmojis(communityId: string): Promise<{
-  emojis: Array<{
+  submissions: Array<{
+    emojiUri: string;
     shortcode: string;
-    emojiRef: string;
-    imageUrl: string;
     creator: string;
-    creatorHandle?: string;
+    creatorHandle: string;
     uploadedAt: string;
     format: 'png' | 'gif' | 'webp';
-    size: number;
-    dimensions: { width: number; height: number };
     animated: boolean;
+    blobUrl: string;
   }>;
 }> {
-  const response = await fetch(
-    `${baseURL}/api/emoji/pending?communityId=${encodeURIComponent(communityId)}`,
-    {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-      },
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error(`Failed to list pending emojis: ${response.statusText}`);
-  }
-
-  return response.json();
+  return await apiClient.emoji.listPending({ communityId });
 }
 
 /**
  * Approve or reject custom emoji (owner only)
+ * @deprecated Use apiClient.emoji.approve() instead.
  */
 export async function approveEmoji(
   communityId: string,
-  emojiRef: string,
-  status: 'approved' | 'rejected',
+  emojiURI: string,
+  approve: boolean,
   reason?: string
-): Promise<{ success: boolean; approvalUri: string }> {
-  const response = await fetch(`${baseURL}/api/emoji/approve`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-    },
-    body: JSON.stringify({ communityId, emojiRef, status, reason }),
+): Promise<{ approvalURI: string; status: 'approved' | 'rejected' }> {
+  return await apiClient.emoji.approve({
+    communityId,
+    emojiURI,
+    approve,
+    reason,
   });
-
-  if (!response.ok) {
-    throw new Error(`Failed to approve emoji: ${response.statusText}`);
-  }
-
-  return response.json();
 }
 
 // ============================================================================

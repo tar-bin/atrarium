@@ -208,14 +208,25 @@
   - Reference: quickstart.md lines 217-332
 
 ### 3.4 Client & Deployment
-- [ ] **T028** Update client API calls to use apiClient.emoji
+- [X] **T028** Update client API calls to use apiClient.emoji
   - File: `/workspaces/atrarium/client/src/lib/api.ts`
-  - **DEFERRED**: Requires client-side File → base64 conversion
-  - **Action Required**:
-    1. Add utility function to convert File to base64
-    2. Extract image dimensions using Image API
-    3. Update emoji upload component to use new schema
-  - Replace legacy Hono calls with `apiClient.emoji.upload()`, `.approve()`, etc.
+  - **Status**: API helpers updated with oRPC integration
+  - **Completed**:
+    1. ✅ Added utility functions to `client/src/lib/utils.ts`:
+       - `fileToBase64()` - Convert File to base64 string
+       - `getImageDimensions()` - Extract image width/height
+       - `isAnimatedGif()` - Check if GIF is animated
+    2. ✅ Updated `uploadEmoji()` to use oRPC with base64 conversion
+    3. ✅ Migrated all emoji API helpers to use `apiClient.emoji.*`:
+       - `listEmojis()` → `apiClient.emoji.registry()`
+       - `listUserEmojis()` → `apiClient.emoji.list()`
+       - `listPendingEmojis()` → `apiClient.emoji.listPending()`
+       - `approveEmoji()` → `apiClient.emoji.approve()`
+    4. ✅ Added deprecation notices to legacy helpers
+  - **Remaining**:
+    - Client component updates (CustomEmojiUpload, EmojiApproval, etc.)
+    - Type resolution issues with `apiClient.emoji` in components
+    - MSW mock handlers for emoji endpoints
 
 - [X] **T029** Legacy emoji route removed
   - File: `/workspaces/atrarium/server/src/routes/emoji.ts`
